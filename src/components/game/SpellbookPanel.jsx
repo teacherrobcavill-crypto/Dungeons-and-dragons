@@ -9,7 +9,9 @@ export default function SpellbookPanel({
     onUseClassFeature,
     onShortRest,
     onLongRest,
-    inCombat = false
+    inCombat = false,
+    actionUsed = false,
+    bonusActionUsed = false
 }) {
     const [selectedLevelFilter, setSelectedLevelFilter] = useState('all');
     const cls = getClassById(character.class || 'wizard');
@@ -173,15 +175,21 @@ export default function SpellbookPanel({
                                         {feat.effect || feat.description}
                                     </p>
                                 </div>
-                                {feat.actionType && feat.actionType !== 'passive' && onUseClassFeature && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onUseClassFeature(feat)}
-                                        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-500 hover:bg-primary-600 text-white flex-shrink-0 transition-colors"
-                                    >
-                                        Use
-                                    </button>
-                                )}
+                                {feat.actionType && feat.actionType !== 'passive' && onUseClassFeature && (() => {
+                                    const isBonus = feat.actionType === 'bonus';
+                                    const isActionLocked = inCombat && ((isBonus && bonusActionUsed) || (feat.actionType === 'action' && actionUsed));
+                                    return (
+                                        <button
+                                            type="button"
+                                            disabled={isActionLocked}
+                                            onClick={() => onUseClassFeature(feat)}
+                                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-500 hover:bg-primary-600 disabled:opacity-40 text-white flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                            title={isActionLocked ? `${isBonus ? 'Bonus Action' : 'Action'} already spent this round` : `Activate ${feat.name}`}
+                                        >
+                                            {isActionLocked ? 'Spent' : 'Use'}
+                                        </button>
+                                    );
+                                })()}
                             </div>
                         ))}
                     </div>
@@ -215,8 +223,11 @@ export default function SpellbookPanel({
 
                     <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                         {filteredSpells.map((spell) => {
+                            const isBonus = spell.castingTime === 'bonus';
+                            const isActionLocked = inCombat && (isBonus ? bonusActionUsed : actionUsed);
                             const slotNeeded = spell.level > 0 ? spellSlots[`level${spell.level}`] : null;
-                            const canCast = spell.level === 0 || (slotNeeded && slotNeeded.current > 0);
+                            const hasSlot = spell.level === 0 || (slotNeeded && slotNeeded.current > 0);
+                            const canCast = !isActionLocked && hasSlot;
                             return (
                                 <div
                                     key={spell.id}
@@ -245,9 +256,16 @@ export default function SpellbookPanel({
                                         type="button"
                                         disabled={!canCast}
                                         onClick={() => onCastSpell && onCastSpell(spell)}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white flex-shrink-0 transition-colors"
+                                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        title={
+                                            isActionLocked
+                                                ? (isBonus ? 'Bonus Action spent this round' : 'Action spent this round')
+                                                : !hasSlot
+                                                    ? 'No spell slots remaining'
+                                                    : 'Cast spell'
+                                        }
                                     >
-                                        Cast
+                                        {isActionLocked ? (isBonus ? 'Bonus Spent' : 'Action Spent') : 'Cast'}
                                     </button>
                                 </div>
                             );

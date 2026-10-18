@@ -432,6 +432,10 @@ export default function GameInterface() {
 
     const handleWeaponAttack = (weapon, targetEnemy, rollMode = 'normal', useDivineSmite = false) => {
         if (!state.combat || !targetEnemy) return;
+        if (state.combat.actionUsed) {
+            pushDmMessage("⚠️ You have already used your Action this round! End your turn to let companions and enemies act.");
+            return;
+        }
         soundService.play('swordHit');
 
         const result = resolveWeaponAttack({
@@ -511,7 +515,24 @@ export default function GameInterface() {
 
     const handleCastCombatSpell = (spell, targetEnemy) => {
         if (!spell) return;
+        if (state.combat?.active) {
+            const isBonus = spell.castingTime === 'bonus';
+            if (isBonus && state.combat.bonusActionUsed) {
+                pushDmMessage("⚠️ You have already used your Bonus Action this round!");
+                return;
+            }
+            if (!isBonus && state.combat.actionUsed) {
+                pushDmMessage("⚠️ You have already used your Action this round! End your turn or wait for the next round.");
+                return;
+            }
+        }
         if (spell.level > 0) {
+            const slotKey = `level${spell.level}`;
+            const availableSlots = state.character.spellSlots?.[slotKey]?.current ?? 0;
+            if (availableSlots <= 0) {
+                pushDmMessage(`⚠️ You have no Level ${spell.level} spell slots remaining!`);
+                return;
+            }
             consumeSpellSlot(spell.level);
         }
 
@@ -633,6 +654,17 @@ export default function GameInterface() {
 
     const handleUseClassFeature = (feature, targetEnemy = null) => {
         if (!feature) return;
+        if (state.combat?.active) {
+            const isBonus = feature.actionType === 'bonus';
+            if (isBonus && state.combat.bonusActionUsed) {
+                pushDmMessage("⚠️ You have already used your Bonus Action this round!");
+                return;
+            }
+            if (feature.actionType === 'action' && state.combat.actionUsed) {
+                pushDmMessage("⚠️ You have already used your Action this round! End your turn or wait for the next round.");
+                return;
+            }
+        }
         soundService.play('spellCast');
         const fname = (feature.name || '').toLowerCase();
         let logText = `⚡ You activate **${feature.name}**! ${feature.effect || ''}`;
@@ -731,6 +763,10 @@ export default function GameInterface() {
 
     const handleDrinkPotion = (item) => {
         if (!item) return;
+        if (state.combat?.active && state.combat.bonusActionUsed) {
+            pushDmMessage("⚠️ You have already used your Bonus Action this round!");
+            return;
+        }
         soundService.play('potion');
         const healFormula = item.healDice || (item.name?.toLowerCase().includes('greater') ? '4d4+4' : '2d4+2');
         const healRoll = rollDiceFormula(healFormula);
@@ -763,6 +799,10 @@ export default function GameInterface() {
 
     const handleDodgeAction = () => {
         if (!state.combat) return;
+        if (state.combat.actionUsed) {
+            pushDmMessage("⚠️ You have already used your Action this round! End your turn or wait for the next round.");
+            return;
+        }
         addCondition('dodging');
         updateCombat({ actionUsed: true });
         addChatMessage({
@@ -781,9 +821,10 @@ export default function GameInterface() {
         setIsCombatResolving(true);
         soundService.play('diceRoll');
 
-        const waitReveal = (proseText, basePauseMs = 1200) => {
+        const COMBAT_REVEAL_SPEED = 200;
+        const waitReveal = (proseText, basePauseMs = 1500) => {
             const wordCount = (proseText || '').trim().split(/\s+/).length;
-            const duration = Math.max(2400, (wordCount * 130) + basePauseMs);
+            const duration = Math.max(3000, (wordCount * COMBAT_REVEAL_SPEED) + basePauseMs);
             return new Promise((resolve) => setTimeout(resolve, duration));
         };
 
@@ -1515,6 +1556,8 @@ export default function GameInterface() {
                                 onShortRest={handleShortRest}
                                 onLongRest={handleLongRest}
                                 inCombat={Boolean(state.combat?.active)}
+                                actionUsed={Boolean(state.combat?.actionUsed)}
+                                bonusActionUsed={Boolean(state.combat?.bonusActionUsed)}
                             />
                         )}
                         {sidebarTab === 'inventory' && (

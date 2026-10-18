@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getClassById } from '../../data/classes';
-import { getSpellsForClass } from '../../data/spells';
+import { getSpellsForClass, getDefaultSpellsForClass } from '../../data/spells';
 import { CONDITIONS_INFO } from '../../services/dndEngine';
 
 export default function CombatEncounterHUD({
@@ -20,6 +20,7 @@ export default function CombatEncounterHUD({
     const [selectedEnemyId, setSelectedEnemyId] = useState(null);
     const [rollMode, setRollMode] = useState('normal');
     const [useDivineSmite, setUseDivineSmite] = useState(false);
+    const [openDropdown, setOpenDropdown] = useState(null); // 'offensive' | 'defensive' | 'potions' | null
 
     if (!combat || !combat.active) return null;
 
@@ -30,7 +31,45 @@ export default function CombatEncounterHUD({
 
     const cls = getClassById(character.class || 'fighter');
     const maxSpellLvl = character.level >= 5 ? 3 : character.level >= 3 ? 2 : 1;
-    const combatSpells = (getSpellsForClass ? getSpellsForClass(character.class || 'wizard', maxSpellLvl) : []).slice(0, 6);
+    const classSpells = getSpellsForClass ? getSpellsForClass(character.class || 'wizard', maxSpellLvl) : [];
+    const defaultSpells = getDefaultSpellsForClass ? getDefaultSpellsForClass(character.class || 'wizard', character.level || 1) : [];
+    const characterSpells = character.spells || [];
+
+    // Collect all available unique spells for this character
+    const allSpellsMap = new Map();
+    [...characterSpells, ...classSpells, ...defaultSpells].forEach((sp) => {
+        if (sp && sp.id && !allSpellsMap.has(sp.id)) {
+            allSpellsMap.set(sp.id, sp);
+        }
+    });
+    const availableSpells = Array.from(allSpellsMap.values());
+
+    const offensiveSpells = availableSpells.filter((s) =>
+        s.type === 'attack' ||
+        s.type === 'save' ||
+        Boolean(s.damageDice) ||
+        Boolean(s.damageType) ||
+        s.conditionApplied === 'slowed' ||
+        s.conditionApplied === 'paralyzed' ||
+        s.conditionApplied === 'frightened' ||
+        (s.name || '').toLowerCase().includes('fire') ||
+        (s.name || '').toLowerCase().includes('blast') ||
+        (s.name || '').toLowerCase().includes('bolt') ||
+        (s.name || '').toLowerCase().includes('missile')
+    );
+
+    const defensiveSpells = availableSpells.filter(
+        (s) => !offensiveSpells.some((o) => o.id === s.id)
+    );
+
+    const potionItems = (inventory || []).filter((i) =>
+        i.quantity > 0 && (
+            i.type === 'consumable' ||
+            i.name?.toLowerCase().includes('potion') ||
+            i.name?.toLowerCase().includes('elixir') ||
+            Boolean(i.healDice)
+        )
+    );
 
     // Primary equipped weapon or class default weapon
     const primaryWeapon = equippedItems.find((i) => i.type === 'weapon' || i.damageDice) || {
@@ -280,30 +319,6 @@ export default function CombatEncounterHUD({
                         </button>
                     )}
 
-                    {/* Quick Spells in Combat */}
-                    {combatSpells.map((spell) => {
-                        const isBonus = spell.castingTime === 'bonus';
-                        const isDisabled = isBonus ? combat.bonusActionUsed : combat.actionUsed;
-                        const slotKey = `level${spell.level}`;
-                        const hasSlot = spell.level === 0 || (character.spellSlots?.[slotKey]?.current > 0);
-                        return (
-                            <button
-                                key={spell.id}
-                                type="button"
-                                disabled={isCombatResolving || isDisabled || !hasSlot || (!activeTarget && spell.type !== 'heal' && spell.type !== 'buff')}
-                                onClick={() => onCastCombatSpell(spell, activeTarget)}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-purple-700/80 hover:bg-purple-600 disabled:opacity-35 text-purple-100 border border-purple-400/40 transition-all flex items-center gap-1 cursor-pointer"
-                                title={`${spell.name} (${spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}, ${spell.castingTime || 'action'})`}
-                            >
-                                <span>{spell.icon || '🔮'}</span>
-                                <span>{spell.name}</span>
-                                <span className="text-[10px] opacity-75">
-                                    ({spell.level === 0 ? '0' : `L${spell.level}`})
-                                </span>
-                            </button>
-                        );
-                    })}
-
                     {/* Class Features */}
                     {activeFeatures.map((feat) => {
                         const isBonus = feat.actionType === 'bonus';
@@ -321,17 +336,238 @@ export default function CombatEncounterHUD({
                         );
                     })}
 
-                    {/* Drink Healing Potion */}
-                    {healingPotion && (
+                    {/* Offensive Spells Dropdown */}
+                    <div className="relative">
                         <button
                             type="button"
-                            disabled={isCombatResolving || combat.bonusActionUsed}
-                            onClick={() => onDrinkPotion(healingPotion)}
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 disabled:opacity-35 text-emerald-100 border border-emerald-400/40 transition-all cursor-pointer"
+                            disabled={isCombatResolving || offensiveSpells.length === 0}
+                            onClick={() => setOpenDropdown(openDropdown === 'offensive' ? null : 'offensive')}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                openDropdown === 'offensive'
+                                    ? 'bg-red-700 text-white border-amber-300 ring-2 ring-amber-300/60 shadow-lg'
+                                    : 'bg-red-950/70 hover:bg-red-900/80 text-red-100 border-red-500/40'
+                            }`}
                         >
-                            🧪 Quaff {healingPotion.name} (Bonus)
+                            <span>⚔️</span>
+                            <span>Offensive Spells ({offensiveSpells.length})</span>
+                            <span className="text-[9px] opacity-75">{openDropdown === 'offensive' ? '▲' : '▼'}</span>
                         </button>
-                    )}
+                        {openDropdown === 'offensive' && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-30"
+                                    onClick={() => setOpenDropdown(null)}
+                                />
+                                <div className="absolute left-0 bottom-full mb-1.5 z-40 w-72 sm:w-80 max-h-64 overflow-y-auto rounded-xl bg-slate-900/98 border border-red-500/60 shadow-2xl p-1.5 space-y-1 backdrop-blur-md">
+                                    <div className="px-2 py-1 border-b border-red-500/20 text-[11px] font-bold text-red-300 flex justify-between items-center">
+                                        <span>⚔️ Offensive Spells</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">Target: {activeTarget?.name || 'Nearest Foe'}</span>
+                                    </div>
+                                    {offensiveSpells.map((spell) => {
+                                        const isBonus = spell.castingTime === 'bonus';
+                                        const isActionLocked = isBonus ? combat.bonusActionUsed : combat.actionUsed;
+                                        const slotKey = `level${spell.level}`;
+                                        const hasSlot = spell.level === 0 || (character.spellSlots?.[slotKey]?.current > 0);
+                                        const isDisabled = isCombatResolving || isActionLocked || !hasSlot || !activeTarget;
+
+                                        return (
+                                            <button
+                                                key={spell.id}
+                                                type="button"
+                                                disabled={isDisabled}
+                                                onClick={() => {
+                                                    onCastCombatSpell(spell, activeTarget);
+                                                    setOpenDropdown(null);
+                                                }}
+                                                className={`w-full text-left p-2 rounded-lg transition-all flex items-center justify-between gap-2 border ${
+                                                    isDisabled
+                                                        ? 'bg-slate-950/40 border-slate-800 text-gray-500 cursor-not-allowed opacity-45'
+                                                        : 'bg-slate-800/80 hover:bg-red-950/70 border-slate-700 hover:border-red-400 text-white cursor-pointer'
+                                                }`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>{spell.icon || '🔥'}</span>
+                                                        <span className="font-bold text-xs truncate">{spell.name}</span>
+                                                        <span className="text-[9px] px-1 py-0.2 rounded bg-red-900/60 text-red-200">
+                                                            {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-300 flex items-center gap-1.5 mt-0.5">
+                                                        {spell.damageDice && (
+                                                            <span className="font-mono text-amber-300 font-semibold">{spell.damageDice} {spell.damageType}</span>
+                                                        )}
+                                                        <span className="text-gray-400">• {isBonus ? 'Bonus' : 'Action'}</span>
+                                                        {spell.level > 0 && (
+                                                            <span className={character.spellSlots?.[slotKey]?.current > 0 ? 'text-emerald-400 font-mono' : 'text-rose-400 font-mono'}>
+                                                                ({character.spellSlots?.[slotKey]?.current ?? 0} slots)
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] px-2 py-1 rounded bg-red-600/80 text-white font-bold shrink-0">
+                                                    Cast
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Defensive Spells Dropdown */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            disabled={isCombatResolving || defensiveSpells.length === 0}
+                            onClick={() => setOpenDropdown(openDropdown === 'defensive' ? null : 'defensive')}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                openDropdown === 'defensive'
+                                    ? 'bg-purple-700 text-white border-amber-300 ring-2 ring-amber-300/60 shadow-lg'
+                                    : 'bg-purple-950/70 hover:bg-purple-900/80 text-purple-100 border-purple-500/40'
+                            }`}
+                        >
+                            <span>🛡️</span>
+                            <span>Defensive Spells ({defensiveSpells.length})</span>
+                            <span className="text-[9px] opacity-75">{openDropdown === 'defensive' ? '▲' : '▼'}</span>
+                        </button>
+                        {openDropdown === 'defensive' && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-30"
+                                    onClick={() => setOpenDropdown(null)}
+                                />
+                                <div className="absolute left-0 bottom-full mb-1.5 z-40 w-72 sm:w-80 max-h-64 overflow-y-auto rounded-xl bg-slate-900/98 border border-purple-500/60 shadow-2xl p-1.5 space-y-1 backdrop-blur-md">
+                                    <div className="px-2 py-1 border-b border-purple-500/20 text-[11px] font-bold text-purple-300 flex justify-between items-center">
+                                        <span>🛡️ Defensive & Support Spells</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">Target: Self / Party</span>
+                                    </div>
+                                    {defensiveSpells.map((spell) => {
+                                        const isBonus = spell.castingTime === 'bonus';
+                                        const isActionLocked = isBonus ? combat.bonusActionUsed : combat.actionUsed;
+                                        const slotKey = `level${spell.level}`;
+                                        const hasSlot = spell.level === 0 || (character.spellSlots?.[slotKey]?.current > 0);
+                                        const isDisabled = isCombatResolving || isActionLocked || !hasSlot;
+
+                                        return (
+                                            <button
+                                                key={spell.id}
+                                                type="button"
+                                                disabled={isDisabled}
+                                                onClick={() => {
+                                                    onCastCombatSpell(spell, null);
+                                                    setOpenDropdown(null);
+                                                }}
+                                                className={`w-full text-left p-2 rounded-lg transition-all flex items-center justify-between gap-2 border ${
+                                                    isDisabled
+                                                        ? 'bg-slate-950/40 border-slate-800 text-gray-500 cursor-not-allowed opacity-45'
+                                                        : 'bg-slate-800/80 hover:bg-purple-950/70 border-slate-700 hover:border-purple-400 text-white cursor-pointer'
+                                                }`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>{spell.icon || '✨'}</span>
+                                                        <span className="font-bold text-xs truncate">{spell.name}</span>
+                                                        <span className="text-[9px] px-1 py-0.2 rounded bg-purple-900/60 text-purple-200">
+                                                            {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-300 flex items-center gap-1.5 mt-0.5">
+                                                        {spell.healDice && (
+                                                            <span className="font-mono text-emerald-300 font-semibold">{spell.healDice} Heal</span>
+                                                        )}
+                                                        {spell.acBonus && (
+                                                            <span className="font-mono text-amber-300 font-semibold">+{spell.acBonus} AC</span>
+                                                        )}
+                                                        <span className="text-gray-400">• {isBonus ? 'Bonus' : 'Action'}</span>
+                                                        {spell.level > 0 && (
+                                                            <span className={character.spellSlots?.[slotKey]?.current > 0 ? 'text-emerald-400 font-mono' : 'text-rose-400 font-mono'}>
+                                                                ({character.spellSlots?.[slotKey]?.current ?? 0} slots)
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] px-2 py-1 rounded bg-purple-600/80 text-white font-bold shrink-0">
+                                                    Cast
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Potions & Consumables Dropdown */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            disabled={isCombatResolving || potionItems.length === 0}
+                            onClick={() => setOpenDropdown(openDropdown === 'potions' ? null : 'potions')}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                openDropdown === 'potions'
+                                    ? 'bg-emerald-700 text-white border-amber-300 ring-2 ring-amber-300/60 shadow-lg'
+                                    : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-100 border-emerald-500/40'
+                            }`}
+                        >
+                            <span>🧪</span>
+                            <span>Potions ({potionItems.reduce((acc, p) => acc + (p.quantity || 1), 0)})</span>
+                            <span className="text-[9px] opacity-75">{openDropdown === 'potions' ? '▲' : '▼'}</span>
+                        </button>
+                        {openDropdown === 'potions' && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-30"
+                                    onClick={() => setOpenDropdown(null)}
+                                />
+                                <div className="absolute left-0 bottom-full mb-1.5 z-40 w-72 sm:w-80 max-h-64 overflow-y-auto rounded-xl bg-slate-900/98 border border-emerald-500/60 shadow-2xl p-1.5 space-y-1 backdrop-blur-md">
+                                    <div className="px-2 py-1 border-b border-emerald-500/20 text-[11px] font-bold text-emerald-300 flex justify-between items-center">
+                                        <span>🧪 Potions & Consumables</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">Costs Bonus Action</span>
+                                    </div>
+                                    {potionItems.map((item) => {
+                                        const isDisabled = isCombatResolving || combat.bonusActionUsed;
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                disabled={isDisabled}
+                                                onClick={() => {
+                                                    onDrinkPotion(item);
+                                                    setOpenDropdown(null);
+                                                }}
+                                                className={`w-full text-left p-2 rounded-lg transition-all flex items-center justify-between gap-2 border ${
+                                                    isDisabled
+                                                        ? 'bg-slate-950/40 border-slate-800 text-gray-500 cursor-not-allowed opacity-45'
+                                                        : 'bg-slate-800/80 hover:bg-emerald-950/70 border-slate-700 hover:border-emerald-400 text-white cursor-pointer'
+                                                }`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>🧪</span>
+                                                        <span className="font-bold text-xs truncate">{item.name}</span>
+                                                        <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-900/60 text-emerald-200">
+                                                            x{item.quantity}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-300 flex items-center gap-1.5 mt-0.5">
+                                                        <span className="font-mono text-emerald-300 font-semibold">
+                                                            {item.healDice || (item.name?.toLowerCase().includes('greater') ? '4d4+4' : '2d4+2')} HP
+                                                        </span>
+                                                        <span className="text-gray-400">• Bonus Action</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] px-2 py-1 rounded bg-emerald-600/80 text-white font-bold shrink-0">
+                                                    Quaff
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     {/* Dodge Action */}
                     <button

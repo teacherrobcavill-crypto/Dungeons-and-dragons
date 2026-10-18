@@ -361,7 +361,7 @@ export default function ChatInterface({
                                         <MagicalRevealText
                                             text={message.text}
                                             isNew={message.isNew !== false}
-                                            speed={130}
+                                            speed={200}
                                             autoScroll={true}
                                             className="leading-relaxed"
                                         />

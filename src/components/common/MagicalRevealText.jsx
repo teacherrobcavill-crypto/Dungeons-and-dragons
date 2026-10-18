@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
  */
 export default function MagicalRevealText({
     text = '',
-    speed = 130, // ms per word (slower, deliberate storytelling pace)
+    speed = 200, // ms per word (deliberate, theatrical storytelling cadence)
     isNew = true,
     autoScroll = true,
     onComplete,
