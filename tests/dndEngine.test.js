@@ -106,3 +106,45 @@ test('D&D 5e combat engine resolves attacks, spells, and initiative', () => {
     assert.equal(spellRes.kind, 'heal');
     assert.ok(spellRes.totalHeal >= 2);
 });
+
+test('D&D 5e Death Saving Throws resolve correctly', async () => {
+    const { resolveDeathSave } = await import('../src/services/dndEngine.js');
+
+    // Nat 20: Instant 1 HP Revival
+    const nat20 = resolveDeathSave({ successes: 1, failures: 2 }, 20);
+    assert.equal(nat20.revived, true);
+    assert.equal(nat20.regainedHp, 1);
+    assert.equal(nat20.deathSaves.successes, 0);
+    assert.equal(nat20.deathSaves.failures, 0);
+    assert.equal(nat20.dead, false);
+
+    // Nat 1: 2 Failures
+    const nat1 = resolveDeathSave({ successes: 0, failures: 1 }, 1);
+    assert.equal(nat1.deathSaves.failures, 3);
+    assert.equal(nat1.dead, true);
+
+    // Success (roll 15)
+    const success = resolveDeathSave({ successes: 1, failures: 0 }, 15);
+    assert.equal(success.success, true);
+    assert.equal(success.deathSaves.successes, 2);
+    assert.equal(success.stabilized, false);
+
+    // 3rd Success: Stabilized
+    const stabilized = resolveDeathSave({ successes: 2, failures: 1 }, 12);
+    assert.equal(stabilized.success, true);
+    assert.equal(stabilized.deathSaves.successes, 3);
+    assert.equal(stabilized.stabilized, true);
+    assert.equal(stabilized.dead, false);
+
+    // Failure (roll 7)
+    const failure = resolveDeathSave({ successes: 0, failures: 1 }, 7);
+    assert.equal(failure.success, false);
+    assert.equal(failure.deathSaves.failures, 2);
+    assert.equal(failure.dead, false);
+
+    // 3rd Failure: Dead
+    const death = resolveDeathSave({ successes: 0, failures: 2 }, 8);
+    assert.equal(death.success, false);
+    assert.equal(death.deathSaves.failures, 3);
+    assert.equal(death.dead, true);
+});

@@ -12,11 +12,13 @@ import SpellbookPanel from '../components/game/SpellbookPanel';
 import BestiaryCodex from '../components/game/BestiaryCodex';
 import CombatEncounterHUD from '../components/game/CombatEncounterHUD';
 import SettingsModal from '../components/game/SettingsModal';
+import DefeatModal from '../components/game/DefeatModal';
 import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
 import { getMonsterById } from '../data/monsters';
 import { getAdventureById } from '../data/adventures';
 import { getSceneImage, getVoiceTrack } from '../data/assets';
+import { normalizeCompanion } from '../context/gameState';
 import {
     calculateCharacterDerivedStats,
     createCombatEncounter,
@@ -24,6 +26,7 @@ import {
     resolveSpellCast,
     resolveCompanionTurn,
     resolveMonsterTurn,
+    resolveDeathSave,
     rollD20Test,
     rollDiceFormula,
     getProficiencyBonus,
@@ -68,6 +71,9 @@ export default function GameInterface() {
         updateCombat,
         endCombat,
         setCompanions,
+        setDeathSaves,
+        reviveCharacter,
+        loadGame,
         updateSettings,
         resetGame,
         setPendingRoll,
@@ -76,6 +82,8 @@ export default function GameInterface() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [isDefeatModalOpen, setIsDefeatModalOpen] = useState(false);
+    const [defeatCause, setDefeatCause] = useState('Succumbed to mortal wounds in battle.');
     const [sidebarTab, setSidebarTab] = useState('character');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isReaderMode, setIsReaderMode] = useState(false);
@@ -363,6 +371,12 @@ export default function GameInterface() {
 
     const handleSelectChoice = (choice) => {
         if (!choice) return;
+        if (character.hp <= 0) {
+            pushDmMessage("💀 You are unconscious at 0 HP and cannot explore! You must be revived before continuing.");
+            setIsDefeatModalOpen(true);
+            setDefeatCause('Unconscious at 0 HP — collapsed in the dungeon.');
+            return;
+        }
         soundService.play('click');
 
         const choiceKey = `${currentNodeId || currentNode?.id || 'node'}:${choice.id || choice.label}`;
@@ -460,6 +474,14 @@ export default function GameInterface() {
             updateHp(-trapDmg.total);
             soundService.play('trap');
             outcomeProse += `\n⚠️ **Hazard Triggered:** You take **${trapDmg.total} damage** (${choice.failDamageDice})!`;
+            if (character.hp - trapDmg.total <= 0) {
+                outcomeProse += `\n💀 **MORTAL INJURY:** The trap reduces you to 0 HP! You collapse unconscious to the dungeon floor!`;
+                soundService.playVoice('game-over', null, true);
+                setTimeout(() => {
+                    setIsDefeatModalOpen(true);
+                    setDefeatCause(`Lethal Dungeon Trap: Suffered ${trapDmg.total} damage in ${currentNode?.title || 'the chamber'}.`);
+                }, 1000);
+            }
         }
 
         let choiceVoice = null;
@@ -530,6 +552,10 @@ export default function GameInterface() {
 
     const handleWeaponAttack = (weapon, targetEnemy, rollMode = 'normal', useDivineSmite = false) => {
         if (!state.combat || !targetEnemy) return;
+        if (character.hp <= 0) {
+            pushDmMessage("💀 You are unconscious at 0 HP and cannot attack! Roll a Death Saving Throw on your turn.");
+            return;
+        }
         if (state.combat.actionUsed) {
             pushDmMessage("⚠️ You have already used your Action this round! End your turn to let companions and enemies act.");
             return;
@@ -613,6 +639,10 @@ export default function GameInterface() {
 
     const handleCastCombatSpell = (spell, targetEnemy) => {
         if (!spell) return;
+        if (character.hp <= 0) {
+            pushDmMessage("💀 You are unconscious at 0 HP and cannot cast spells!");
+            return;
+        }
         if (state.combat?.active) {
             const isBonus = spell.castingTime === 'bonus';
             if (isBonus && state.combat.bonusActionUsed) {
@@ -752,6 +782,10 @@ export default function GameInterface() {
 
     const handleUseClassFeature = (feature, targetEnemy = null) => {
         if (!feature) return;
+        if (character.hp <= 0) {
+            pushDmMessage("💀 You are unconscious at 0 HP and cannot use class features!");
+            return;
+        }
         if (state.combat?.active) {
             const isBonus = feature.actionType === 'bonus';
             if (isBonus && state.combat.bonusActionUsed) {
@@ -897,6 +931,10 @@ export default function GameInterface() {
 
     const handleDodgeAction = () => {
         if (!state.combat) return;
+        if (character.hp <= 0) {
+            pushDmMessage("💀 You are unconscious at 0 HP and cannot dodge!");
+            return;
+        }
         if (state.combat.actionUsed) {
             pushDmMessage("⚠️ You have already used your Action this round! End your turn or wait for the next round.");
             return;
@@ -1122,15 +1160,49 @@ export default function GameInterface() {
 
             if (mTurn.isTargetPlayer) {
                 if (mTurn.damageToPlayer > 0) {
+                    const wasAlreadyDown = character.hp <= 0;
                     totalPlayerDamageTaken += mTurn.damageToPlayer;
                     if (character.hp - totalPlayerDamageTaken <= 0 && character.race === 'half-orc' && character.hp > 1) {
                         updateHp(-(character.hp - 1));
                     } else {
                         updateHp(-mTurn.damageToPlayer);
-                        if (character.hp - totalPlayerDamageTaken <= 0) {
-                            if (state.settings.narrationEnabled) {
-                                soundService.playVoice('game-over');
+                        if (wasAlreadyDown) {
+                            // Damage while at 0 HP = Death Save failure (2 failures if critical hit)
+                            const failCount = mTurn.isCrit ? 2 : 1;
+                            const prevFailures = character.deathSaves?.failures || 0;
+                            const nextFailures = Math.min(3, prevFailures + failCount);
+                            const updatedSaves = {
+                                successes: character.deathSaves?.successes || 0,
+                                failures: nextFailures
+                            };
+                            setDeathSaves(updatedSaves);
+                            addChatMessage({
+                                type: 'combat',
+                                subtype: 'fatal_blow',
+                                title: `💀 COUP-DE-GRÂCE: ${currentEnemyState.name} strikes you while unconscious!`,
+                                text: `The blow inflicts ${failCount} Death Saving Throw failure${failCount > 1 ? 's' : ''}! (${nextFailures}/3 Failures)`,
+                                rollText: `${failCount} Death Failure${failCount > 1 ? 's' : ''}`,
+                                isNew: true,
+                                timestamp: new Date().toISOString()
+                            });
+                            if (nextFailures >= 3) {
+                                soundService.playVoice('game-over', null, true);
+                                setIsDefeatModalOpen(true);
+                                setDefeatCause(`${currentEnemyState.name}'s coup-de-grâce struck you down while unconscious.`);
+                                setIsCombatResolving(false);
+                                return;
                             }
+                        } else if (character.hp - totalPlayerDamageTaken <= 0) {
+                            soundService.playVoice('game-over', null, true);
+                            addChatMessage({
+                                type: 'combat',
+                                subtype: 'fatal_blow',
+                                title: `💀 HERO DOWNED: ${character.name || 'You'} collapsed!`,
+                                text: `The devastating assault reduces you to 0 HP! Your vision blurs as darkness encroaches—you collapse unconscious to the dungeon floor, clinging to life!`,
+                                rollText: `0 HP (Unconscious)`,
+                                isNew: true,
+                                timestamp: new Date().toISOString()
+                            });
                         }
                     }
                 }
@@ -1179,6 +1251,16 @@ export default function GameInterface() {
         removeCondition('shielded');
         removeCondition('hidden');
 
+        // Check if entire party is wiped out (player down + all companions down)
+        const livingComps = currentCompanions.filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
+        if (character.hp <= 0 && livingComps.length === 0) {
+            soundService.playVoice('game-over', null, true);
+            setIsDefeatModalOpen(true);
+            setDefeatCause('Total Party Defeat: All heroes and party companions have fallen in battle.');
+            setIsCombatResolving(false);
+            return;
+        }
+
         const updatedFeed = [...(state.combat.rollingFeed || []), ...newFeedEntries].slice(-30);
 
         updateCombat({
@@ -1191,6 +1273,152 @@ export default function GameInterface() {
         });
 
         setIsCombatResolving(false);
+    };
+
+    // === DEATH SAVING THROWS & DEFEAT HANDLERS ===
+    const handleRollDeathSave = async () => {
+        if (isCombatResolving) return;
+        setIsCombatResolving(true);
+        soundService.play('diceRoll');
+
+        const result = resolveDeathSave(character.deathSaves);
+
+        if (result.revived) {
+            soundService.play('critical');
+            updateHp(1); // Regain 1 HP and stand back up!
+            setDeathSaves({ successes: 0, failures: 0 });
+            removeCondition('unconscious');
+        } else {
+            setDeathSaves(result.deathSaves);
+            if (result.dead) {
+                soundService.play('fumble');
+                soundService.playVoice('game-over', null, true);
+            } else if (result.success) {
+                soundService.play('critical');
+            } else {
+                soundService.play('fumble');
+            }
+        }
+
+        const feedItem = {
+            id: `death-save-${Date.now()}`,
+            type: result.revived ? 'critical' : result.dead ? 'fatal_blow' : result.success ? 'check' : 'miss',
+            title: result.revived
+                ? `✨ HEROIC REVIVAL: Natural 20 on Death Save!`
+                : result.dead
+                    ? `💀 MORTAL DEFEAT: 3rd Death Save Failed!`
+                    : `🎲 Death Saving Throw: Rolled ${result.roll}`,
+            text: result.text,
+            rollText: `d20: ${result.roll} (${result.success ? 'Success' : 'Failure'})`,
+            timestamp: Date.now()
+        };
+
+        addChatMessage({
+            type: 'combat',
+            subtype: result.dead ? 'fatal_blow' : 'hero_action',
+            title: feedItem.title,
+            text: feedItem.text,
+            rollText: feedItem.rollText,
+            isNew: true,
+            timestamp: new Date().toISOString()
+        });
+
+        if (result.dead) {
+            setIsDefeatModalOpen(true);
+            setDefeatCause('Accumulated 3 Death Saving Throw failures in battle.');
+            setIsCombatResolving(false);
+            return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        setIsCombatResolving(false);
+        handleEndTurn();
+    };
+
+    const handleCallCompanionHelp = async () => {
+        if (isCombatResolving) return;
+        const healer = (state.companions || []).find((c) => {
+            const isAlive = (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
+            const cls = (c.class || '').toLowerCase();
+            return isAlive && (cls.includes('cleric') || cls.includes('paladin') || cls.includes('druid') || (c.role || '').toLowerCase().includes('heal'));
+        }) || (state.companions || []).find((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
+
+        if (!healer) {
+            pushDmMessage("⚠️ None of your companions are able to reach you with aid!");
+            return;
+        }
+
+        setIsCombatResolving(true);
+        soundService.play('heal');
+        soundService.playVoice('cleric-heal');
+
+        const healAmount = rollDiceFormula('1d8+3').total;
+        updateHp(healAmount);
+        setDeathSaves({ successes: 0, failures: 0 });
+        removeCondition('unconscious');
+
+        addChatMessage({
+            type: 'combat',
+            subtype: 'companion_heal',
+            title: `❤️ ${healer.name} administers emergency aid to ${character.name || 'You'}!`,
+            text: `${healer.name} rushes to your side with a muttered prayer of restoration, reviving you with +${healAmount} Hit Points! You gasp for air and stumble back onto your feet!`,
+            rollText: `+${healAmount} HP (Revived!)`,
+            voiceTrack: 'cleric-heal',
+            isNew: true,
+            timestamp: new Date().toISOString()
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setIsCombatResolving(false);
+    };
+
+    const handleReviveHero = () => {
+        setIsDefeatModalOpen(false);
+        const reviveHp = Math.max(1, Math.floor((character.maxHp || 20) * 0.5));
+        reviveCharacter(reviveHp, false);
+
+        // Revive fallen companions to 50% HP
+        const revivedCompanions = (state.companions || []).map((c, i) => {
+            const norm = normalizeCompanion(c, i);
+            return {
+                ...norm,
+                hp: Math.max(1, Math.floor(norm.maxHp * 0.5))
+            };
+        });
+        setCompanions(revivedCompanions);
+
+        soundService.play('heal');
+        pushDmMessage(
+            `⚡ **Heroic Second Wind!** You drag yourself back from the edge of oblivion, binding your mortal wounds with iron willpower! You and your party regain **50% Hit Points** (${reviveHp} HP)!`,
+            { voiceTrack: 'healing-surge' }
+        );
+    };
+
+    const handleRestartEncounter = () => {
+        setIsDefeatModalOpen(false);
+        reviveCharacter(character.maxHp || 20, false);
+
+        // Restore companions to full HP
+        const fullCompanions = (state.companions || []).map((c, i) => {
+            const norm = normalizeCompanion(c, i);
+            return { ...norm, hp: norm.maxHp };
+        });
+        setCompanions(fullCompanions);
+
+        if (currentNode?.encounter) {
+            handleTriggerEncounter(currentNode.encounter);
+        }
+    };
+
+    const handleLoadLatestSave = () => {
+        setIsDefeatModalOpen(false);
+        loadGame();
+    };
+
+    const handleReturnToCharacterCreation = () => {
+        setIsDefeatModalOpen(false);
+        resetGame();
+        navigate('/');
     };
 
     // === REST, SKILL CHECK & SHOP HANDLERS ===
@@ -1578,6 +1806,8 @@ export default function GameInterface() {
                                 onDrinkPotion={handleDrinkPotion}
                                 onDodgeAction={handleDodgeAction}
                                 onEndTurn={handleEndTurn}
+                                onRollDeathSave={handleRollDeathSave}
+                                onCallCompanionHelp={handleCallCompanionHelp}
                             />
                         </div>
                     )}
@@ -1742,6 +1972,19 @@ export default function GameInterface() {
                     resetGame();
                     navigate('/');
                 }}
+            />
+
+            {/* Defeat / Game Over Modal */}
+            <DefeatModal
+                isOpen={isDefeatModalOpen}
+                character={character}
+                adventure={currentAdventure}
+                currentNode={currentNode}
+                cause={defeatCause}
+                onRevive={handleReviveHero}
+                onRestartEncounter={currentNode?.encounter ? handleRestartEncounter : null}
+                onLoadSave={handleLoadLatestSave}
+                onNewCharacter={handleReturnToCharacterCreation}
             />
         </div>
     );

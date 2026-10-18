@@ -16,12 +16,21 @@ export default function CombatEncounterHUD({
     onUseClassFeature,
     onDrinkPotion,
     onDodgeAction,
-    onEndTurn
+    onEndTurn,
+    onRollDeathSave,
+    onCallCompanionHelp
 }) {
     const [selectedEnemyId, setSelectedEnemyId] = useState(null);
     const [rollMode, setRollMode] = useState('normal');
     const [useDivineSmite, setUseDivineSmite] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null); // 'offensive' | 'defensive' | 'potions' | null
+
+    const isPlayerDown = (character?.hp || 0) <= 0;
+    const hasHealingCompanion = (companions || []).some((c) => {
+        const isAlive = (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
+        const cls = (c.class || '').toLowerCase();
+        return isAlive && (cls.includes('cleric') || cls.includes('paladin') || cls.includes('druid') || (c.role || '').toLowerCase().includes('heal'));
+    });
 
     if (!combat || !combat.active) return null;
 
@@ -119,19 +128,29 @@ export default function CombatEncounterHUD({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {/* Player Card */}
-                    <div className="p-1 sm:p-1.5 rounded-lg bg-amber-950/40 border border-amber-500/40 space-y-0.5">
+                    <div className={`p-1 sm:p-1.5 rounded-lg space-y-0.5 transition-all ${
+                        isPlayerDown
+                            ? 'bg-red-950/60 border-2 border-red-600 animate-pulse'
+                            : 'bg-amber-950/40 border border-amber-500/40'
+                    }`}>
                         <div className="flex justify-between items-center text-[10px]">
-                            <span className="font-bold text-amber-300 truncate">
-                                👤 {character.name || 'You'}
+                            <span className={`font-bold truncate ${isPlayerDown ? 'text-red-300' : 'text-amber-300'}`}>
+                                {isPlayerDown ? '💀 ' : '👤 '}{character.name || 'You'}
                             </span>
-                            <span className="font-mono text-amber-200 text-[9px] sm:text-[10px]">
-                                {character.hp}/{character.maxHp}
+                            <span className={`font-mono text-[9px] sm:text-[10px] ${isPlayerDown ? 'text-red-400 font-bold' : 'text-amber-200'}`}>
+                                {isPlayerDown ? `DOWNED 0/${character.maxHp}` : `${character.hp}/${character.maxHp}`}
                             </span>
                         </div>
                         <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                             <div
                                 className={`h-full transition-all duration-300 ${
-                                    (character.hp / character.maxHp) > 0.5 ? 'bg-emerald-500' : (character.hp / character.maxHp) > 0.25 ? 'bg-amber-500' : 'bg-rose-600'
+                                    isPlayerDown
+                                        ? 'bg-red-600'
+                                        : (character.hp / character.maxHp) > 0.5
+                                            ? 'bg-emerald-500'
+                                            : (character.hp / character.maxHp) > 0.25
+                                                ? 'bg-amber-500'
+                                                : 'bg-rose-600'
                                 }`}
                                 style={{ width: `${Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100))}%` }}
                             />
@@ -268,7 +287,108 @@ export default function CombatEncounterHUD({
             </div>
 
             {/* 5e Action Economy & Tactical Controls */}
-            <div className="pt-1.5 border-t border-red-500/30 space-y-1.5">
+            {isPlayerDown ? (
+                <div className="pt-2 border-t border-red-600/60 p-3 rounded-xl bg-gradient-to-r from-red-950/90 via-slate-900/95 to-red-950/90 border-2 border-red-700/70 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl animate-pulse">💀</span>
+                            <div>
+                                <h4 className="text-xs font-bold text-red-200 uppercase tracking-wider flex items-center gap-2">
+                                    <span>Hero Downed & Unconscious</span>
+                                    {character.deathSaves?.successes >= 3 && (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 border border-emerald-500/40">
+                                            ✨ Stabilized
+                                        </span>
+                                    )}
+                                </h4>
+                                <p className="text-[10px] text-gray-300">
+                                    {character.deathSaves?.successes >= 3
+                                        ? 'You are unconscious but stabilized! Await companion aid or rest.'
+                                        : 'Roll a DC 10 Death Saving Throw on your turn, or call upon your companions for emergency aid!'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Death Saves Counters */}
+                        <div className="flex items-center gap-3 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-red-900/50 text-xs font-mono">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-emerald-400 text-[10px] font-bold">SUCCESSES:</span>
+                                <div className="flex gap-1">
+                                    {[0, 1, 2].map((i) => (
+                                        <span
+                                            key={i}
+                                            className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                                                i < (character.deathSaves?.successes || 0)
+                                                    ? 'bg-emerald-500 border-emerald-300 text-slate-950 shadow-sm shadow-emerald-500/50'
+                                                    : 'bg-slate-900 border-slate-700 text-transparent'
+                                            }`}
+                                        >
+                                            ✓
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-rose-400 text-[10px] font-bold">FAILURES:</span>
+                                <div className="flex gap-1">
+                                    {[0, 1, 2].map((i) => (
+                                        <span
+                                            key={i}
+                                            className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                                                i < (character.deathSaves?.failures || 0)
+                                                    ? 'bg-rose-600 border-rose-400 text-white shadow-sm shadow-rose-600/50'
+                                                    : 'bg-slate-900 border-slate-700 text-transparent'
+                                            }`}
+                                        >
+                                            ✕
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tactical Actions for Downed Hero */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-red-900/50">
+                        {/* Roll Death Save Button */}
+                        <button
+                            type="button"
+                            disabled={isCombatResolving || (character.deathSaves?.successes >= 3)}
+                            onClick={onRollDeathSave}
+                            className="px-4 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-lg shadow-red-950/50 border border-red-400/50 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <span>🎲</span>
+                            <span>Roll Death Saving Throw (DC 10)</span>
+                        </button>
+
+                        {/* Companion Aid Button */}
+                        {hasHealingCompanion && (
+                            <button
+                                type="button"
+                                disabled={isCombatResolving}
+                                onClick={onCallCompanionHelp}
+                                className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-900/70 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/50 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                            >
+                                <span>❤️</span>
+                                <span>Call Companion Emergency Aid</span>
+                            </button>
+                        )}
+
+                        {/* Pass / End Turn */}
+                        <button
+                            type="button"
+                            disabled={isCombatResolving}
+                            onClick={onEndTurn}
+                            className="ml-auto px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                        >
+                            <span>🛡️</span>
+                            <span>End Turn (Let Party Fight)</span>
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="pt-1.5 border-t border-red-500/30 space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
                     <div className="flex items-center gap-1.5">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${combat.actionUsed ? 'bg-slate-800 text-gray-400 line-through' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}`}>
@@ -607,6 +727,7 @@ export default function CombatEncounterHUD({
                     </button>
                 </div>
             </div>
+            )}
         </div>
     );
 }

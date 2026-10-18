@@ -93,6 +93,12 @@ export function GameProvider({ children }) {
         updateHp: (amount) =>
             dispatch({ type: ActionTypes.UPDATE_HP, amount }),
 
+        setDeathSaves: (deathSaves) =>
+            dispatch({ type: ActionTypes.SET_DEATH_SAVES, deathSaves }),
+
+        reviveCharacter: (hpAmount, keepCombat = false) =>
+            dispatch({ type: ActionTypes.REVIVE_CHARACTER, hpAmount, keepCombat }),
+
         updateGold: (amount) =>
             dispatch({ type: ActionTypes.UPDATE_GOLD, amount }),
 
@@ -128,6 +134,13 @@ export function GameProvider({ children }) {
 
         updateSettings: (settings) =>
             dispatch({ type: ActionTypes.UPDATE_SETTINGS, settings }),
+
+        loadGame: (stateToLoad) => {
+            const savedState = stateToLoad || loadGameState();
+            if (savedState) {
+                dispatch({ type: ActionTypes.LOAD_STATE, state: savedState });
+            }
+        },
 
         resetGame: () => {
             dispatch({ type: ActionTypes.RESET_STATE });

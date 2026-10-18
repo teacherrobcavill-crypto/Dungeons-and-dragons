@@ -108,7 +108,9 @@ export const ActionTypes = {
     LOAD_STATE: 'LOAD_STATE',
     RESET_STATE: 'RESET_STATE',
     SET_PENDING_ROLL: 'SET_PENDING_ROLL',
-    CLEAR_PENDING_ROLL: 'CLEAR_PENDING_ROLL'
+    CLEAR_PENDING_ROLL: 'CLEAR_PENDING_ROLL',
+    SET_DEATH_SAVES: 'SET_DEATH_SAVES',
+    REVIVE_CHARACTER: 'REVIVE_CHARACTER'
 };
 
 export function normalizeCompanion(comp, fallbackIndex = 0) {
@@ -369,13 +371,44 @@ export function gameReducer(state, action) {
 
         case ActionTypes.UPDATE_HP: {
             const newHp = Math.max(0, Math.min(state.character.maxHp, state.character.hp + action.amount));
+            const currentConds = state.character.conditions || [];
+            let nextConds;
+            if (newHp === 0) {
+                nextConds = currentConds.includes('unconscious') ? currentConds : [...currentConds, 'unconscious'];
+            } else {
+                nextConds = currentConds.filter((c) => c !== 'unconscious');
+            }
             return {
                 ...state,
                 character: {
                     ...state.character,
                     hp: newHp,
-                    deathSaves: newHp > 0 ? { successes: 0, failures: 0 } : state.character.deathSaves
+                    conditions: nextConds,
+                    deathSaves: newHp > 0 ? { successes: 0, failures: 0 } : (state.character.deathSaves || { successes: 0, failures: 0 })
                 }
+            };
+        }
+
+        case ActionTypes.SET_DEATH_SAVES:
+            return {
+                ...state,
+                character: {
+                    ...state.character,
+                    deathSaves: action.deathSaves || { successes: 0, failures: 0 }
+                }
+            };
+
+        case ActionTypes.REVIVE_CHARACTER: {
+            const healAmount = action.hpAmount || Math.max(1, Math.floor(state.character.maxHp * 0.5));
+            return {
+                ...state,
+                character: {
+                    ...state.character,
+                    hp: healAmount,
+                    deathSaves: { successes: 0, failures: 0 },
+                    conditions: (state.character.conditions || []).filter((c) => c !== 'unconscious')
+                },
+                combat: action.keepCombat ? state.combat : null
             };
         }
 

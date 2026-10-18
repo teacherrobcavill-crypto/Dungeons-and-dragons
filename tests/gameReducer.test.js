@@ -95,3 +95,18 @@ test('LOAD_STATE normalizes loaded companions', () => {
     assert.equal(state.companions[0].hp, 10);
 });
 
+test('UPDATE_HP sets unconscious condition at 0 HP and clears it on revival', () => {
+    // Drop to 0 HP
+    const downed = gameReducer(initialState, { type: ActionTypes.UPDATE_HP, amount: -999 });
+    assert.equal(downed.character.hp, 0);
+    assert.ok(downed.character.conditions.includes('unconscious'));
+
+    // Revive character
+    const revived = gameReducer(downed, { type: ActionTypes.REVIVE_CHARACTER, hpAmount: 15 });
+    assert.equal(revived.character.hp, 15);
+    assert.ok(!revived.character.conditions.includes('unconscious'));
+    assert.equal(revived.character.deathSaves.successes, 0);
+    assert.equal(revived.character.deathSaves.failures, 0);
+});
+
+

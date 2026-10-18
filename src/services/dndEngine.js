@@ -807,3 +807,84 @@ export function resolveMonsterTurn(monster, character, derivedStats, companions 
             : `👹 **${monster.name}** lunges at **${targetName}** with **${chosenAction.name}** (Roll ${attackRoll.total} vs AC ${targetAc}) — ${targetName} deflects/dodges the blow!`
     };
 }
+
+/**
+ * Resolve D&D 5e Death Saving Throw (DC 10)
+ * - Roll 20: Regain 1 HP and regain consciousness immediately.
+ * - Roll 10-19: Success (3 successes = stabilized).
+ * - Roll 2-9: Failure (3 failures = death).
+ * - Roll 1: Critical failure = 2 failures (3 failures = death).
+ */
+export function resolveDeathSave(currentDeathSaves = { successes: 0, failures: 0 }, rollOverride = null) {
+    const roll = rollOverride !== null ? rollOverride : rollDie(20);
+    const prevSuccesses = currentDeathSaves?.successes || 0;
+    const prevFailures = currentDeathSaves?.failures || 0;
+
+    if (roll === 20) {
+        return {
+            roll,
+            isCritSuccess: true,
+            isCritFailure: false,
+            success: true,
+            regainedHp: 1,
+            deathSaves: { successes: 0, failures: 0 },
+            stabilized: false,
+            dead: false,
+            revived: true,
+            text: 'Natural 20! A surge of adrenaline brings you back from the brink—you regain 1 HP and stand back up!'
+        };
+    }
+
+    if (roll === 1) {
+        const nextFailures = Math.min(3, prevFailures + 2);
+        return {
+            roll,
+            isCritSuccess: false,
+            isCritFailure: true,
+            success: false,
+            regainedHp: 0,
+            deathSaves: { successes: prevSuccesses, failures: nextFailures },
+            stabilized: false,
+            dead: nextFailures >= 3,
+            revived: false,
+            text: `Natural 1! Critical failure—you suffer 2 Death Save failures! (${nextFailures}/3 Failures)`
+        };
+    }
+
+    if (roll >= 10) {
+        const nextSuccesses = Math.min(3, prevSuccesses + 1);
+        const stabilized = nextSuccesses >= 3;
+        return {
+            roll,
+            isCritSuccess: false,
+            isCritFailure: false,
+            success: true,
+            regainedHp: 0,
+            deathSaves: { successes: nextSuccesses, failures: prevFailures },
+            stabilized,
+            dead: false,
+            revived: false,
+            text: stabilized
+                ? 'Death Save Success (3/3)! Your condition stabilizes—you are unconscious but safe from death!'
+                : `Death Save Success (${nextSuccesses}/3)! You cling stubbornly to life.`
+        };
+    }
+
+    const nextFailures = Math.min(3, prevFailures + 1);
+    const dead = nextFailures >= 3;
+    return {
+        roll,
+        isCritSuccess: false,
+        isCritFailure: false,
+        success: false,
+        regainedHp: 0,
+        deathSaves: { successes: prevSuccesses, failures: nextFailures },
+        stabilized: false,
+        dead,
+        revived: false,
+        text: dead
+            ? 'Death Save Failure (3/3)... Darkness overtakes you. You have succumbed to your wounds.'
+            : `Death Save Failure (${nextFailures}/3)! The light begins to slip away...`
+    };
+}
+
