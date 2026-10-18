@@ -517,19 +517,38 @@ export function gameReducer(state, action) {
         case ActionTypes.UPDATE_SETTINGS:
             return { ...state, settings: { ...state.settings, ...action.settings } };
 
-        case ActionTypes.LOAD_STATE:
+        case ActionTypes.LOAD_STATE: {
+            const loaded = action.state || {};
+            const loadedChar = loaded.character || {};
             return {
                 ...initialState,
-                ...action.state,
+                ...loaded,
                 character: {
                     ...initialState.character,
-                    ...(action.state?.character || {})
+                    ...loadedChar,
+                    stats: {
+                        ...initialState.character.stats,
+                        ...(loadedChar.stats || {})
+                    },
+                    skills: Array.isArray(loadedChar.skills) ? loadedChar.skills : [],
+                    spells: Array.isArray(loadedChar.spells) ? loadedChar.spells : [],
+                    conditions: Array.isArray(loadedChar.conditions) ? loadedChar.conditions : []
                 },
+                companions: Array.isArray(loaded.companions) ? loaded.companions : [],
+                inventory: Array.isArray(loaded.inventory) ? loaded.inventory : initialState.inventory,
+                equippedItems: Array.isArray(loaded.equippedItems) ? loaded.equippedItems : [],
+                visitedNodes: Array.isArray(loaded.visitedNodes) ? loaded.visitedNodes : [],
+                searchedNodes: Array.isArray(loaded.searchedNodes) ? loaded.searchedNodes : [],
+                lootedNodes: Array.isArray(loaded.lootedNodes) ? loaded.lootedNodes : [],
+                defeatedNodes: Array.isArray(loaded.defeatedNodes) ? loaded.defeatedNodes : [],
+                completedChoices: Array.isArray(loaded.completedChoices) ? loaded.completedChoices : [],
+                chatHistory: Array.isArray(loaded.chatHistory) ? loaded.chatHistory : [],
                 settings: {
                     ...initialState.settings,
-                    ...(action.state?.settings || {})
+                    ...(loaded.settings || {})
                 }
             };
+        }
 
         case ActionTypes.RESET_STATE:
             return initialState;

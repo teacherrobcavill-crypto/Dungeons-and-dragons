@@ -39,15 +39,15 @@ export default function CharacterCreator() {
 
     const [currentStep, setStep] = useState(1);
     const [errors, setErrors] = useState({});
-    const [startingLevel, setStartingLevel] = useState(state.character.level || 1);
+    const [startingLevel, setStartingLevel] = useState(state.character?.level || 1);
     const [showPresets, setShowPresets] = useState(false);
 
     const [localData, setLocalData] = useState({
-        race: state.character.race || null,
-        subrace: state.character.subrace || null,
-        class: state.character.class || null,
-        subclass: state.character.subclass || null,
-        stats: state.character.stats || {
+        race: state.character?.race || null,
+        subrace: state.character?.subrace || null,
+        class: state.character?.class || null,
+        subclass: state.character?.subclass || null,
+        stats: state.character?.stats || {
             strength: 10,
             dexterity: 10,
             constitution: 10,
@@ -55,12 +55,12 @@ export default function CharacterCreator() {
             wisdom: 10,
             charisma: 10
         },
-        skills: state.character.skills || [],
-        personality: state.character.personality || '',
-        traits: state.character.traits || '',
-        name: state.character.name || '',
-        background: state.character.background || '',
-        companions: state.companions.length === 3 ? state.companions : [
+        skills: Array.isArray(state.character?.skills) ? state.character.skills : [],
+        personality: state.character?.personality || '',
+        traits: state.character?.traits || '',
+        name: state.character?.name || '',
+        background: state.character?.background || '',
+        companions: Array.isArray(state.companions) && state.companions.length === 3 ? state.companions : [
             { name: 'Aria', race: 'elf', class: 'wizard', personality: 'Wise' },
             { name: 'Thorin', race: 'dwarf', class: 'cleric', personality: 'Grumpy' },
             { name: 'Vex', race: 'halfling', class: 'rogue', personality: 'Mischievous' }
@@ -82,7 +82,8 @@ export default function CharacterCreator() {
                 if (!localData.class) newErrors.class = 'Please select a class';
                 break;
             case 7: {
-                const hasCompanion = localData.companions.some((c) => c.name && c.race && c.class);
+                const list = Array.isArray(localData.companions) ? localData.companions : [];
+                const hasCompanion = list.some((c) => c && c.name && c.race && c.class);
                 if (!hasCompanion) newErrors.companions = 'Create at least one companion';
                 break;
             }
@@ -289,15 +290,19 @@ export default function CharacterCreator() {
                 return (
                     <SkillSelection
                         selectedClass={localData.class}
-                        selected={localData.skills}
+                        selectedSkills={localData.skills || []}
+                        selected={localData.skills || []}
+                        onSkillsChange={(skills) => updateLocalData('skills', skills)}
                         onChange={(skills) => updateLocalData('skills', skills)}
                     />
                 );
             case 5:
                 return (
                     <PersonalityTraits
+                        name={localData.name}
                         personality={localData.personality}
                         traits={localData.traits}
+                        onNameChange={(val) => updateLocalData('name', val)}
                         onPersonalityChange={(val) => updateLocalData('personality', val)}
                         onTraitsChange={(val) => updateLocalData('traits', val)}
                     />
@@ -314,7 +319,8 @@ export default function CharacterCreator() {
             case 7:
                 return (
                     <CompanionSetup
-                        companions={localData.companions}
+                        companions={localData.companions || []}
+                        onCompanionsChange={(companions) => updateLocalData('companions', companions)}
                         onChange={(companions) => updateLocalData('companions', companions)}
                         error={errors.companions}
                     />
@@ -323,7 +329,7 @@ export default function CharacterCreator() {
                 return (
                     <FinalReview
                         character={localData}
-                        companions={localData.companions.filter((c) => c.name && c.race && c.class)}
+                        companions={(localData.companions || []).filter((c) => c && c.name && c.race && c.class)}
                         onEditStep={(step) => setStep(step)}
                     />
                 );

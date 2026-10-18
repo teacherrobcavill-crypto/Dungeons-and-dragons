@@ -38,7 +38,7 @@ export default function FinalReview({ character, companions }) {
                     <div className="mb-6">
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Ability Scores</h4>
                         <div className="grid grid-cols-3 gap-3">
-                            {Object.entries(character.stats).map(([ability, score]) => (
+                            {Object.entries(character.stats || {}).map(([ability, score]) => (
                                 <div key={ability} className="text-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
                                     <span className="text-xs uppercase text-gray-500 dark:text-gray-400">{ability.slice(0, 3)}</span>
                                     <p className="text-xl font-bold text-gray-900 dark:text-white">{score}</p>
@@ -49,15 +49,15 @@ export default function FinalReview({ character, companions }) {
                     </div>
 
                     {/* Skills */}
-                    {character.skills?.length > 0 && (
+                    {Array.isArray(character.skills) && character.skills.length > 0 && (
                         <div className="mb-6">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Skills</h4>
                             <div className="flex flex-wrap gap-2">
-                                {character.skills.map(skillId => {
+                                {character.skills.map((skillId) => {
                                     const skill = getSkillById(skillId);
                                     return (
                                         <span key={skillId} className="px-3 py-1 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400 rounded-full text-sm">
-                                            {skill?.name}
+                                            {skill?.name || skillId}
                                         </span>
                                     );
                                 })}
@@ -89,7 +89,7 @@ export default function FinalReview({ character, companions }) {
                     <Card padding="lg">
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Your Party</h4>
                         <div className="space-y-3">
-                            {companions.map((companion, index) => {
+                            {(companions || []).map((companion, index) => {
                                 const compRace = getRaceById(companion.race);
                                 const compClass = getClassById(companion.class);
                                 return (

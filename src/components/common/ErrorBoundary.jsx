@@ -17,10 +17,11 @@ export default class ErrorBoundary extends React.Component {
     handleReset = () => {
         try {
             localStorage.removeItem('mythicbot_game_state');
+            sessionStorage.clear();
         } catch {
             // ignore
         }
-        window.location.href = '/';
+        window.location.reload();
     };
 
     handleReload = () => {
