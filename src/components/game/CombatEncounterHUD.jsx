@@ -23,8 +23,10 @@ export default function CombatEncounterHUD({
 
     if (!combat || !combat.active) return null;
 
-    const livingEnemies = (combat.enemies || []).filter((e) => e.hp > 0);
+    const enemies = combat.enemies || [];
+    const livingEnemies = enemies.filter((e) => e.hp > 0);
     const activeTarget = livingEnemies.find((e) => e.instanceId === selectedEnemyId) || livingEnemies[0] || null;
+    const isMultiAttacker = enemies.length > 3;
 
     const cls = getClassById(character.class || 'fighter');
     const maxSpellLvl = character.level >= 5 ? 3 : character.level >= 3 ? 2 : 1;
@@ -44,76 +46,49 @@ export default function CombatEncounterHUD({
     );
 
     return (
-        <div className="mx-3 sm:mx-4 mt-3 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 text-white border-2 border-red-500/60 shadow-xl space-y-3 animate-fade-in">
-            {/* Top Combat Banner & Initiative Ribbon */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-500/30 pb-2.5">
+        <div className="mx-2 sm:mx-4 mt-2 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 text-white border border-red-500/50 shadow-lg space-y-2 animate-fade-in">
+            {/* Top Combat Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-red-500/30 pb-1.5">
                 <div className="flex items-center gap-2">
-                    <span className="text-xl animate-pulse">⚔️</span>
-                    <div>
-                        <h4 className="font-display font-bold text-sm text-red-200 flex items-center gap-2">
+                    <span className="text-base animate-pulse">⚔️</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-display font-bold text-xs sm:text-sm text-red-200 flex items-center gap-1.5">
                             <span>{combat.title}</span>
                             <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-600/80 text-white uppercase tracking-wider font-mono">
                                 Round {combat.round}
                             </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">
                                 {combat.difficulty} ({combat.xpReward} XP)
                             </span>
                         </h4>
                         {combat.terrainFeature && (
-                            <p className="text-[11px] text-amber-200/80">
-                                🌋 Battlefield Terrain: {combat.terrainFeature}
-                            </p>
+                            <span className="text-[10px] text-amber-200/80 hidden md:inline">
+                                • 🌋 {combat.terrainFeature}
+                            </span>
                         )}
                     </div>
                 </div>
-
-                {/* Initiative Order Pills */}
-                <div className="flex items-center gap-1 overflow-x-auto max-w-full">
-                    {(combat.initiativeOrder || []).map((entry) => {
-                        const enemyObj = entry.isEnemy ? combat.enemies.find((e) => e.instanceId === entry.id) : null;
-                        if (entry.isEnemy && (!enemyObj || enemyObj.hp <= 0)) return null;
-                        return (
-                            <span
-                                key={entry.id}
-                                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center gap-1 border shrink-0 ${
-                                    entry.isPlayer
-                                        ? 'bg-amber-500/30 border-amber-400 text-amber-100 font-bold'
-                                        : entry.isCompanion
-                                            ? 'bg-indigo-500/30 border-indigo-400 text-indigo-100'
-                                            : 'bg-red-500/30 border-red-400 text-red-100'
-                                }`}
-                            >
-                                <span>{entry.icon}</span>
-                                <span className="max-w-[70px] truncate">{entry.name}</span>
-                                <span className="opacity-75 font-mono">({entry.initiative})</span>
-                            </span>
-                        );
-                    })}
-                </div>
             </div>
 
-            {/* Party Combat Vitals Strip (Player + Companions HP & Status) */}
-            <div className="p-2 sm:p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <div className="flex items-center justify-between text-[11px] font-bold text-gray-300 mb-1.5 uppercase tracking-wider">
-                    <span className="flex items-center gap-1.5 text-amber-400">
+            {/* Party Combat Vitals Strip */}
+            <div className="p-1.5 sm:p-2 rounded-xl bg-slate-900/80 border border-slate-700/80">
+                <div className="flex items-center justify-between text-[10px] font-bold text-gray-300 mb-1 uppercase tracking-wider">
+                    <span className="flex items-center gap-1 text-amber-400">
                         <span>🛡️</span> Party Vitals
                     </span>
-                    <span className="text-[10px] text-gray-400 font-normal">
-                        Monsters may attack you or companions in melee & spell range
-                    </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {/* Player Card */}
-                    <div className="p-1.5 rounded-lg bg-amber-950/40 border border-amber-500/40 space-y-1">
+                    <div className="p-1 sm:p-1.5 rounded-lg bg-amber-950/40 border border-amber-500/40 space-y-0.5">
                         <div className="flex justify-between items-center text-[10px]">
                             <span className="font-bold text-amber-300 truncate">
-                                👤 {character.name || 'You'} (Hero)
+                                👤 {character.name || 'You'}
                             </span>
-                            <span className="font-mono text-amber-200">
-                                {character.hp}/{character.maxHp} HP
+                            <span className="font-mono text-amber-200 text-[9px] sm:text-[10px]">
+                                {character.hp}/{character.maxHp}
                             </span>
                         </div>
-                        <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                        <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                             <div
                                 className={`h-full transition-all duration-300 ${
                                     (character.hp / character.maxHp) > 0.5 ? 'bg-emerald-500' : (character.hp / character.maxHp) > 0.25 ? 'bg-amber-500' : 'bg-rose-600'
@@ -132,21 +107,21 @@ export default function CombatEncounterHUD({
                         return (
                             <div
                                 key={idx}
-                                className={`p-1.5 rounded-lg border transition-all ${
+                                className={`p-1 sm:p-1.5 rounded-lg border transition-all ${
                                     isDown
                                         ? 'bg-red-950/20 border-red-900/60 opacity-50'
                                         : 'bg-indigo-950/30 border-indigo-500/30'
-                                } space-y-1`}
+                                } space-y-0.5`}
                             >
                                 <div className="flex justify-between items-center text-[10px]">
                                     <span className="font-bold text-indigo-200 truncate">
                                         🛡️ {comp.name}
                                     </span>
-                                    <span className={`font-mono ${isDown ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
-                                        {isDown ? 'Down' : `${compHp}/${compMaxHp} HP`}
+                                    <span className={`font-mono text-[9px] sm:text-[10px] ${isDown ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
+                                        {isDown ? 'Down' : `${compHp}/${compMaxHp}`}
                                     </span>
                                 </div>
-                                <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-300 ${
                                             pct > 0.5 ? 'bg-indigo-400' : pct > 0.25 ? 'bg-amber-500' : 'bg-rose-600'
@@ -160,9 +135,13 @@ export default function CombatEncounterHUD({
                 </div>
             </div>
 
-            {/* Enemy Target Cards (2024 Monster Manual HUD) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {(combat.enemies || []).map((enemy) => {
+            {/* Enemy Target Cards (Scaled Down when > 3 Attackers) */}
+            <div className={
+                isMultiAttacker
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5"
+                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+            }>
+                {enemies.map((enemy) => {
                     const isDead = enemy.hp <= 0;
                     const isTargeted = activeTarget?.instanceId === enemy.instanceId;
                     const hpPct = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
@@ -170,7 +149,9 @@ export default function CombatEncounterHUD({
                         <div
                             key={enemy.instanceId}
                             onClick={() => !isDead && setSelectedEnemyId(enemy.instanceId)}
-                            className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                            className={`rounded-lg border transition-all cursor-pointer ${
+                                isMultiAttacker ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5'
+                            } ${
                                 isDead
                                     ? 'bg-slate-900/40 border-slate-800 opacity-45 cursor-not-allowed'
                                     : isTargeted
@@ -178,32 +159,40 @@ export default function CombatEncounterHUD({
                                         : 'bg-slate-800/70 border-slate-700 hover:border-red-400/60'
                             }`}
                         >
-                            <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-lg">{isDead ? '💀' : enemy.icon || '👹'}</span>
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className={isMultiAttacker ? "text-sm" : "text-base"}>
+                                        {isDead ? '💀' : enemy.icon || '👹'}
+                                    </span>
                                     <div className="min-w-0">
-                                        <p className="font-bold text-xs text-white truncate">{enemy.name}</p>
-                                        <span className="text-[10px] text-gray-300">
+                                        <p className={`font-bold text-white truncate leading-tight ${
+                                            isMultiAttacker ? 'text-[11px]' : 'text-xs'
+                                        }`}>
+                                            {enemy.name}
+                                        </p>
+                                        <span className="text-[9px] text-gray-300">
                                             AC {enemy.ac} • CR {enemy.cr}
                                         </span>
                                     </div>
                                 </div>
                                 {isTargeted && !isDead && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">
+                                    <span className={`rounded bg-amber-500 text-slate-950 font-bold shrink-0 ${
+                                        isMultiAttacker ? 'text-[8px] px-1 py-0.2' : 'text-[9px] px-1.5 py-0.5'
+                                    }`}>
                                         TARGET 🎯
                                     </span>
                                 )}
                             </div>
 
                             {/* Enemy HP Bar */}
-                            <div className="space-y-1">
-                                <div className="flex justify-between text-[10px]">
+                            <div className="space-y-0.5">
+                                <div className="flex justify-between text-[9px]">
                                     <span className="text-gray-300">{isDead ? 'Defeated' : 'HP'}</span>
                                     <span className="font-mono font-bold text-red-200">
                                         {enemy.hp} / {enemy.maxHp}
                                     </span>
                                 </div>
-                                <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+                                <div className={`${isMultiAttacker ? 'h-1' : 'h-1.5'} bg-slate-950 rounded-full overflow-hidden`}>
                                     <div
                                         className={`h-full transition-all duration-300 ${
                                             hpPct > 50 ? 'bg-red-500' : hpPct > 25 ? 'bg-amber-500' : 'bg-rose-600'
@@ -215,11 +204,11 @@ export default function CombatEncounterHUD({
 
                             {/* Enemy Conditions */}
                             {enemy.conditions?.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2">
+                                <div className="flex flex-wrap gap-0.5 mt-1">
                                     {enemy.conditions.map((cond) => (
                                         <span
                                             key={cond}
-                                            className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-600/70 text-purple-100 uppercase"
+                                            className="px-1 py-0.2 rounded text-[8px] font-semibold bg-purple-600/70 text-purple-100 uppercase"
                                         >
                                             {CONDITIONS_INFO[cond]?.icon || '⚡'} {cond}
                                         </span>
@@ -232,25 +221,25 @@ export default function CombatEncounterHUD({
             </div>
 
             {/* 5e Action Economy & Tactical Controls */}
-            <div className="pt-2 border-t border-red-500/30 space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${combat.actionUsed ? 'bg-slate-800 text-gray-400 line-through' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}`}>
+            <div className="pt-1.5 border-t border-red-500/30 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+                    <div className="flex items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${combat.actionUsed ? 'bg-slate-800 text-gray-400 line-through' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}`}>
                             ⚡ Action {combat.actionUsed ? 'Spent' : 'Ready'}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${combat.bonusActionUsed ? 'bg-slate-800 text-gray-400 line-through' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}`}>
-                            ✨ Bonus Action {combat.bonusActionUsed ? 'Spent' : 'Ready'}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${combat.bonusActionUsed ? 'bg-slate-800 text-gray-400 line-through' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}`}>
+                            ✨ Bonus {combat.bonusActionUsed ? 'Spent' : 'Ready'}
                         </span>
                     </div>
 
-                    {/* Roll Mode (Normal / Advantage / Disadvantage) */}
-                    <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-700">
+                    {/* Roll Mode */}
+                    <div className="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-700">
                         {['normal', 'advantage', 'disadvantage'].map((m) => (
                             <button
                                 key={m}
                                 type="button"
                                 onClick={() => setRollMode(m)}
-                                className={`px-2 py-0.5 rounded text-[10px] font-semibold capitalize transition-colors ${
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold capitalize transition-colors ${
                                     rollMode === m
                                         ? m === 'advantage'
                                             ? 'bg-emerald-600 text-white'
@@ -260,20 +249,20 @@ export default function CombatEncounterHUD({
                                         : 'text-gray-400 hover:text-white'
                                 }`}
                             >
-                                {m === 'normal' ? '1d20 Normal' : m === 'advantage' ? '2d20 Adv ▲' : '2d20 Dis ▼'}
+                                {m === 'normal' ? 'Normal' : m === 'advantage' ? 'Adv ▲' : 'Dis ▼'}
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Primary Tactical Buttons */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                     {/* Weapon Attack */}
                     <button
                         type="button"
                         disabled={isCombatResolving || combat.actionUsed || !activeTarget}
                         onClick={() => activeTarget && onWeaponAttack(primaryWeapon, activeTarget, rollMode, useDivineSmite)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-40 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-40 text-white shadow transition-all flex items-center gap-1 cursor-pointer"
                     >
                         <span>⚔️</span>
                         <span>Attack with {primaryWeapon.name} ({primaryWeapon.damageDice})</span>
@@ -285,13 +274,13 @@ export default function CombatEncounterHUD({
                             type="button"
                             disabled={isCombatResolving}
                             onClick={() => setUseDivineSmite(!useDivineSmite)}
-                            className={`px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                            className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                                 useDivineSmite
                                     ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
                                     : 'bg-slate-800 text-amber-300 border-amber-500/40'
                             }`}
                         >
-                            ✨ Divine Smite (+2d8)
+                            ✨ Smite (+2d8)
                         </button>
                     )}
 
@@ -307,7 +296,7 @@ export default function CombatEncounterHUD({
                                 type="button"
                                 disabled={isCombatResolving || isDisabled || !hasSlot || (!activeTarget && spell.type !== 'heal' && spell.type !== 'buff')}
                                 onClick={() => onCastCombatSpell(spell, activeTarget)}
-                                className="px-3 py-2 rounded-xl text-xs font-semibold bg-purple-700/80 hover:bg-purple-600 disabled:opacity-35 text-purple-100 border border-purple-400/40 transition-all flex items-center gap-1 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-purple-700/80 hover:bg-purple-600 disabled:opacity-35 text-purple-100 border border-purple-400/40 transition-all flex items-center gap-1 cursor-pointer"
                                 title={`${spell.name} (${spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}, ${spell.castingTime || 'action'})`}
                             >
                                 <span>{spell.icon || '🔮'}</span>
@@ -319,7 +308,7 @@ export default function CombatEncounterHUD({
                         );
                     })}
 
-                    {/* Class Features (Second Wind, Action Surge, Rage, Sneak/Cunning Action, Turn Undead, etc.) */}
+                    {/* Class Features */}
                     {activeFeatures.map((feat) => {
                         const isBonus = feat.actionType === 'bonus';
                         const isDisabled = (isBonus && combat.bonusActionUsed) || (feat.actionType === 'action' && combat.actionUsed);
@@ -329,20 +318,20 @@ export default function CombatEncounterHUD({
                                 type="button"
                                 disabled={isCombatResolving || isDisabled}
                                 onClick={() => onUseClassFeature(feat, activeTarget)}
-                                className="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-700/80 hover:bg-indigo-600 disabled:opacity-35 text-indigo-100 border border-indigo-400/40 transition-all cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-700/80 hover:bg-indigo-600 disabled:opacity-35 text-indigo-100 border border-indigo-400/40 transition-all cursor-pointer"
                             >
                                 ⚡ {feat.name}
                             </button>
                         );
                     })}
 
-                    {/* Drink Healing Potion (Bonus Action in 2024 DMG/PHB!) */}
+                    {/* Drink Healing Potion */}
                     {healingPotion && (
                         <button
                             type="button"
                             disabled={isCombatResolving || combat.bonusActionUsed}
                             onClick={() => onDrinkPotion(healingPotion)}
-                            className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 disabled:opacity-35 text-emerald-100 border border-emerald-400/40 transition-all cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 disabled:opacity-35 text-emerald-100 border border-emerald-400/40 transition-all cursor-pointer"
                         >
                             🧪 Quaff {healingPotion.name} (Bonus)
                         </button>
@@ -353,20 +342,20 @@ export default function CombatEncounterHUD({
                         type="button"
                         disabled={isCombatResolving || combat.actionUsed}
                         onClick={onDodgeAction}
-                        className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-700 hover:bg-slate-600 disabled:opacity-35 text-gray-200 border border-slate-500 transition-all cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600 disabled:opacity-35 text-gray-200 border border-slate-500 transition-all cursor-pointer"
                     >
                         🛡️ Dodge
                     </button>
 
-                    {/* End Turn / Execute Party & Enemy Round */}
+                    {/* End Turn */}
                     <button
                         type="button"
                         disabled={isCombatResolving}
                         onClick={onEndTurn}
-                        className={`ml-auto px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`ml-auto px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                             isCombatResolving
                                 ? 'bg-amber-700/60 text-amber-200 cursor-not-allowed opacity-75'
-                                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg ring-2 ring-amber-300/50'
+                                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md ring-1 ring-amber-300/50'
                         }`}
                     >
                         <span>{isCombatResolving ? '⏳' : '⏭️'}</span>

@@ -1383,7 +1383,7 @@ export default function GameInterface() {
                 {/* Center Column: Live Combat HUD (when active) + Narrative Chat */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {!isReaderMode && state.combat?.active && (
-                        <div className="max-h-[46%] overflow-y-auto flex-shrink-0">
+                        <div className="max-h-[36%] sm:max-h-[40%] overflow-y-auto flex-shrink-0">
                             <CombatEncounterHUD
                                 combat={state.combat}
                                 character={character}
