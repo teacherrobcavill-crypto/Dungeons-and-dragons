@@ -111,6 +111,56 @@ export const ActionTypes = {
     CLEAR_PENDING_ROLL: 'CLEAR_PENDING_ROLL'
 };
 
+export function normalizeCompanion(comp, fallbackIndex = 0) {
+    if (!comp) return null;
+    const cls = (comp.class || 'fighter').toLowerCase();
+    const classHpDefaults = {
+        barbarian: 26,
+        paladin: 24,
+        fighter: 22,
+        cleric: 20,
+        druid: 18,
+        ranger: 20,
+        monk: 18,
+        bard: 18,
+        rogue: 18,
+        warlock: 16,
+        wizard: 16,
+        sorcerer: 16
+    };
+    const defaultMaxHp = classHpDefaults[cls] || 18;
+    const maxHp = comp.maxHp || (comp.hp && comp.hp > 14 ? comp.hp : defaultMaxHp);
+    const currentHp = comp.hp !== undefined ? Math.min(maxHp, Math.max(0, comp.hp)) : maxHp;
+
+    const classAcDefaults = {
+        barbarian: 15,
+        paladin: 18,
+        fighter: 18,
+        cleric: 17,
+        druid: 14,
+        ranger: 16,
+        monk: 16,
+        bard: 14,
+        rogue: 15,
+        warlock: 13,
+        wizard: 13,
+        sorcerer: 13
+    };
+    const ac = comp.ac || classAcDefaults[cls] || 14;
+
+    return {
+        ...comp,
+        id: comp.id || `comp-${fallbackIndex}-${(comp.name || 'ally').toLowerCase().replace(/\s+/g, '_')}`,
+        name: comp.name || 'Companion',
+        race: comp.race || 'Human',
+        class: comp.class || 'Fighter',
+        personality: comp.personality || 'Wise',
+        maxHp,
+        hp: currentHp,
+        ac
+    };
+}
+
 export function gameReducer(state, action) {
     switch (action.type) {
         case ActionTypes.SET_CHARACTER_FIELD:
@@ -147,7 +197,10 @@ export function gameReducer(state, action) {
             };
 
         case ActionTypes.SET_COMPANIONS:
-            return { ...state, companions: action.companions };
+            return {
+                ...state,
+                companions: (action.companions || []).map((c, i) => normalizeCompanion(c, i))
+            };
 
         case ActionTypes.SET_ADVENTURE: {
             const adv = action.adventure;
@@ -476,6 +529,16 @@ export function gameReducer(state, action) {
                     };
                 }
             }
+            const healedCompanions = (state.companions || []).map((c, i) => {
+                const norm = normalizeCompanion(c, i);
+                const maxHp = norm.maxHp;
+                const currentHp = norm.hp;
+                const compHeal = Math.max(4, Math.floor(maxHp * 0.45));
+                return {
+                    ...norm,
+                    hp: Math.min(maxHp, currentHp + compHeal)
+                };
+            });
             return {
                 ...state,
                 character: {
@@ -484,7 +547,8 @@ export function gameReducer(state, action) {
                     hitDiceRemaining: Math.max(0, currentHd - 1),
                     spellSlots: currentSlots,
                     conditions: (state.character.conditions || []).filter((c) => !['frightened', 'charmed', 'prone', 'stunned'].includes(c))
-                }
+                },
+                companions: healedCompanions
             };
         }
 
@@ -493,6 +557,13 @@ export function gameReducer(state, action) {
             const restoredSlots = {};
             Object.entries(currentSlots).forEach(([k, v]) => {
                 restoredSlots[k] = { ...v, current: v.max };
+            });
+            const restoredCompanions = (state.companions || []).map((c, i) => {
+                const norm = normalizeCompanion(c, i);
+                return {
+                    ...norm,
+                    hp: norm.maxHp
+                };
             });
             return {
                 ...state,
@@ -504,7 +575,8 @@ export function gameReducer(state, action) {
                     deathSaves: { successes: 0, failures: 0 },
                     conditions: [],
                     spellSlots: restoredSlots
-                }
+                },
+                companions: restoredCompanions
             };
         }
 
@@ -534,7 +606,9 @@ export function gameReducer(state, action) {
                     spells: Array.isArray(loadedChar.spells) ? loadedChar.spells : [],
                     conditions: Array.isArray(loadedChar.conditions) ? loadedChar.conditions : []
                 },
-                companions: Array.isArray(loaded.companions) ? loaded.companions : [],
+                companions: Array.isArray(loaded.companions)
+                    ? loaded.companions.map((c, i) => normalizeCompanion(c, i))
+                    : [],
                 inventory: Array.isArray(loaded.inventory) ? loaded.inventory : initialState.inventory,
                 equippedItems: Array.isArray(loaded.equippedItems) ? loaded.equippedItems : [],
                 visitedNodes: Array.isArray(loaded.visitedNodes) ? loaded.visitedNodes : [],

@@ -348,7 +348,7 @@ export default function CharacterSheet({
                                                     {comp.name}
                                                 </p>
                                                 <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
-                                                    {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 14)}/{comp.maxHp || comp.hp || 14} HP</span> • AC {comp.ac || 13}
+                                                    {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 18)}/{comp.maxHp || 18} HP</span> • AC {comp.ac || 13}
                                                 </p>
                                             </div>
                                         </div>

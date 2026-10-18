@@ -674,7 +674,7 @@ export function resolveMonsterTurn(monster, character, derivedStats, companions 
     }
 
     // Target Selection: Player or Living Companion
-    const livingCompanions = (companions || []).filter((c) => (c.hp ?? 14) > 0);
+    const livingCompanions = (companions || []).filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
     const targetCompanion = (livingCompanions.length > 0 && Math.random() < 0.4)
         ? livingCompanions[Math.floor(Math.random() * livingCompanions.length)]
         : null;
@@ -682,7 +682,7 @@ export function resolveMonsterTurn(monster, character, derivedStats, companions 
     const isTargetPlayer = !targetCompanion;
     const targetName = isTargetPlayer ? (character.name || 'You') : targetCompanion.name;
     const targetAc = isTargetPlayer ? (derivedStats?.ac || 14) : (targetCompanion.ac || 13);
-    const targetCurrentHp = isTargetPlayer ? character.hp : (targetCompanion.hp ?? 14);
+    const targetCurrentHp = isTargetPlayer ? character.hp : (targetCompanion.hp !== undefined ? targetCompanion.hp : (targetCompanion.maxHp || 18));
 
     // Check Recharge 5-6 at start of monster's turn
     let rechargedNow = false;

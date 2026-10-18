@@ -932,6 +932,10 @@ export default function GameInterface() {
 
         // 1. Party Companions take their combat turns sequentially
         for (const comp of currentCompanions) {
+            // Downed companions cannot act
+            const compEffectiveHp = comp.hp !== undefined ? comp.hp : (comp.maxHp || 18);
+            if (compEffectiveHp <= 0) continue;
+
             // Check if any enemies remain alive
             const livingTargets = workingEnemies.filter((e) => e.hp > 0);
             if (livingTargets.length === 0) break;
@@ -1134,13 +1138,20 @@ export default function GameInterface() {
                     addCondition(mTurn.conditionInflicted);
                 }
             } else if (mTurn.targetCompanion) {
-                const compKey = mTurn.targetCompanion.id || mTurn.targetCompanion.name;
+                const targetId = mTurn.targetCompanion.id;
+                const targetName = (mTurn.targetCompanion.name || '').toLowerCase().trim();
+                const dmgToTake = mTurn.damageToCompanion !== undefined ? mTurn.damageToCompanion : (mTurn.damage || 0);
+
                 currentCompanions = currentCompanions.map((c) => {
-                    const cKey = c.id || c.name;
-                    if (cKey === compKey) {
+                    const cName = (c.name || '').toLowerCase().trim();
+                    const isMatch = (targetId && c.id && c.id === targetId) ||
+                        (targetName && cName && (cName === targetName || cName.includes(targetName) || targetName.includes(cName)));
+                    if (isMatch) {
                         anyCompanionDamaged = true;
-                        const currentHp = c.hp !== undefined ? c.hp : (c.maxHp || 14);
-                        return { ...c, hp: Math.max(0, currentHp - mTurn.damageToCompanion) };
+                        const maxHp = c.maxHp || 18;
+                        const currentHp = c.hp !== undefined ? c.hp : maxHp;
+                        const nextHp = Math.max(0, currentHp - dmgToTake);
+                        return { ...c, maxHp, hp: nextHp };
                     }
                     return c;
                 });

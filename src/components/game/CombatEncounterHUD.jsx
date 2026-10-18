@@ -140,13 +140,13 @@ export default function CombatEncounterHUD({
 
                     {/* Companions */}
                     {companions.map((comp, idx) => {
-                        const compMaxHp = comp.maxHp || comp.hp || 14;
+                        const compMaxHp = comp.maxHp || 18;
                         const compHp = comp.hp !== undefined ? comp.hp : compMaxHp;
                         const pct = Math.max(0, Math.min(100, (compHp / compMaxHp) * 100));
                         const isDown = compHp <= 0;
                         return (
                             <div
-                                key={idx}
+                                key={comp.id || idx}
                                 className={`p-1 sm:p-1.5 rounded-lg border transition-all ${
                                     isDown
                                         ? 'bg-red-950/20 border-red-900/60 opacity-50'
@@ -164,7 +164,7 @@ export default function CombatEncounterHUD({
                                 <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-300 ${
-                                            pct > 0.5 ? 'bg-indigo-400' : pct > 0.25 ? 'bg-amber-500' : 'bg-rose-600'
+                                            pct > 50 ? 'bg-indigo-400' : pct > 25 ? 'bg-amber-500' : 'bg-rose-600'
                                         }`}
                                         style={{ width: `${pct}%` }}
                                     />
