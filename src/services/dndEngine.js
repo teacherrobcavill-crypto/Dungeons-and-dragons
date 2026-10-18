@@ -342,6 +342,15 @@ export function createCombatEncounter(encounterDef, character, companions = [], 
         reactionUsed: false,
         initiativeOrder,
         enemies,
+        rollingFeed: [
+            {
+                id: `init-${Date.now()}`,
+                type: 'init',
+                title: '⚔️ Roll for Initiative!',
+                text: `${encounterDef?.title || 'Battle Joined'} — Your Initiative: ${playerInit}`,
+                timestamp: Date.now()
+            }
+        ],
         combatLog: [
             `⚔️ **Roll for Initiative!** (${encounterDef?.title || 'Battle Joined'}) — Your Initiative: **${playerInit}**`
         ]
@@ -646,7 +655,7 @@ export function resolveCompanionTurn(companion, enemies, character) {
     };
 }
 
-export function resolveMonsterTurn(monster, character, derivedStats) {
+export function resolveMonsterTurn(monster, character, derivedStats, companions = []) {
     if (!monster || monster.hp <= 0) return null;
 
     // Check Incapacitating conditions
@@ -659,9 +668,21 @@ export function resolveMonsterTurn(monster, character, derivedStats) {
             skipped: true,
             recoveredCondition: recovered ? activeIncap : null,
             damageToPlayer: 0,
+            damageToCompanion: 0,
             log: `💫 **${monster.name}** is **${activeIncap.toUpperCase()}** and cannot act this turn!${recovered ? ` (Breaks free from ${activeIncap} at end of turn!)` : ''}`
         };
     }
+
+    // Target Selection: Player or Living Companion
+    const livingCompanions = (companions || []).filter((c) => (c.hp ?? 14) > 0);
+    const targetCompanion = (livingCompanions.length > 0 && Math.random() < 0.4)
+        ? livingCompanions[Math.floor(Math.random() * livingCompanions.length)]
+        : null;
+
+    const isTargetPlayer = !targetCompanion;
+    const targetName = isTargetPlayer ? (character.name || 'You') : targetCompanion.name;
+    const targetAc = isTargetPlayer ? (derivedStats?.ac || 14) : (targetCompanion.ac || 13);
+    const targetCurrentHp = isTargetPlayer ? character.hp : (targetCompanion.hp ?? 14);
 
     // Check Recharge 5-6 at start of monster's turn
     let rechargedNow = false;
@@ -686,14 +707,13 @@ export function resolveMonsterTurn(monster, character, derivedStats) {
         monster.rechargeReady = false;
     }
 
-    const playerAc = derivedStats?.ac || 14;
     const playerConditions = character?.conditions || [];
     const monsterDisadv = (monster.conditions || []).includes('poisoned') ||
         (monster.conditions || []).includes('frightened') ||
         (monster.conditions || []).includes('restrained') ||
-        playerConditions.includes('dodging');
+        (isTargetPlayer && playerConditions.includes('dodging'));
 
-    // Saving throw based monster action (e.g., Dragon Breath, Banshee Wail, Mind Blast)
+    // Saving throw based monster action (e.g., Dragon Breath, Banshee Wail, Mind Blast, Spells)
     if (chosenAction.saveDc) {
         const saveAbility = (chosenAction.saveAbility || 'dex').toLowerCase();
         const fullAbilityMap = {
@@ -705,26 +725,42 @@ export function resolveMonsterTurn(monster, character, derivedStats) {
             cha: 'charisma'
         };
         const fullKey = fullAbilityMap[saveAbility.slice(0, 3)] || 'dexterity';
-        const playerSaveMod = getAbilityMod(character?.stats?.[fullKey] || 10);
-        const saveRoll = rollDie(20) + playerSaveMod;
-        const playerSaved = saveRoll >= chosenAction.saveDc;
+        const targetSaveMod = isTargetPlayer
+            ? getAbilityMod(character?.stats?.[fullKey] || 10)
+            : 2;
+        const saveRoll = rollDie(20) + targetSaveMod;
+        const targetSaved = saveRoll >= chosenAction.saveDc;
 
         const rawDmg = rollDiceFormula(chosenAction.damageDice || '3d6');
-        let dmg = playerSaved ? Math.floor(rawDmg.total / 2) : rawDmg.total;
+        let dmg = targetSaved ? Math.floor(rawDmg.total / 2) : rawDmg.total;
 
-        // Apply player resistance (e.g. Tiefling/Dragonborn Fire resistance, Dwarf Poison resistance)
-        if (playerConditions.includes('raging') && ['bludgeoning', 'piercing', 'slashing'].includes((chosenAction.damageType || '').toLowerCase())) {
+        // Apply player resistance (e.g. Barbarian Rage, Tiefling Fire resistance)
+        if (isTargetPlayer && playerConditions.includes('raging') && ['bludgeoning', 'piercing', 'slashing'].includes((chosenAction.damageType || '').toLowerCase())) {
             dmg = Math.floor(dmg / 2);
         }
 
-        const conditionInflicted = (!playerSaved && chosenAction.condition) ? chosenAction.condition.toLowerCase() : null;
+        const conditionInflicted = (!targetSaved && chosenAction.condition) ? chosenAction.condition.toLowerCase() : null;
 
         return {
             skipped: false,
+            isSpellOrPower: true,
             actionName: chosenAction.name,
-            damageToPlayer: dmg,
+            monsterName: monster.name,
+            targetName,
+            isTargetPlayer,
+            targetCompanion,
+            saveAbility: saveAbility.toUpperCase(),
+            saveDc: chosenAction.saveDc,
+            saveRoll,
+            targetSaved,
+            damageToPlayer: isTargetPlayer ? dmg : 0,
+            damageToCompanion: !isTargetPlayer ? dmg : 0,
+            damage: dmg,
+            damageType: chosenAction.damageType || 'Magical',
             conditionInflicted,
-            log: `${rechargedNow ? `🔥 **${monster.name}** recharges its deadly power! ` : ''}👹 **${monster.name}** unleashes **${chosenAction.name}**! You roll a ${saveAbility.toUpperCase()} Save: **${saveRoll}** vs DC ${chosenAction.saveDc} (${playerSaved ? 'SAVED — Half Damage' : 'FAILED!'}) — taking **${dmg} ${chosenAction.damageType || 'Magical'} damage**!${conditionInflicted ? ` You are **${conditionInflicted.toUpperCase()}**!` : ''}`
+            targetRemainingHp: Math.max(0, targetCurrentHp - dmg),
+            rechargedNow,
+            log: `${rechargedNow ? `🔥 **${monster.name}** recharges its deadly power! ` : ''}🔮 **${monster.name}** unleashes **${chosenAction.name}** upon **${targetName}**! ${targetName} rolls a ${saveAbility.toUpperCase()} Save: **${saveRoll}** vs DC ${chosenAction.saveDc} (${targetSaved ? 'SAVED — Half Damage' : 'FAILED!'}) — taking **${dmg} ${chosenAction.damageType || 'Magical'} damage**!${conditionInflicted ? ` Afflicted with **${conditionInflicted.toUpperCase()}**!` : ''}`
         };
     }
 
@@ -734,14 +770,14 @@ export function resolveMonsterTurn(monster, character, derivedStats) {
         mode: monsterDisadv ? 'disadvantage' : 'normal'
     });
 
-    const hit = attackRoll.isCrit || (!attackRoll.isFumble && attackRoll.total >= playerAc);
+    const hit = attackRoll.isCrit || (!attackRoll.isFumble && attackRoll.total >= targetAc);
     let dmg = 0;
     let conditionInflicted = null;
 
     if (hit) {
         const dmgRoll = rollDiceFormula(chosenAction.damageDice || '1d6+2', attackRoll.isCrit);
         dmg = dmgRoll.total;
-        if (playerConditions.includes('raging') && ['bludgeoning', 'piercing', 'slashing'].includes((chosenAction.damageType || 'slashing').toLowerCase())) {
+        if (isTargetPlayer && playerConditions.includes('raging') && ['bludgeoning', 'piercing', 'slashing'].includes((chosenAction.damageType || 'slashing').toLowerCase())) {
             dmg = Math.max(1, Math.floor(dmg / 2));
         }
         if (chosenAction.condition && rollDie(20) < (chosenAction.conditionDc || 12)) {
@@ -751,13 +787,23 @@ export function resolveMonsterTurn(monster, character, derivedStats) {
 
     return {
         skipped: false,
+        isSpellOrPower: false,
         actionName: chosenAction.name,
+        monsterName: monster.name,
+        targetName,
+        isTargetPlayer,
+        targetCompanion,
         hit,
+        isCrit: attackRoll.isCrit,
         attackRoll,
-        damageToPlayer: dmg,
+        damageToPlayer: isTargetPlayer ? dmg : 0,
+        damageToCompanion: !isTargetPlayer ? dmg : 0,
+        damage: dmg,
+        damageType: chosenAction.damageType || 'Slashing',
         conditionInflicted,
+        targetRemainingHp: Math.max(0, targetCurrentHp - dmg),
         log: hit
-            ? `👹 **${monster.name}** attacks you with **${chosenAction.name}** (${attackRoll.isCrit ? 'CRITICAL HIT! ' : ''}Roll ${attackRoll.total} vs AC ${playerAc}) — dealing **${dmg} ${chosenAction.damageType || 'Slashing'} damage**!${conditionInflicted ? ` You are afflicted with **${conditionInflicted.toUpperCase()}**!` : ''}`
-            : `👹 **${monster.name}** lunges with **${chosenAction.name}** (Roll ${attackRoll.total} vs AC ${playerAc}) — you parry/dodge the blow!`
+            ? `👹 **${monster.name}** strikes **${targetName}** with **${chosenAction.name}** (${attackRoll.isCrit ? 'CRITICAL HIT! ' : ''}Roll ${attackRoll.total} vs AC ${targetAc}) — dealing **${dmg} ${chosenAction.damageType || 'Slashing'} damage**!${conditionInflicted ? ` Afflicted with **${conditionInflicted.toUpperCase()}**!` : ''}`
+            : `👹 **${monster.name}** lunges at **${targetName}** with **${chosenAction.name}** (Roll ${attackRoll.total} vs AC ${targetAc}) — ${targetName} deflects/dodges the blow!`
     };
 }

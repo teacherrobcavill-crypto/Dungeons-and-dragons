@@ -327,7 +327,7 @@ export default function CharacterSheet({
                                                 {comp.icon ? `${comp.icon} ` : ''}{comp.name}
                                             </p>
                                             <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
-                                                {comp.race} {comp.class} • {comp.personality}
+                                                {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 14)}/{comp.maxHp || comp.hp || 14} HP</span> • AC {comp.ac || 13}
                                             </p>
                                         </div>
                                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0">

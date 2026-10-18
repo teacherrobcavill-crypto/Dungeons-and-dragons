@@ -28,6 +28,14 @@ import {
     getProficiencyBonus,
     formatMod
 } from '../services/dndEngine';
+import {
+    describePlayerWeaponAttack,
+    describePlayerSpellCast,
+    describeCompanionCombatAction,
+    describeMonsterAttackTarget,
+    describeMonsterSpellTarget,
+    SPELL_CONDITION_EFFECTS
+} from '../services/combatNarrative';
 
 export default function GameInterface() {
     const navigate = useNavigate();
@@ -57,6 +65,7 @@ export default function GameInterface() {
         setCombat,
         updateCombat,
         endCombat,
+        setCompanions,
         updateSettings,
         resetGame,
         setPendingRoll,
@@ -418,22 +427,55 @@ export default function GameInterface() {
             consumeSpellSlot(1);
         }
 
+        const isFatal = result.hit && (targetEnemy.hp - result.totalDamage <= 0);
+        const remainingHp = Math.max(0, targetEnemy.hp - result.totalDamage);
+
+        const narrative = describePlayerWeaponAttack({
+            heroName: character.name || 'You',
+            weaponName: result.weaponName,
+            targetName: targetEnemy.name,
+            hit: result.hit,
+            isCrit: result.attackRoll.isCrit,
+            damage: result.totalDamage,
+            damageType: weapon?.damageType || 'slashing',
+            isFatal,
+            remainingHp,
+            breakdown: result.damageBreakdown
+        });
+
         const updatedEnemies = state.combat.enemies.map((e) =>
             e.instanceId === targetEnemy.instanceId
                 ? { ...e, hp: Math.max(0, e.hp - result.totalDamage) }
                 : e
         );
 
-        const attackMsg = result.hit
-            ? `⚔️ **${character.name || 'You'}** strike **${targetEnemy.name}** with **${result.weaponName}** (${result.attackRoll.isCrit ? 'CRITICAL HIT! ' : ''}Roll **${result.attackRoll.total}** vs AC ${targetEnemy.ac}) for **${result.totalDamage} damage** (${result.damageBreakdown})!`
-            : `⚔️ **${character.name || 'You'}** swing **${result.weaponName}** at **${targetEnemy.name}** (Roll **${result.attackRoll.total}** vs AC ${targetEnemy.ac}) — **Miss!**`;
+        const attackMsg = `${narrative.prose}\n\n*Combat Outcome:* ${result.hit ? (result.attackRoll.isCrit ? '💥 CRITICAL HIT!' : '⚔️ HIT!') : '🛡️ MISSED!'} (Roll **${result.attackRoll.total}** vs AC ${targetEnemy.ac}${result.hit ? ` for **${result.totalDamage} damage**` : ''})`;
+
+        const newFeedEntry = {
+            id: `atk-${Date.now()}`,
+            type: isFatal ? 'fatal_blow' : result.hit ? 'hero_attack' : 'miss',
+            title: narrative.title,
+            text: narrative.prose,
+            rollText: narrative.rollText,
+            attackerName: character.name || 'You',
+            targetName: targetEnemy.name,
+            damage: result.totalDamage,
+            timestamp: Date.now()
+        };
+
+        const updatedFeed = [...(state.combat.rollingFeed || []), newFeedEntry].slice(-25);
 
         pushDmMessage(attackMsg, { roll: result.attackRoll.natural });
+
+        if (isFatal) {
+            soundService.play('critical');
+        }
 
         if (!checkCombatVictory(updatedEnemies, state.combat)) {
             updateCombat({
                 enemies: updatedEnemies,
-                actionUsed: true
+                actionUsed: true,
+                rollingFeed: updatedFeed
             });
         }
     };
@@ -465,11 +507,46 @@ export default function GameInterface() {
             addCondition(res.conditionAdded);
         }
 
+        const isFatal = res.hit && targetEnemy && (targetEnemy.hp - (res.totalDamage || 0) <= 0);
+        const remainingHp = targetEnemy ? Math.max(0, targetEnemy.hp - (res.totalDamage || 0)) : 0;
+
+        const narrative = describePlayerSpellCast({
+            heroName: character.name || 'You',
+            spell,
+            targetName: targetEnemy?.name,
+            hit: res.hit,
+            isCrit: res.attackRoll?.isCrit,
+            damage: res.totalDamage || res.totalHeal || 0,
+            conditionApplied: res.conditionApplied || res.conditionAdded,
+            isFatal,
+            remainingHp,
+            failedSave: res.failedSave,
+            saveAbility: spell.saveAbility || 'DEX',
+            saveDc: res.saveDc,
+            enemyRoll: res.enemyRoll,
+            isAoE: spell.isAoE
+        });
+
+        const spellMsg = `${narrative.prose}\n\n*Spell Mechanics:* ${res.summary}`;
+
+        const newFeedEntry = {
+            id: `spell-${Date.now()}`,
+            type: isFatal ? 'fatal_blow' : 'spell',
+            title: narrative.title,
+            text: narrative.prose,
+            rollText: narrative.rollText,
+            spellName: spell.name,
+            attackerName: character.name || 'You',
+            targetName: targetEnemy?.name || 'Allies',
+            damage: res.totalDamage || 0,
+            timestamp: Date.now()
+        };
+
         if (state.combat && state.combat.active) {
             let updatedEnemies = [...state.combat.enemies];
             if (targetEnemy && res.totalDamage > 0) {
                 if (spell.isAoE) {
-                    // AoE spells like Fireball / Burning Hands / Shatter hit all living enemies!
+                    // AoE spells hit all living enemies
                     updatedEnemies = updatedEnemies.map((e) =>
                         e.hp > 0 ? { ...e, hp: Math.max(0, e.hp - res.totalDamage) } : e
                     );
@@ -494,18 +571,24 @@ export default function GameInterface() {
                 );
             }
 
-            pushDmMessage(res.summary, { roll: res.attackRoll?.natural });
+            const updatedFeed = [...(state.combat.rollingFeed || []), newFeedEntry].slice(-25);
+            pushDmMessage(spellMsg, { roll: res.attackRoll?.natural });
+
+            if (isFatal) {
+                soundService.play('critical');
+            }
 
             if (!checkCombatVictory(updatedEnemies, state.combat)) {
                 const isBonus = spell.castingTime === 'bonus';
                 updateCombat({
                     enemies: updatedEnemies,
                     actionUsed: isBonus ? state.combat.actionUsed : true,
-                    bonusActionUsed: isBonus ? true : state.combat.bonusActionUsed
+                    bonusActionUsed: isBonus ? true : state.combat.bonusActionUsed,
+                    rollingFeed: updatedFeed
                 });
             }
         } else {
-            pushDmMessage(res.summary);
+            pushDmMessage(spellMsg);
         }
     };
 
@@ -617,18 +700,32 @@ export default function GameInterface() {
         soundService.play('diceRoll');
 
         let workingEnemies = [...state.combat.enemies];
+        let currentCompanions = [...(state.companions || [])];
         const roundLogs = [];
         const companionBubbles = [];
+        const newFeedEntries = [];
 
         // 1. Party Companions take their combat turns
-        (state.companions || []).forEach((comp) => {
+        currentCompanions.forEach((comp) => {
             const compTurn = resolveCompanionTurn(comp, workingEnemies, character);
             if (!compTurn) return;
 
             if (compTurn.type === 'heal') {
                 updateHp(compTurn.healAmount);
                 roundLogs.push(compTurn.log);
+                newFeedEntries.push({
+                    id: `comp-heal-${Date.now()}-${Math.random()}`,
+                    type: 'companion_heal',
+                    title: `✨ ${comp.name} heals ${character.name || 'You'}`,
+                    text: `${comp.name} casts *Healing Word*, restoring **+${compTurn.healAmount} HP**!`,
+                    rollText: `+${compTurn.healAmount} HP`,
+                    timestamp: Date.now()
+                });
             } else if (compTurn.type === 'attack') {
+                const target = workingEnemies.find((e) => e.instanceId === compTurn.targetId);
+                const isFatal = compTurn.hit && target && (target.hp - compTurn.damage <= 0);
+                const remainingHp = target ? Math.max(0, target.hp - compTurn.damage) : 0;
+
                 if (compTurn.hit && compTurn.damage > 0) {
                     workingEnemies = workingEnemies.map((e) =>
                         e.instanceId === compTurn.targetId
@@ -636,8 +733,33 @@ export default function GameInterface() {
                             : e
                     );
                 }
-                roundLogs.push(compTurn.log);
+
+                const compNarrative = describeCompanionCombatAction({
+                    companionName: comp.name,
+                    companionClass: comp.class,
+                    actionName: compTurn.abilities || 'Tactical Strike',
+                    targetName: compTurn.targetName,
+                    hit: compTurn.hit,
+                    damage: compTurn.damage,
+                    isFatal,
+                    remainingHp,
+                    companionBark: compTurn.text
+                });
+
+                roundLogs.push(`${compNarrative.prose}\n*Dice Check:* ${compTurn.log}`);
+                newFeedEntries.push({
+                    id: `comp-atk-${Date.now()}-${Math.random()}`,
+                    type: isFatal ? 'fatal_blow' : compTurn.hit ? 'companion_attack' : 'miss',
+                    title: compNarrative.title,
+                    text: compNarrative.prose,
+                    rollText: compNarrative.rollText,
+                    attackerName: comp.name,
+                    targetName: compTurn.targetName,
+                    damage: compTurn.damage,
+                    timestamp: Date.now()
+                });
             }
+
             companionBubbles.push({
                 companionName: compTurn.companionName,
                 companionRace: compTurn.companionRace,
@@ -653,20 +775,84 @@ export default function GameInterface() {
             return;
         }
 
-        // 2. Living Monsters take their 2024 MM turns
+        // 2. Living Monsters take their 2024 MM turns (attacking Character or Companions)
         let totalPlayerDamageTaken = 0;
+        let anyCompanionDamaged = false;
+
         workingEnemies = workingEnemies.map((enemy) => {
             if (enemy.hp <= 0) return enemy;
-            const mTurn = resolveMonsterTurn(enemy, character, derivedStats);
+            const mTurn = resolveMonsterTurn(enemy, character, derivedStats, currentCompanions);
             if (!mTurn) return enemy;
 
-            roundLogs.push(mTurn.log);
-            if (mTurn.damageToPlayer > 0) {
-                totalPlayerDamageTaken += mTurn.damageToPlayer;
+            let narrativeResult;
+            if (mTurn.isSpellOrPower) {
+                narrativeResult = describeMonsterSpellTarget({
+                    monsterName: enemy.name,
+                    actionName: mTurn.actionName,
+                    spellName: mTurn.actionName,
+                    targetName: mTurn.targetName,
+                    isPlayer: mTurn.isTargetPlayer,
+                    damage: mTurn.damage,
+                    damageType: mTurn.damageType,
+                    conditionInflicted: mTurn.conditionInflicted,
+                    saved: mTurn.targetSaved,
+                    saveAbility: mTurn.saveAbility,
+                    saveDc: mTurn.saveDc,
+                    saveRoll: mTurn.saveRoll,
+                    remainingHp: mTurn.targetRemainingHp
+                });
+            } else {
+                narrativeResult = describeMonsterAttackTarget({
+                    monsterName: enemy.name,
+                    actionName: mTurn.actionName,
+                    targetName: mTurn.targetName,
+                    isPlayer: mTurn.isTargetPlayer,
+                    hit: mTurn.hit,
+                    isCrit: mTurn.isCrit,
+                    damage: mTurn.damage,
+                    damageType: mTurn.damageType,
+                    conditionInflicted: mTurn.conditionInflicted,
+                    remainingHp: mTurn.targetRemainingHp
+                });
             }
-            if (mTurn.conditionInflicted) {
-                addCondition(mTurn.conditionInflicted);
+
+            roundLogs.push(`${narrativeResult.prose}\n*Dice Check:* ${mTurn.log}`);
+
+            newFeedEntries.push({
+                id: `mon-${Date.now()}-${Math.random()}`,
+                type: mTurn.isSpellOrPower ? 'monster_spell' : (mTurn.damage > 0 ? 'monster_hit' : 'miss'),
+                title: narrativeResult.title,
+                text: narrativeResult.prose,
+                spellName: mTurn.isSpellOrPower ? mTurn.actionName : null,
+                effect: mTurn.conditionInflicted ? SPELL_CONDITION_EFFECTS[mTurn.conditionInflicted] : null,
+                attackerName: enemy.name,
+                targetName: mTurn.targetName,
+                damage: mTurn.damage,
+                rollText: narrativeResult.rollText,
+                timestamp: Date.now()
+            });
+
+            if (mTurn.isTargetPlayer) {
+                if (mTurn.damageToPlayer > 0) {
+                    totalPlayerDamageTaken += mTurn.damageToPlayer;
+                }
+                if (mTurn.conditionInflicted) {
+                    addCondition(mTurn.conditionInflicted);
+                }
+            } else if (mTurn.targetCompanion) {
+                // Apply damage to companion
+                const compKey = mTurn.targetCompanion.id || mTurn.targetCompanion.name;
+                currentCompanions = currentCompanions.map((c) => {
+                    const cKey = c.id || c.name;
+                    if (cKey === compKey) {
+                        anyCompanionDamaged = true;
+                        const currentHp = c.hp !== undefined ? c.hp : (c.maxHp || 14);
+                        return { ...c, hp: Math.max(0, currentHp - mTurn.damageToCompanion) };
+                    }
+                    return c;
+                });
             }
+
             if (mTurn.recoveredCondition) {
                 return {
                     ...enemy,
@@ -675,6 +861,10 @@ export default function GameInterface() {
             }
             return enemy;
         });
+
+        if (anyCompanionDamaged) {
+            setCompanions(currentCompanions);
+        }
 
         if (totalPlayerDamageTaken > 0) {
             // Half-Orc Relentless Endurance check: drop to 1 HP instead of 0!
@@ -691,16 +881,19 @@ export default function GameInterface() {
         removeCondition('shielded');
         removeCondition('hidden');
 
+        const updatedFeed = [...(state.combat.rollingFeed || []), ...newFeedEntries].slice(-30);
+
         updateCombat({
             enemies: workingEnemies,
             round: state.combat.round + 1,
             actionUsed: false,
             bonusActionUsed: false,
-            reactionUsed: false
+            reactionUsed: false,
+            rollingFeed: updatedFeed
         });
 
         pushDmMessage(
-            `🔄 **Round ${state.combat.round} Resolution:**\n${roundLogs.join('\n')}`,
+            `🔄 **Round ${state.combat.round} Skirmish Resolution:**\n\n${roundLogs.join('\n\n')}`,
             { companionMessages: companionBubbles }
         );
     };
@@ -1064,10 +1257,11 @@ export default function GameInterface() {
                 {/* Center Column: Live Combat HUD (when active) + Narrative Chat */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {!isReaderMode && state.combat?.active && (
-                        <div className="max-h-[48%] overflow-y-auto flex-shrink-0">
+                        <div className="max-h-[55%] overflow-y-auto flex-shrink-0">
                             <CombatEncounterHUD
                                 combat={state.combat}
                                 character={character}
+                                companions={state.companions || []}
                                 equippedItems={state.equippedItems}
                                 inventory={state.inventory}
                                 onWeaponAttack={handleWeaponAttack}
