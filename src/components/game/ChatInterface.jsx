@@ -4,6 +4,7 @@ import Button from '../common/Button';
 import { RollResult } from './AnimatedDice';
 import soundService from '../../services/soundService';
 import LoreText from '../common/LoreText';
+import MagicalRevealText from '../common/MagicalRevealText';
 
 const getRaceEmoji = (race) => {
     const raceEmojis = {
@@ -186,6 +187,7 @@ export default function ChatInterface({
                     <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Chat filters">
                         {[
                             { id: 'all', label: 'All' },
+                            { id: 'combat', label: '⚔️ Skirmish' },
                             { id: 'ai', label: 'DM' },
                             { id: 'user', label: 'Player' },
                             { id: 'companions', label: 'Companions' },
@@ -251,6 +253,101 @@ export default function ChatInterface({
                                     </div>
                                     <div className={`whitespace-pre-line ${getReaderFontClass()} font-medium leading-relaxed`}>
                                         <LoreText text={message.text} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Combat Chronicle Action Card - In Main Story Body with Real-Time Magical Reveal */}
+                        {message.type === 'combat' && (
+                            <div className="w-full animate-fade-in">
+                                <div className={`w-full rounded-2xl p-4 sm:p-5 transition-all shadow-md border-l-4 ${
+                                    message.subtype === 'fatal_blow'
+                                        ? 'bg-emerald-950/40 dark:bg-emerald-950/60 border-l-emerald-500 border border-emerald-500/30 text-emerald-100 shadow-emerald-900/20'
+                                        : message.subtype === 'spell' || message.subtype === 'monster_spell'
+                                            ? 'bg-purple-950/40 dark:bg-purple-950/60 border-l-purple-500 border border-purple-500/30 text-purple-100 shadow-purple-900/20'
+                                            : message.subtype === 'monster_hit'
+                                                ? 'bg-rose-950/40 dark:bg-rose-950/60 border-l-rose-500 border border-rose-500/30 text-rose-100 shadow-rose-900/20'
+                                                : message.subtype === 'companion_attack' || message.subtype === 'companion_heal'
+                                                    ? 'bg-indigo-950/40 dark:bg-indigo-950/60 border-l-indigo-500 border border-indigo-500/30 text-indigo-100 shadow-indigo-900/20'
+                                                    : message.subtype === 'victory' || message.subtype === 'skirmish_victory'
+                                                        ? 'bg-amber-950/50 dark:bg-amber-950/70 border-l-amber-400 border border-amber-400/40 text-amber-100 shadow-amber-900/20'
+                                                        : 'bg-amber-950/30 dark:bg-slate-800/90 border-l-amber-500 border border-amber-500/30 text-amber-100 shadow-slate-900/20'
+                                }`}>
+                                    {/* Header bar */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-white/10 text-xs">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                message.subtype === 'fatal_blow'
+                                                    ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                                                    : message.subtype === 'spell' || message.subtype === 'monster_spell'
+                                                        ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
+                                                        : message.subtype === 'monster_hit'
+                                                            ? 'bg-rose-500/30 text-rose-300 border border-rose-500/40'
+                                                            : message.subtype === 'companion_attack' || message.subtype === 'companion_heal'
+                                                                ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/40'
+                                                                : message.subtype === 'victory' || message.subtype === 'skirmish_victory'
+                                                                    ? 'bg-amber-500/40 text-amber-200 border border-amber-400/60'
+                                                                    : 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                                            }`}>
+                                                {message.subtype === 'fatal_blow' ? '💀 Fatal Blow' :
+                                                 message.subtype === 'spell' || message.subtype === 'monster_spell' ? '🔮 Spell Cast' :
+                                                 message.subtype === 'monster_hit' ? '🩸 Enemy Strike' :
+                                                 message.subtype === 'companion_attack' || message.subtype === 'companion_heal' ? '🛡️ Companion Action' :
+                                                 message.subtype === 'victory' || message.subtype === 'skirmish_victory' ? '🏆 Victory' :
+                                                 message.subtype === 'skirmish_start' ? '⚔️ Battle Joined' :
+                                                 '⚔️ Hero Action'}
+                                            </span>
+                                            <span className="font-bold text-gray-100 text-xs sm:text-sm">
+                                                {message.title}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {message.rollText && (
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-black/40 text-gray-300 border border-white/10">
+                                                    {message.rollText}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggleNarrate(`msg-${index}`, message.text, 'dm', 'Stoic')}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                                                    speakingId === `msg-${index}`
+                                                        ? 'bg-amber-500/30 text-amber-200 border border-amber-500/60 animate-pulse font-bold'
+                                                        : 'bg-black/20 hover:bg-black/30 text-amber-300'
+                                                }`}
+                                                title={speakingId === `msg-${index}` ? 'Mute narration' : 'Read skirmish action aloud (TTS)'}
+                                            >
+                                                <span>{speakingId === `msg-${index}` ? '🔇' : '🔊'}</span>
+                                                <span>{speakingId === `msg-${index}` ? 'Mute' : 'Narrate'}</span>
+                                            </button>
+                                            <span className="text-[10px] opacity-40 font-mono">
+                                                {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Dedicated Spell Impact & Condition Callout */}
+                                    {message.effect && (
+                                        <div className="my-2 p-2.5 rounded-xl bg-purple-900/30 border border-purple-400/40 text-purple-200 text-xs flex items-start gap-2 animate-fade-in">
+                                            <span className="text-base animate-pulse">⚡</span>
+                                            <div>
+                                                <strong className="text-amber-300 uppercase tracking-wide mr-1.5">
+                                                    Condition Impact:
+                                                </strong>
+                                                <span>{message.effect}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Prose with Magical Reveal Real-Time Animation */}
+                                    <div className={`whitespace-pre-line ${getReaderFontClass()} font-normal leading-relaxed text-gray-100 pt-0.5`}>
+                                        <MagicalRevealText
+                                            text={message.text}
+                                            isNew={message.isNew !== false}
+                                            speed={42}
+                                            className="leading-relaxed"
+                                        />
                                     </div>
                                 </div>
                             </div>

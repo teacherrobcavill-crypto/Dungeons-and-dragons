@@ -1,6 +1,7 @@
 // Combat Narrative & Rolling Action Feed Engine for MythicBot D&D 5e
 // Generates vivid, 1980s Fighting Fantasy / Tabletop D&D prose for skirmishes,
 // describing attacks, wounds, fatal blows, enemy counter-strikes, and spells.
+// All outputs are guaranteed clean of asterisks and raw markdown markers.
 
 export const SPELL_CONDITION_EFFECTS = {
     paralyzed: 'PARALYZED: Frozen solid! Incapacitated, speed 0, attacks against you are automatic critical hits.',
@@ -37,7 +38,20 @@ export const SPELL_FLAVOR_PROSE = {
 const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
- * Describe a Player's Weapon Attack with cinematic, punchy prose
+ * Strips all markdown asterisks, underscores, and formatting symbols
+ * ensuring pure, clean storytelling prose.
+ */
+export function cleanProse(text) {
+    if (!text) return '';
+    return text
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/_{1,2}/g, '')
+        .trim();
+}
+
+/**
+ * Describe a Player's Weapon Attack with cinematic, punchy prose (no asterisks)
  */
 export function describePlayerWeaponAttack({
     heroName = 'You',
@@ -56,6 +70,7 @@ export function describePlayerWeaponAttack({
     const weapon = weaponName || 'weapon';
     const enemy = targetName || 'foe';
     const dmgType = (damageType || 'slashing').toLowerCase();
+    const cleanBreakdown = cleanProse(breakdown);
 
     if (!hit) {
         const missTemplates = [
@@ -65,8 +80,8 @@ export function describePlayerWeaponAttack({
             `${hero} ${isPlayer ? 'unleash' : 'unleashes'} a strike with ${isPlayer ? 'your' : 'their'} ${weapon}, whistling harmlessly through the air as the ${enemy} dances out of reach!`
         ];
         return {
-            title: `⚔️ ${hero} attacks ${enemy} — Miss`,
-            prose: getRandom(missTemplates),
+            title: cleanProse(`⚔️ ${hero} attacks ${enemy} — Miss`),
+            prose: cleanProse(getRandom(missTemplates)),
             rollText: `Missed vs AC`
         };
     }
@@ -79,39 +94,39 @@ export function describePlayerWeaponAttack({
             `${hero} ${isPlayer ? 'cleave' : 'cleaves'} through the ${enemy}'s defenses with a ferocious sweep of the ${weapon} (${damage} ${dmgType} damage)! The beast collapses with a sickening thud, dead before it strikes the ground!`
         ];
         return {
-            title: `💀 FATAL BLOW: ${hero} slays ${enemy}!`,
-            prose: getRandom(fatalTemplates),
+            title: cleanProse(`💀 FATAL BLOW: ${hero} slays ${enemy}!`),
+            prose: cleanProse(getRandom(fatalTemplates)),
             rollText: `${damage} ${dmgType} damage (FATAL)`
         };
     }
 
     if (isCrit) {
         const critTemplates = [
-            `⚡ **CRITICAL STRIKE!** ${hero} ${isPlayer ? 'spot' : 'spots'} an exposed opening in the ${enemy}'s stance and ${isPlayer ? 'drive' : 'drives'} the ${weapon} home with devastating momentum! The blow sunders armor and flesh for **${damage} ${dmgType} damage** (${breakdown}). The ${enemy} howls in blind fury, staggering back bleeding heavily (${remainingHp} HP remaining)!`,
-            `⚡ **CRITICAL HIT!** With lightning reflexes, ${hero} ${isPlayer ? 'strike' : 'strikes'} the ${enemy} at its most vulnerable seam with the ${weapon}! The vicious strike delivers **${damage} ${dmgType} damage**, leaving the wounded beast reeling and gasping for breath (${remainingHp} HP remaining)!`
+            `CRITICAL STRIKE! ${hero} ${isPlayer ? 'spot' : 'spots'} an exposed opening in the ${enemy}'s stance and ${isPlayer ? 'drive' : 'drives'} the ${weapon} home with devastating momentum! The blow sunders armor and flesh for ${damage} ${dmgType} damage${cleanBreakdown ? ` (${cleanBreakdown})` : ''}. The ${enemy} howls in blind fury, staggering back bleeding heavily (${remainingHp} HP remaining)!`,
+            `CRITICAL HIT! With lightning reflexes, ${hero} ${isPlayer ? 'strike' : 'strikes'} the ${enemy} at its most vulnerable seam with the ${weapon}! The vicious strike delivers ${damage} ${dmgType} damage, leaving the wounded beast reeling and gasping for breath (${remainingHp} HP remaining)!`
         ];
         return {
-            title: `⚡ CRITICAL HIT: ${hero} strikes ${enemy}!`,
-            prose: getRandom(critTemplates),
+            title: cleanProse(`⚡ CRITICAL HIT: ${hero} strikes ${enemy}!`),
+            prose: cleanProse(getRandom(critTemplates)),
             rollText: `${damage} ${dmgType} damage (Critical!)`
         };
     }
 
     const hitTemplates = [
-        `${hero} ${isPlayer ? 'wield' : 'wields'} ${isPlayer ? 'your' : 'their'} ${weapon} and ${isPlayer ? 'slash' : 'slashes'} at the ${enemy}! The honed edge bites deep, dealing **${damage} ${dmgType} damage** (${breakdown}). The ${enemy} screeches with pain and recoils with fangs bared (${remainingHp} HP remaining).`,
-        `${hero} ${isPlayer ? 'step' : 'steps'} inside the ${enemy}'s guard, driving the ${weapon} home for **${damage} ${dmgType} damage**! Dark blood splatters the stones as the creature grunts in torment (${remainingHp} HP remaining).`,
-        `A clean, practiced strike from ${hero}'s ${weapon} catches the ${enemy} across the flank, carving through armor for **${damage} ${dmgType} damage**! The creature snarls venomously, nursing its wound (${remainingHp} HP remaining).`
+        `${hero} ${isPlayer ? 'wield' : 'wields'} ${isPlayer ? 'your' : 'their'} ${weapon} and ${isPlayer ? 'slash' : 'slashes'} at the ${enemy}! The honed edge bites deep, dealing ${damage} ${dmgType} damage${cleanBreakdown ? ` (${cleanBreakdown})` : ''}. The ${enemy} screeches with pain and recoils with fangs bared (${remainingHp} HP remaining).`,
+        `${hero} ${isPlayer ? 'step' : 'steps'} inside the ${enemy}'s guard, driving the ${weapon} home for ${damage} ${dmgType} damage! Dark blood splatters the stones as the creature grunts in torment (${remainingHp} HP remaining).`,
+        `A clean, practiced strike from ${hero}'s ${weapon} catches the ${enemy} across the flank, carving through armor for ${damage} ${dmgType} damage! The creature snarls venomously, nursing its wound (${remainingHp} HP remaining).`
     ];
 
     return {
-        title: `⚔️ ${hero} hits ${enemy}`,
-        prose: getRandom(hitTemplates),
+        title: cleanProse(`⚔️ ${hero} hits ${enemy}`),
+        prose: cleanProse(getRandom(hitTemplates)),
         rollText: `${damage} ${dmgType} damage`
     };
 }
 
 /**
- * Describe a Player's Spell Cast
+ * Describe a Player's Spell Cast (no asterisks)
  */
 export function describePlayerSpellCast({
     heroName = 'You',
@@ -131,17 +146,17 @@ export function describePlayerSpellCast({
 }) {
     const hero = heroName || 'You';
     const isPlayer = hero.toLowerCase() === 'you';
-    const spellName = spell?.name || 'Spell';
+    const spellName = cleanProse(spell?.name || 'Spell');
     const spellKey = spell?.id || spellName.toLowerCase().replace(/\s+/g, '-');
-    const flavor = SPELL_FLAVOR_PROSE[spellKey] || `channels arcane power into *${spellName}*`;
+    const flavor = SPELL_FLAVOR_PROSE[spellKey] || `channels arcane power into ${spellName}`;
     const enemy = targetName || 'enemy';
     const dmgType = spell?.damageType || 'Magical';
 
     // 1. Healing
     if (spell?.type === 'heal') {
         return {
-            title: `✨ ${hero} casts ${spellName}`,
-            prose: `${hero} ${isPlayer ? 'speak' : 'speaks'} a sacred prayer as ${flavor}. Soothing luminescence washes over wounds, restoring **+${damage} HP**!`,
+            title: cleanProse(`✨ ${hero} casts ${spellName}`),
+            prose: cleanProse(`${hero} ${isPlayer ? 'speak' : 'speaks'} a sacred prayer as ${flavor}. Soothing luminescence washes over wounds, restoring +${damage} HP!`),
             rollText: `Restores +${damage} HP`
         };
     }
@@ -149,8 +164,8 @@ export function describePlayerSpellCast({
     // 2. Buff / Utility
     if (spell?.type === 'buff' || spell?.type === 'utility') {
         return {
-            title: `🔮 ${hero} casts ${spellName}`,
-            prose: `${hero} ${isPlayer ? 'weave' : 'weaves'} mystical wards, invoking *${spellName}*! Warding light and arcane vigilance envelop your presence (${spell?.description || 'defensive ward active'}).`,
+            title: cleanProse(`🔮 ${hero} casts ${spellName}`),
+            prose: cleanProse(`${hero} ${isPlayer ? 'weave' : 'weaves'} mystical wards, invoking ${spellName}! Warding light and arcane vigilance envelop your presence (${spell?.description || 'defensive ward active'}).`),
             rollText: `Buff Active`
         };
     }
@@ -159,15 +174,15 @@ export function describePlayerSpellCast({
     if (spell?.type === 'save') {
         if (isFatal) {
             return {
-                title: `💀 FATAL SPELL: ${hero}'s ${spellName} destroys ${enemy}!`,
-                prose: `${hero} unleashes *${spellName}*—${flavor}! The ${enemy} scrambles desperately (${saveAbility.toUpperCase()} save ${enemyRoll} vs DC ${saveDc} — ${failedSave ? 'FAILED' : 'SAVED'}), taking **${damage} ${dmgType} damage**! The torrent of magic obliterates the creature, leaving it motionless and vanquished!`,
+                title: cleanProse(`💀 FATAL SPELL: ${hero}'s ${spellName} destroys ${enemy}!`),
+                prose: cleanProse(`${hero} unleashes ${spellName}—${flavor}! The ${enemy} scrambles desperately (${saveAbility.toUpperCase()} save ${enemyRoll} vs DC ${saveDc} — ${failedSave ? 'FAILED' : 'SAVED'}), taking ${damage} ${dmgType} damage! The torrent of magic obliterates the creature, leaving it motionless and vanquished!`),
                 rollText: `${damage} ${dmgType} damage (FATAL)`
             };
         }
 
         return {
-            title: `🔮 ${hero} casts ${spellName}`,
-            prose: `${hero} unleashes *${spellName}*—${flavor}! The ${enemy} rolls a ${saveAbility.toUpperCase()} save (${enemyRoll} vs DC ${saveDc} — **${failedSave ? 'FAILED' : 'SAVED'}**)${damage > 0 ? `, taking **${damage} ${dmgType} damage** (${remainingHp} HP remaining)` : ''}!${conditionApplied ? ` The ${enemy} is gripped by **${conditionApplied.toUpperCase()}**!` : ''}`,
+            title: cleanProse(`🔮 ${hero} casts ${spellName}`),
+            prose: cleanProse(`${hero} unleashes ${spellName}—${flavor}! The ${enemy} rolls a ${saveAbility.toUpperCase()} save (${enemyRoll} vs DC ${saveDc} — ${failedSave ? 'FAILED' : 'SAVED'})${damage > 0 ? `, taking ${damage} ${dmgType} damage (${remainingHp} HP remaining)` : ''}!${conditionApplied ? ` The ${enemy} is gripped by ${conditionApplied.toUpperCase()}!` : ''}`),
             rollText: `${damage} ${dmgType} (${failedSave ? 'Save Failed' : 'Saved'})`
         };
     }
@@ -175,29 +190,29 @@ export function describePlayerSpellCast({
     // 4. Attack / Auto-Hit Spells
     if (!hit) {
         return {
-            title: `🔮 ${hero}'s ${spellName} misses`,
-            prose: `${hero} ${isPlayer ? 'hurl' : 'hurls'} *${spellName}* at the ${enemy}, but the magic streaks past in a flash of sparks, dissipating harmlessly against the cavern wall!`,
+            title: cleanProse(`🔮 ${hero}'s ${spellName} misses`),
+            prose: cleanProse(`${hero} ${isPlayer ? 'hurl' : 'hurls'} ${spellName} at the ${enemy}, but the magic streaks past in a flash of sparks, dissipating harmlessly against the cavern wall!`),
             rollText: `Missed vs AC`
         };
     }
 
     if (isFatal) {
         return {
-            title: `💀 FATAL SPELL: ${hero}'s ${spellName} slays ${enemy}!`,
-            prose: `${hero} strikes true with *${spellName}*—${flavor}! The devastating blast slams into the ${enemy} for **${damage} ${dmgType} damage**! The creature screeches with pain as magic tears through its flesh, dropping lifeless to the ground!`,
+            title: cleanProse(`💀 FATAL SPELL: ${hero}'s ${spellName} slays ${enemy}!`),
+            prose: cleanProse(`${hero} strikes true with ${spellName}—${flavor}! The devastating blast slams into the ${enemy} for ${damage} ${dmgType} damage! The creature screeches with pain as magic tears through its flesh, dropping lifeless to the ground!`),
             rollText: `${damage} ${dmgType} damage (FATAL)`
         };
     }
 
     return {
-        title: `🔮 ${hero} blasts ${enemy} with ${spellName}`,
-        prose: `${hero} unleashes *${spellName}*—${flavor}! The arcane discharge strikes the ${enemy} full in the chest for **${damage} ${dmgType} damage**! The beast howls in agony, reeling from the raw magical impact (${remainingHp} HP remaining).${conditionApplied ? ` The target is afflicted with **${conditionApplied.toUpperCase()}**!` : ''}`,
+        title: cleanProse(`🔮 ${hero} blasts ${enemy} with ${spellName}`),
+        prose: cleanProse(`${hero} unleashes ${spellName}—${flavor}! The arcane discharge strikes the ${enemy} full in the chest for ${damage} ${dmgType} damage! The beast howls in agony, reeling from the raw magical impact (${remainingHp} HP remaining).${conditionApplied ? ` The target is afflicted with ${conditionApplied.toUpperCase()}!` : ''}`),
         rollText: `${damage} ${dmgType} damage`
     };
 }
 
 /**
- * Describe a Party Companion's Action
+ * Describe a Party Companion's Action (no asterisks)
  */
 export function describeCompanionCombatAction({
     companionName,
@@ -211,31 +226,34 @@ export function describeCompanionCombatAction({
     remainingHp = 0,
     companionBark = ''
 }) {
+    const action = cleanProse(actionName);
+    const bark = cleanProse(companionBark);
+
     if (!hit) {
         return {
-            title: `🛡️ ${companionName} (${companionClass}) attacks ${targetName} — Miss`,
-            prose: `${companionName} attacks ${targetName} with *${actionName}*, but the foe deflects the strike with its crude buckler!`,
+            title: cleanProse(`🛡️ ${companionName} (${companionClass}) attacks ${targetName} — Miss`),
+            prose: cleanProse(`${companionName} attacks ${targetName} with ${action}, but the foe deflects the strike with its crude buckler!`),
             rollText: 'Miss'
         };
     }
 
     if (isFatal) {
         return {
-            title: `💀 FATAL STRIKE: ${companionName} slays ${targetName}!`,
-            prose: `${companionName} steps in with *${actionName}*, landing a deadly blow for **${damage} ${damageType} damage**! The ${targetName} gasps in agony and collapses dead to the stones!${companionBark ? ` "${companionBark}"` : ''}`,
+            title: cleanProse(`💀 FATAL STRIKE: ${companionName} slays ${targetName}!`),
+            prose: cleanProse(`${companionName} steps in with ${action}, landing a deadly blow for ${damage} ${damageType} damage! The ${targetName} gasps in agony and collapses dead to the stones!${bark ? ` "${bark}"` : ''}`),
             rollText: `${damage} ${damageType} damage (FATAL)`
         };
     }
 
     return {
-        title: `🛡️ ${companionName} hits ${targetName}`,
-        prose: `${companionName} unleashes *${actionName}* upon ${targetName}! The blow connects for **${damage} ${damageType} damage**, staggering the beast (${remainingHp} HP remaining).${companionBark ? ` "${companionBark}"` : ''}`,
+        title: cleanProse(`🛡️ ${companionName} hits ${targetName}`),
+        prose: cleanProse(`${companionName} unleashes ${action} upon ${targetName}! The blow connects for ${damage} ${damageType} damage, staggering the beast (${remainingHp} HP remaining).${bark ? ` "${bark}"` : ''}`),
         rollText: `${damage} ${damageType} damage`
     };
 }
 
 /**
- * Describe a Monster's Attack on the Character or a Companion
+ * Describe a Monster's Attack on the Character or a Companion (no asterisks)
  */
 export function describeMonsterAttackTarget({
     monsterName,
@@ -251,51 +269,50 @@ export function describeMonsterAttackTarget({
     remainingHp = 0
 }) {
     const victim = isPlayer ? 'You' : targetName;
-    const victimObj = isPlayer ? 'you' : targetName;
-    const victimPoss = isPlayer ? 'your' : `${targetName}'s`;
+    const condText = conditionInflicted ? SPELL_CONDITION_EFFECTS[conditionInflicted] || '' : '';
 
     if (!hit) {
         const parryTemplates = isPlayer
             ? [
-                `👹 **${monsterName}** lunges with **${actionName}**, but you raise your guard and parry the vicious strike just in time!`,
-                `👹 **${monsterName}** strikes at you with **${actionName}**, the blow glancing harmlessly off your armor with a ring of steel!`,
-                `👹 **${monsterName}** slashes with **${actionName}**, but you step swiftly aside, letting the weapon bite harmlessly into empty air!`
+                `👹 ${monsterName} lunges with ${actionName}, but you raise your guard and parry the vicious strike just in time!`,
+                `👹 ${monsterName} strikes at you with ${actionName}, the blow glancing harmlessly off your armor with a ring of steel!`,
+                `👹 ${monsterName} slashes with ${actionName}, but you step swiftly aside, letting the weapon bite harmlessly into empty air!`
             ]
             : [
-                `👹 **${monsterName}** lunges with **${actionName}** at **${targetName}**, but ${targetName} raises their shield and deflects the savage blow!`,
-                `👹 **${monsterName}** swings **${actionName}** toward **${targetName}**, but the skilled companion ducks beneath the blade!`
+                `👹 ${monsterName} lunges with ${actionName} at ${targetName}, but ${targetName} raises their shield and deflects the savage blow!`,
+                `👹 ${monsterName} swings ${actionName} toward ${targetName}, but the skilled companion ducks beneath the blade!`
             ];
         return {
-            title: `🛡️ ${monsterName} attacks ${victim} — Miss`,
-            prose: getRandom(parryTemplates),
+            title: cleanProse(`🛡️ ${monsterName} attacks ${victim} — Miss`),
+            prose: cleanProse(getRandom(parryTemplates)),
             rollText: 'Defended / Miss'
         };
     }
 
     if (isCrit) {
         const critText = isPlayer
-            ? `💥 **BRUTAL CRITICAL STRIKE!** **${monsterName}** finds a deadly opening, driving its **${actionName}** straight into you! The vicious blow inflicts **${damage} ${damageType} damage**! Agonizing pain flashes through your limbs (${remainingHp} HP remaining)!`
-            : `💥 **BRUTAL CRITICAL HIT!** **${monsterName}** unleashes a devastating **${actionName}** upon **${targetName}**! The horrific blow deals **${damage} ${damageType} damage**, sending ${targetName} staggering back with bloodied armor (${remainingHp} HP remaining)!`;
+            ? `💥 BRUTAL CRITICAL STRIKE! ${monsterName} finds a deadly opening, driving its ${actionName} straight into you! The vicious blow inflicts ${damage} ${damageType} damage! Agonizing pain flashes through your limbs (${remainingHp} HP remaining)!`
+            : `💥 BRUTAL CRITICAL HIT! ${monsterName} unleashes a devastating ${actionName} upon ${targetName}! The horrific blow deals ${damage} ${damageType} damage, sending ${targetName} staggering back with bloodied armor (${remainingHp} HP remaining)!`;
         return {
-            title: `💥 CRITICAL HIT: ${monsterName} strikes ${victim}!`,
-            prose: critText + (conditionInflicted ? `\n⚠️ **Affliction:** ${victim} is now **${conditionInflicted.toUpperCase()}**! ${SPELL_CONDITION_EFFECTS[conditionInflicted] || ''}` : ''),
+            title: cleanProse(`💥 CRITICAL HIT: ${monsterName} strikes ${victim}!`),
+            prose: cleanProse(critText + (conditionInflicted ? `\nAffliction: ${victim} is now ${conditionInflicted.toUpperCase()}! ${condText}` : '')),
             rollText: `${damage} ${damageType} damage (Critical!)`
         };
     }
 
     const hitText = isPlayer
-        ? `👹 **${monsterName}** leaps forward, striking you with **${actionName}**! The assault bites deep for **${damage} ${damageType} damage** (${remainingHp} HP remaining). You grit your teeth as fresh wounds sting in the dark.`
-        : `👹 **${monsterName}** wheels around and strikes **${targetName}** with **${actionName}**! The blow crashes home for **${damage} ${damageType} damage** (${remainingHp} HP remaining), eliciting a pained gasp from ${targetName}.`;
+        ? `👹 ${monsterName} leaps forward, striking you with ${actionName}! The assault bites deep for ${damage} ${damageType} damage (${remainingHp} HP remaining). You grit your teeth as fresh wounds sting in the dark.`
+        : `👹 ${monsterName} wheels around and strikes ${targetName} with ${actionName}! The blow crashes home for ${damage} ${damageType} damage (${remainingHp} HP remaining), eliciting a pained gasp from ${targetName}.`;
 
     return {
-        title: `🩸 ${monsterName} hits ${victim}`,
-        prose: hitText + (conditionInflicted ? `\n⚠️ **Affliction:** ${victim} is struck with **${conditionInflicted.toUpperCase()}**! ${SPELL_CONDITION_EFFECTS[conditionInflicted] || ''}` : ''),
+        title: cleanProse(`🩸 ${monsterName} hits ${victim}`),
+        prose: cleanProse(hitText + (conditionInflicted ? `\nAffliction: ${victim} is struck with ${conditionInflicted.toUpperCase()}! ${condText}` : '')),
         rollText: `${damage} ${damageType} damage`
     };
 }
 
 /**
- * Describe a Monster's Spell or Supernatural Ability hitting Character or Companion
+ * Describe a Monster's Spell or Supernatural Ability hitting Character or Companion (no asterisks)
  */
 export function describeMonsterSpellTarget({
     monsterName,
@@ -312,29 +329,29 @@ export function describeMonsterSpellTarget({
     saveRoll = 10,
     remainingHp = 0
 }) {
-    const power = spellName || actionName;
+    const power = cleanProse(spellName || actionName);
     const victim = isPlayer ? 'You' : targetName;
     const condEffect = conditionInflicted ? SPELL_CONDITION_EFFECTS[conditionInflicted] || `${conditionInflicted.toUpperCase()} effect applied.` : null;
 
     let narrative = isPlayer
-        ? `🔮 **${monsterName}** unleashes **${power}** directly at you! You roll a ${saveAbility.toUpperCase()} Saving Throw (**${saveRoll}** vs DC ${saveDc} — **${saved ? 'SAVED (Half Damage)' : 'FAILED!'}**)`
-        : `🔮 **${monsterName}** hurls **${power}** across the battlefield at **${targetName}**! ${targetName} rolls a ${saveAbility.toUpperCase()} Saving Throw (**${saveRoll}** vs DC ${saveDc} — **${saved ? 'SAVED' : 'FAILED!'}**)`;
+        ? `🔮 ${monsterName} unleashes ${power} directly at you! You roll a ${saveAbility.toUpperCase()} Saving Throw (${saveRoll} vs DC ${saveDc} — ${saved ? 'SAVED (Half Damage)' : 'FAILED!'})`
+        : `🔮 ${monsterName} hurls ${power} across the battlefield at ${targetName}! ${targetName} rolls a ${saveAbility.toUpperCase()} Saving Throw (${saveRoll} vs DC ${saveDc} — ${saved ? 'SAVED' : 'FAILED!'})`;
 
     if (damage > 0) {
-        narrative += `, taking **${damage} ${damageType} damage** (${remainingHp} HP remaining)!`;
+        narrative += `, taking ${damage} ${damageType} damage (${remainingHp} HP remaining)!`;
     } else {
         narrative += '!';
     }
 
     if (conditionInflicted) {
-        narrative += `\n⚠️ **Spell & Condition Impact:** **${victim}** is afflicted with **${conditionInflicted.toUpperCase()}**! ${condEffect}`;
+        narrative += `\nSpell and Condition Impact: ${victim} is afflicted with ${conditionInflicted.toUpperCase()}! ${cleanProse(condEffect)}`;
     }
 
     return {
-        title: `🔮 ${monsterName} casts ${power} at ${victim}`,
-        prose: narrative,
+        title: cleanProse(`🔮 ${monsterName} casts ${power} at ${victim}`),
+        prose: cleanProse(narrative),
         spellName: power,
-        effect: condEffect,
+        effect: cleanProse(condEffect),
         rollText: `${damage} ${damageType} (${saved ? 'Saved' : 'Failed'})`
     };
 }
