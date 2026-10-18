@@ -1,0 +1,919 @@
+{
+  "frameworkVersion": "1.0.0",
+  "system": "D&D 5e Hybrid Engine (PHB 2014 + DMG 2024 + MM 2014/2024)",
+  "sources": {
+    "phb2014": "https://www.dndbeyond.com/sources/dnd/phb-2014",
+    "dmg2024": "https://www.dndbeyond.com/sources/dnd/dmg-2024",
+    "mm2014": "https://www.dndbeyond.com/sources/dnd/mm-2014",
+    "mm2024": "https://www.dndbeyond.com/sources/dnd/mm-2024"
+  },
+  "coreFormulas": {
+    "abilityModifier": "floor((score - 10) / 2)",
+    "d20Test": "1d20 + abilityModifier + (isProficient ? proficiencyBonus : 0) + situationalBonus",
+    "passiveScore": "10 + skillModifier + (hasAdvantage ? 5 : 0) - (hasDisadvantage ? 5 : 0)",
+    "spellSaveDC": "8 + proficiencyBonus + spellcastingAbilityModifier",
+    "spellAttackBonus": "proficiencyBonus + spellcastingAbilityModifier",
+    "concentrationDC": "max(10, floor(damageTaken / 2))"
+  },
+  "proficiencyBonusByLevel": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
+  },
+  "xpThresholdsByLevel": {
+    "1": { "xpRequired": 0, "proficiencyBonus": 2, "tier": "Tier 1: Local Heroes" },
+    "2": { "xpRequired": 300, "proficiencyBonus": 2, "tier": "Tier 1: Local Heroes" },
+    "3": { "xpRequired": 900, "proficiencyBonus": 2, "tier": "Tier 1: Local Heroes" },
+    "4": { "xpRequired": 2700, "proficiencyBonus": 2, "tier": "Tier 1: Local Heroes" },
+    "5": { "xpRequired": 6500, "proficiencyBonus": 3, "tier": "Tier 2: Heroes of the Realm" },
+    "6": { "xpRequired": 14000, "proficiencyBonus": 3, "tier": "Tier 2: Heroes of the Realm" },
+    "7": { "xpRequired": 23000, "proficiencyBonus": 3, "tier": "Tier 2: Heroes of the Realm" },
+    "8": { "xpRequired": 34000, "proficiencyBonus": 3, "tier": "Tier 2: Heroes of the Realm" },
+    "9": { "xpRequired": 48000, "proficiencyBonus": 4, "tier": "Tier 2: Heroes of the Realm" },
+    "10": { "xpRequired": 64000, "proficiencyBonus": 4, "tier": "Tier 2: Heroes of the Realm" },
+    "11": { "xpRequired": 85000, "proficiencyBonus": 4, "tier": "Tier 3: Masters of the Realm" },
+    "12": { "xpRequired": 100000, "proficiencyBonus": 4, "tier": "Tier 3: Masters of the Realm" },
+    "13": { "xpRequired": 120000, "proficiencyBonus": 5, "tier": "Tier 3: Masters of the World" },
+    "14": { "xpRequired": 140000, "proficiencyBonus": 5, "tier": "Tier 3: Masters of the World" },
+    "15": { "xpRequired": 165000, "proficiencyBonus": 5, "tier": "Tier 3: Masters of the World" },
+    "16": { "xpRequired": 195000, "proficiencyBonus": 5, "tier": "Tier 3: Masters of the World" },
+    "17": { "xpRequired": 225000, "proficiencyBonus": 6, "tier": "Tier 4: Masters of the Multiverse" },
+    "18": { "xpRequired": 265000, "proficiencyBonus": 6, "tier": "Tier 4: Masters of the Multiverse" },
+    "19": { "xpRequired": 305000, "proficiencyBonus": 6, "tier": "Tier 4: Masters of the Multiverse" },
+    "20": { "xpRequired": 355000, "proficiencyBonus": 6, "tier": "Tier 4: Masters of the Multiverse" }
+  },
+  "dmg2024EncounterBudgets": {
+    "description": "2024 DMG XP Budget per character by level. Sum the budgets for all characters in the party and spend directly on raw monster XP (no monster-count multipliers).",
+    "levels": {
+      "1": { "low": 50, "moderate": 75, "high": 100, "soloHeroWithSidekick": { "min": 100, "max": 200 } },
+      "2": { "low": 100, "moderate": 150, "high": 200, "soloHeroWithSidekick": { "min": 200, "max": 400 } },
+      "3": { "low": 150, "moderate": 225, "high": 400, "soloHeroWithSidekick": { "min": 300, "max": 700 } },
+      "4": { "low": 250, "moderate": 375, "high": 500, "soloHeroWithSidekick": { "min": 500, "max": 1100 } },
+      "5": { "low": 500, "moderate": 750, "high": 1100, "soloHeroWithSidekick": { "min": 1100, "max": 1800 } },
+      "6": { "low": 600, "moderate": 1000, "high": 1400, "soloHeroWithSidekick": { "min": 1400, "max": 2300 } },
+      "7": { "low": 750, "moderate": 1300, "high": 1700, "soloHeroWithSidekick": { "min": 1700, "max": 2900 } },
+      "8": { "low": 1000, "moderate": 1700, "high": 2100, "soloHeroWithSidekick": { "min": 2100, "max": 3900 } },
+      "9": { "low": 1300, "moderate": 2000, "high": 2600, "soloHeroWithSidekick": { "min": 2600, "max": 5000 } },
+      "10": { "low": 1600, "moderate": 2300, "high": 3100, "soloHeroWithSidekick": { "min": 3100, "max": 5900 } },
+      "11": { "low": 1900, "moderate": 2900, "high": 4100, "soloHeroWithSidekick": { "min": 4100, "max": 7200 } },
+      "12": { "low": 2200, "moderate": 3700, "high": 4700, "soloHeroWithSidekick": { "min": 4700, "max": 8400 } },
+      "13": { "low": 2600, "moderate": 4200, "high": 5400, "soloHeroWithSidekick": { "min": 5400, "max": 9800 } },
+      "14": { "low": 2900, "moderate": 4900, "high": 6200, "soloHeroWithSidekick": { "min": 6200, "max": 11200 } },
+      "15": { "low": 3900, "moderate": 5900, "high": 7800, "soloHeroWithSidekick": { "min": 7800, "max": 13000 } },
+      "16": { "low": 4300, "moderate": 6800, "high": 9800, "soloHeroWithSidekick": { "min": 9800, "max": 15500 } },
+      "17": { "low": 5000, "moderate": 7900, "high": 11700, "soloHeroWithSidekick": { "min": 11700, "max": 18000 } },
+      "18": { "low": 5700, "moderate": 9000, "high": 13000, "soloHeroWithSidekick": { "min": 13000, "max": 20500 } },
+      "19": { "low": 6100, "moderate": 9900, "high": 13500, "soloHeroWithSidekick": { "min": 13500, "max": 22500 } },
+      "20": { "low": 6400, "moderate": 10600, "high": 14200, "soloHeroWithSidekick": { "min": 14200, "max": 25000 } }
+    }
+  },
+  "difficultyClasses": {
+    "Very Easy": {
+      "dc": 5,
+      "guideline": "Almost anyone can do this without training; noticing something large in plain sight."
+    },
+    "Easy": {
+      "dc": 10,
+      "guideline": "Routine task for an adventurer; climbing a knotted rope, recalling common local lore."
+    },
+    "Medium": {
+      "dc": 15,
+      "guideline": "Requires training or natural talent; picking a standard lock, spotting a well-hidden tripwire."
+    },
+    "Hard": {
+      "dc": 20,
+      "guideline": "Challenging even for experts; swimming against a raging underground river, disarming an arcane glyph."
+    },
+    "Very Hard": {
+      "dc": 25,
+      "guideline": "Heroic feat; picking a masterwork dwarven vault, tracking a creature across bare rain-washed stone."
+    },
+    "Nearly Impossible": {
+      "dc": 30,
+      "guideline": "Legendary mastery required; persuading a hostile warlord to stand down mid-siege."
+    }
+  },
+  "improvisedDamage": {
+    "diceScales": [
+      {
+        "dice": "1d10",
+        "average": 5,
+        "severityByTier": "Levels 1-4 Nuisance",
+        "examples": ["Burned by coals", "Hit by a falling bookshelf", "Pricked by a poison needle"]
+      },
+      {
+        "dice": "2d10",
+        "average": 11,
+        "severityByTier": "Levels 5-10 Nuisance",
+        "examples": ["Struck by lightning", "Stumbling into a fire pit", "Falling into a 20-ft spiked pit"]
+      },
+      {
+        "dice": "4d10",
+        "average": 22,
+        "severityByTier": "Levels 1-4 Deadly / Levels 11-16 Nuisance",
+        "examples": ["Hit by falling rubble in a collapsing tunnel", "Tumbling into a vat of acid", "Fire-breathing statue trap"]
+      },
+      {
+        "dice": "10d10",
+        "average": 55,
+        "severityByTier": "Levels 5-10 Deadly / Levels 17-20 Nuisance",
+        "examples": ["Crushed by compacting walls", "Hit by whirling steel blades", "Wading through a lava stream"]
+      },
+      {
+        "dice": "18d10",
+        "average": 99,
+        "severityByTier": "Levels 11-16 Deadly",
+        "examples": ["Submerged in lava", "Hit by a crashing flying fortress"]
+      },
+      {
+        "dice": "24d10",
+        "average": 132,
+        "severityByTier": "Levels 17-20 Deadly",
+        "examples": ["Tumbling into a vortex of fire on the Elemental Plane of Fire", "Crushed in the jaws of a godlike monster"]
+      }
+    ],
+    "byTier": {
+      "tier1_levels1to4": { "nuisance": "1d10", "deadly": "4d10" },
+      "tier2_levels5to10": { "nuisance": "2d10", "deadly": "10d10" },
+      "tier3_levels11to16": { "nuisance": "4d10", "deadly": "18d10" },
+      "tier4_levels17to20": { "nuisance": "10d10", "deadly": "24d10" }
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "ability": "DEX",
+      "description": "Stay on your feet in a tricky situation, balance on a tightrope or icy ledge, perform acrobatic stunts, or escape a grapple."
+    },
+    "Animal Handling": {
+      "ability": "WIS",
+      "description": "Calm down a domesticated animal, keep a mount from getting spooked, or intuit an animal's intentions."
+    },
+    "Arcana": {
+      "ability": "INT",
+      "description": "Recall lore about spells, eldritch symbols, magical traditions, the planes of existence, and the inhabitants of those planes."
+    },
+    "Athletics": {
+      "ability": "STR",
+      "description": "Climb a sheer or slippery cliff, jump an unusually long distance, swim in treacherous currents, or grapple/shove a creature."
+    },
+    "Deception": {
+      "ability": "CHA",
+      "description": "Convincingly hide the truth, either verbally or through your actions, fast-talk a guard, or maintain a disguise."
+    },
+    "History": {
+      "ability": "INT",
+      "description": "Recall lore about historical events, legendary people, ancient kingdoms, past disputes, recent wars, and lost civilizations."
+    },
+    "Insight": {
+      "ability": "WIS",
+      "description": "Determine the true intentions of a creature, such as when searching out a lie or predicting someone's next move from body language."
+    },
+    "Intimidation": {
+      "ability": "CHA",
+      "description": "Attempt to influence someone through overt threats, hostile actions, and physical violence."
+    },
+    "Investigation": {
+      "ability": "INT",
+      "description": "Look around for clues and make deductions based on those clues, deduce the location of a hidden object, or discern how a trap works."
+    },
+    "Medicine": {
+      "ability": "WIS",
+      "description": "Try to stabilize a dying companion (DC 10) or diagnose an illness, poison, or cause of death."
+    },
+    "Nature": {
+      "ability": "INT",
+      "description": "Recall lore about terrain, plants and animals, the weather, and natural cycles."
+    },
+    "Perception": {
+      "ability": "WIS",
+      "description": "Spot, hear, or otherwise detect the presence of something; measures general awareness of your surroundings and keenness of senses."
+    },
+    "Performance": {
+      "ability": "CHA",
+      "description": "Delight an audience with music, dance, acting, storytelling, or some other form of entertainment."
+    },
+    "Persuasion": {
+      "ability": "CHA",
+      "description": "Influence someone or a group of people with tact, social graces, or good nature; act in good faith to foster friendships or negotiate peace."
+    },
+    "Religion": {
+      "ability": "INT",
+      "description": "Recall lore about deities, rites and prayers, religious hierarchies, holy symbols, undead ecology, and the practices of secret cults."
+    },
+    "Sleight of Hand": {
+      "ability": "DEX",
+      "description": "Attempt an act of legerdemain or manual trickery, such as planting something on someone else, concealing an object, or picking a pocket."
+    },
+    "Stealth": {
+      "ability": "DEX",
+      "description": "Attempt to conceal yourself from enemies, slink past guards, slip away without being noticed, or sneak up on someone without being seen or heard."
+    },
+    "Survival": {
+      "ability": "WIS",
+      "description": "Follow tracks, hunt wild game, guide your group through frozen wastelands, identify signs of nearby creatures, or avoid natural hazards."
+    }
+  },
+  "conditions": {
+    "Blinded": {
+      "name": "Blinded",
+      "effects": [
+        "Automatically fails any ability check that requires sight.",
+        "Attack rolls against the creature have Advantage.",
+        "The creature's attack rolls have Disadvantage."
+      ]
+    },
+    "Charmed": {
+      "name": "Charmed",
+      "effects": [
+        "Can't attack the charmer or target the charmer with harmful abilities or magical effects.",
+        "The charmer has Advantage on any ability check to interact socially with the creature."
+      ]
+    },
+    "Deafened": {
+      "name": "Deafened",
+      "effects": [
+        "Automatically fails any ability check that requires hearing."
+      ]
+    },
+    "Exhaustion": {
+      "name": "Exhaustion",
+      "effects": [
+        "Level 1: Disadvantage on ability checks.",
+        "Level 2: Speed halved.",
+        "Level 3: Disadvantage on attack rolls and saving throws.",
+        "Level 4: Hit point maximum halved.",
+        "Level 5: Speed reduced to 0.",
+        "Level 6: Death."
+      ]
+    },
+    "Frightened": {
+      "name": "Frightened",
+      "effects": [
+        "Has Disadvantage on ability checks and attack rolls while the source of its fear is within line of sight.",
+        "The creature can't willingly move closer to the source of its fear."
+      ]
+    },
+    "Grappled": {
+      "name": "Grappled",
+      "effects": [
+        "A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed.",
+        "The condition ends if the grappler is Incapacitated or if an effect removes the grappled creature from the reach of the grappler."
+      ]
+    },
+    "Incapacitated": {
+      "name": "Incapacitated",
+      "effects": [
+        "An incapacitated creature can't take Actions or Reactions.",
+        "Immediately loses Concentration on any spell."
+      ]
+    },
+    "Invisible": {
+      "name": "Invisible",
+      "effects": [
+        "Impossible to see without the aid of magic or a special sense (counts as Heavily Obscured for hiding).",
+        "Attack rolls against the creature have Disadvantage.",
+        "The creature's attack rolls have Advantage."
+      ]
+    },
+    "Paralyzed": {
+      "name": "Paralyzed",
+      "effects": [
+        "Is Incapacitated and can't move or speak.",
+        "Automatically fails Strength and Dexterity saving throws.",
+        "Attack rolls against the creature have Advantage.",
+        "Any attack that hits the creature is a Critical Hit if the attacker is within 5 feet of the creature."
+      ]
+    },
+    "Petrified": {
+      "name": "Petrified",
+      "effects": [
+        "Transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance (usually stone); weight increases by a factor of 10.",
+        "Is Incapacitated, can't move or speak, and is unaware of its surroundings.",
+        "Attack rolls against the creature have Advantage.",
+        "Automatically fails Strength and Dexterity saving throws.",
+        "Has Resistance to all damage, and is Immune to poison and disease."
+      ]
+    },
+    "Poisoned": {
+      "name": "Poisoned",
+      "effects": [
+        "A poisoned creature has Disadvantage on attack rolls and ability checks."
+      ]
+    },
+    "Prone": {
+      "name": "Prone",
+      "effects": [
+        "Only movement option is to crawl, unless it stands up (spending half its movement speed).",
+        "The creature has Disadvantage on attack rolls.",
+        "An attack roll against the creature has Advantage if the attacker is within 5 feet, otherwise the attack roll has Disadvantage."
+      ]
+    },
+    "Restrained": {
+      "name": "Restrained",
+      "effects": [
+        "A restrained creature's speed becomes 0, and it can't benefit from any bonus to its speed.",
+        "Attack rolls against the creature have Advantage, and the creature's attack rolls have Disadvantage.",
+        "The creature has Disadvantage on Dexterity saving throws."
+      ]
+    },
+    "Stunned": {
+      "name": "Stunned",
+      "effects": [
+        "Is Incapacitated, can't move, and can speak only falteringly.",
+        "Automatically fails Strength and Dexterity saving throws.",
+        "Attack rolls against the creature have Advantage."
+      ]
+    },
+    "Unconscious": {
+      "name": "Unconscious",
+      "effects": [
+        "Is Incapacitated, can't move or speak, and is unaware of its surroundings.",
+        "Drops whatever it's holding and falls Prone.",
+        "Automatically fails Strength and Dexterity saving throws.",
+        "Attack rolls against the creature have Advantage.",
+        "Any attack that hits the creature is a Critical Hit if the attacker is within 5 feet of the creature."
+      ]
+    }
+  },
+  "socialAttitudes": {
+    "Friendly": {
+      "attitude": "Friendly",
+      "behavior": "Wishes the party well; offers help, information, or fair bargains if risk is low.",
+      "influenceRollModifier": "Advantage",
+      "defaultDC": 15,
+      "effectiveBaselineDC": 10,
+      "applicableSkills": ["Persuasion", "Deception", "Intimidation", "Animal Handling"]
+    },
+    "Indifferent": {
+      "attitude": "Indifferent",
+      "behavior": "Neutral or self-interested; cares about their own safety, coin, or duty.",
+      "influenceRollModifier": "Normal",
+      "defaultDC": 15,
+      "effectiveBaselineDC": 15,
+      "applicableSkills": ["Persuasion", "Deception", "Intimidation", "Animal Handling"]
+    },
+    "Hostile": {
+      "attitude": "Hostile",
+      "behavior": "Opposes the party; seeks to thwart, deceive, drive off, or attack them.",
+      "influenceRollModifier": "Disadvantage",
+      "defaultDC": 15,
+      "effectiveBaselineDC": 20,
+      "applicableSkills": ["Persuasion", "Deception", "Intimidation", "Animal Handling"]
+    }
+  },
+  "treasureThemes": {
+    "Arcana": {
+      "description": "Magical knowledge and mysticism: gemstones, spell scrolls, potions, wands, staffs, rings, and wondrous items.",
+      "hoardByTier": {
+        "CR_0_to_4": {
+          "monetaryFormula": "2d4 * 100 GP",
+          "averageGP": 500,
+          "sampleValuables": ["3x Onyx gemstones (50 GP each)", "Silver-inlaid arcane primer (75 GP)"],
+          "sampleMagicItems": ["Potion of Healing (2d4 + 2)", "Spell Scroll (1st-level: Identify or Shield)", "Wand of Magic Detection", "Pearl of Power"]
+        },
+        "CR_5_to_10": {
+          "monetaryFormula": "8d10 * 100 GP",
+          "averageGP": 4400,
+          "sampleValuables": ["4x Star Rose Quartz (50 GP)", "2x Black Pearls (500 GP)", "Obsidian planar astrolabe (750 GP)"],
+          "sampleMagicItems": ["Potion of Greater Healing (4d4 + 4)", "Spell Scroll (3rd-level: Fireball or Counterspell)", "Wand of the War Mage +1", "Ring of Spell Storing"]
+        },
+        "CR_11_to_16": {
+          "monetaryFormula": "8d8 * 1000 GP",
+          "averageGP": 36000,
+          "sampleValuables": ["6x Fire Opals (1000 GP)", "Sapphire-studded grimoire clasp (2500 GP)"],
+          "sampleMagicItems": ["Staff of Power", "Robe of Stars", "Spell Scroll (6th-level: Disintegrate)"]
+        },
+        "CR_17_plus": {
+          "monetaryFormula": "6d10 * 10000 GP",
+          "averageGP": 330000,
+          "sampleValuables": ["10x Jacinths and Diamonds (5000 GP each)"],
+          "sampleMagicItems": ["Staff of the Magi", "Robe of the Archmagi", "Tome of Clear Thought"]
+        }
+      }
+    },
+    "Armaments": {
+      "description": "Martial war-gear: coins, trade bars, +1/+2/+3 weapons, shields, armor, and magical ammunition.",
+      "hoardByTier": {
+        "CR_0_to_4": {
+          "monetaryFormula": "2d4 * 100 GP",
+          "averageGP": 500,
+          "sampleValuables": ["Silver trade bars (25 GP each)", "Masterwork dwarven whetstone and scabbard (50 GP)"],
+          "sampleMagicItems": ["+1 Longsword", "+1 Shield", "+1 Ammunition (5 arrows/bolts)", "Javelin of Lightning", "Mithral Chain Shirt"]
+        },
+        "CR_5_to_10": {
+          "monetaryFormula": "8d10 * 100 GP",
+          "averageGP": 4400,
+          "sampleValuables": ["Gold trade bars (250 GP each)", "Electrum ceremonial helm (750 GP)"],
+          "sampleMagicItems": ["+2 Weapon", "Flame Tongue Longsword", "+1 Half Plate or Plate Armor", "Sentinel Shield", "Bracers of Defense"]
+        },
+        "CR_11_to_16": {
+          "monetaryFormula": "8d8 * 1000 GP",
+          "averageGP": 36000,
+          "sampleValuables": ["Platinum trade bars (500 GP each)", "Jeweled warhorn (2500 GP)"],
+          "sampleMagicItems": ["Frost Brand", "Dwarven Thrower", "+2 Plate Armor", "Animated Shield"]
+        },
+        "CR_17_plus": {
+          "monetaryFormula": "6d10 * 10000 GP",
+          "averageGP": 330000,
+          "sampleValuables": ["Royal treasury chests of platinum and rubies"],
+          "sampleMagicItems": ["Vorpal Sword", "Defender", "+3 Plate Armor"]
+        }
+      }
+    },
+    "Implements": {
+      "description": "Adventuring tools and utility: coins, mundane gear, thieves' tools, bags of holding, boots, cloaks, and utility magic items.",
+      "hoardByTier": {
+        "CR_0_to_4": {
+          "monetaryFormula": "2d4 * 100 GP",
+          "averageGP": 500,
+          "sampleValuables": ["Silk pouch of gold sovereigns", "Silvered thieves' tools (100 GP)"],
+          "sampleMagicItems": ["Bag of Holding", "Cloak of Elvenkind", "Boots of Elvenkind", "Gloves of Thievery", "Immovable Rod", "Rope of Climbing"]
+        },
+        "CR_5_to_10": {
+          "monetaryFormula": "8d10 * 100 GP",
+          "averageGP": 4400,
+          "sampleValuables": ["Spyglass set with electrum filigree (1000 GP)", "Merchant guild letters of credit"],
+          "sampleMagicItems": ["Cloak of Displacement", "Winged Boots", "Chime of Opening", "Dimensional Shackles", "Portable Hole"]
+        },
+        "CR_11_to_16": {
+          "monetaryFormula": "8d8 * 1000 GP",
+          "averageGP": 36000,
+          "sampleValuables": ["Masterwork clockwork astrolabe (2500 GP)"],
+          "sampleMagicItems": ["Carpet of Flying", "Cloak of Invisibility", "Helm of Teleportation"]
+        },
+        "CR_17_plus": {
+          "monetaryFormula": "6d10 * 10000 GP",
+          "averageGP": 330000,
+          "sampleValuables": ["Planar trade charters and astral diamonds"],
+          "sampleMagicItems": ["Cubic Gate", "Manual of Quickness of Action", " Sovereign Glue"]
+        }
+      }
+    },
+    "Relics": {
+      "description": "Sacred, ancient, or cursed artifacts: art objects, holy symbols, divine scrolls, censers, and relic magic items.",
+      "hoardByTier": {
+        "CR_0_to_4": {
+          "monetaryFormula": "2d4 * 100 GP",
+          "averageGP": 500,
+          "sampleValuables": ["Gold reliquary chalice set with garnets (150 GP)", "Vials of Holy Water (25 GP each)"],
+          "sampleMagicItems": ["Potion of Healing", "Periapt of Wound Closure", "Amulet of Proof against Detection and Location", "Spell Scroll (Lesser Restoration)"]
+        },
+        "CR_5_to_10": {
+          "monetaryFormula": "8d10 * 100 GP",
+          "averageGP": 4400,
+          "sampleValuables": ["Idol of solid gold with ruby eyes (750 GP)", "Platinum censer (500 GP)"],
+          "sampleMagicItems": ["Mace of Disruption", "Necklace of Prayer Beads", "Sun Blade", "Periapt of Proof against Poison"]
+        },
+        "CR_11_to_16": {
+          "monetaryFormula": "8d8 * 1000 GP",
+          "averageGP": 36000,
+          "sampleValuables": ["Bejeweled crown of a fallen dynasty (7500 GP)"],
+          "sampleMagicItems": ["Candle of Invocation", "Rod of Resurrection", "Scarab of Protection"]
+        },
+        "CR_17_plus": {
+          "monetaryFormula": "6d10 * 10000 GP",
+          "averageGP": 330000,
+          "sampleValuables": ["Sacred astral vestments and divine regalia"],
+          "sampleMagicItems": ["Holy Avenger", "Talisman of Pure Good", "Book of Exalted Deeds"]
+        }
+      }
+    }
+  },
+  "races": [
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "size": "Medium",
+      "speed": 25,
+      "abilityBonuses": { "CON": 2 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Dwarvish"],
+      "traits": [
+        "Dwarven Resilience (Advantage on saving throws against poison, Resistance against poison damage)",
+        "Dwarven Combat Training (Proficiency with battleaxe, handaxe, light hammer, warhammer)",
+        "Tool Proficiency (Smith's tools, brewer's supplies, or mason's tools)",
+        "Stonecunning (Double proficiency bonus on INT [History] checks related to the origin of stonework)"
+      ],
+      "subraces": [
+        {
+          "id": "hill-dwarf",
+          "name": "Hill Dwarf",
+          "abilityBonuses": { "WIS": 1 },
+          "traits": ["Dwarven Toughness (+1 HP maximum per level)"]
+        },
+        {
+          "id": "mountain-dwarf",
+          "name": "Mountain Dwarf",
+          "abilityBonuses": { "STR": 2 },
+          "traits": ["Dwarven Armor Training (Proficiency with light and medium armor)"]
+        }
+      ]
+    },
+    {
+      "id": "elf",
+      "name": "Elf",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "DEX": 2 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Elvish"],
+      "traits": [
+        "Keen Senses (Proficiency in Perception)",
+        "Fey Ancestry (Advantage on saving throws against being Charmed; magic can't put you to sleep)",
+        "Trance (4 hours of meditation grants the benefit of an 8-hour Long Rest)"
+      ],
+      "subraces": [
+        {
+          "id": "high-elf",
+          "name": "High Elf",
+          "abilityBonuses": { "INT": 1 },
+          "traits": [
+            "Elf Weapon Training (Longsword, shortsword, shortbow, longbow)",
+            "Cantrip (One Wizard cantrip using INT)",
+            "Extra Language (One additional language of choice)"
+          ]
+        },
+        {
+          "id": "wood-elf",
+          "name": "Wood Elf",
+          "abilityBonuses": { "WIS": 1 },
+          "speed": 35,
+          "traits": [
+            "Elf Weapon Training (Longsword, shortsword, shortbow, longbow)",
+            "Fleet of Foot (Base walking speed increases to 35 ft.)",
+            "Mask of the Wild (Can attempt to Hide when only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena)"
+          ]
+        },
+        {
+          "id": "drow",
+          "name": "Dark Elf (Drow)",
+          "abilityBonuses": { "CHA": 1 },
+          "senses": ["Superior Darkvision 120 ft."],
+          "traits": [
+            "Sunlight Sensitivity (Disadvantage on attack rolls and sight-based Perception checks in direct sunlight)",
+            "Drow Magic (Dancing Lights cantrip; Faerie Fire at L3; Darkness at L5, using CHA)",
+            "Drow Weapon Training (Rapiers, shortswords, hand crossbows)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "size": "Small",
+      "speed": 25,
+      "abilityBonuses": { "DEX": 2 },
+      "senses": ["Normal Vision"],
+      "languages": ["Common", "Halfling"],
+      "traits": [
+        "Lucky (When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll)",
+        "Brave (Advantage on saving throws against being Frightened)",
+        "Halfling Nimbleness (Can move through the space of any creature that is of a size larger than yours)"
+      ],
+      "subraces": [
+        {
+          "id": "lightfoot-halfling",
+          "name": "Lightfoot Halfling",
+          "abilityBonuses": { "CHA": 1 },
+          "traits": ["Naturally Stealthy (Can attempt to Hide even when obscured only by a creature that is at least one size larger than you)"]
+        },
+        {
+          "id": "stout-halfling",
+          "name": "Stout Halfling",
+          "abilityBonuses": { "CON": 1 },
+          "traits": ["Stout Resilience (Advantage on saving throws against poison, and Resistance against poison damage)"]
+        }
+      ]
+    },
+    {
+      "id": "human",
+      "name": "Human",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "STR": 1, "DEX": 1, "CON": 1, "INT": 1, "WIS": 1, "CHA": 1 },
+      "senses": ["Normal Vision"],
+      "languages": ["Common", "One extra language of choice"],
+      "traits": ["Versatile Heritage (+1 to all six ability scores)"],
+      "subraces": [
+        {
+          "id": "standard-human",
+          "name": "Standard Human",
+          "abilityBonuses": { "STR": 1, "DEX": 1, "CON": 1, "INT": 1, "WIS": 1, "CHA": 1 },
+          "traits": ["+1 to all six ability scores"]
+        },
+        {
+          "id": "variant-human",
+          "name": "Variant Human",
+          "abilityBonuses": { "ANY_TWO": 1 },
+          "traits": [
+            "+1 to two different ability scores of choice",
+            "Skills (Proficiency in one skill of choice)",
+            "Feat (Gain one Feat of choice at Level 1)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragonborn",
+      "name": "Dragonborn",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "STR": 2, "CHA": 1 },
+      "senses": ["Normal Vision"],
+      "languages": ["Common", "Draconic"],
+      "traits": [
+        "Draconic Ancestry (Choose Black/Copper [Acid], Blue/Bronze [Lightning], Brass/Gold/Red [Fire], Green [Poison], or Silver/White [Cold])",
+        "Breath Weapon (Action, 1/Short or Long Rest: 15-ft cone or 5x30-ft line, DC 8 + CON mod + PB, 2d6 elemental damage [3d6 at L6, 4d6 at L11, 5d6 at L16], half on save)",
+        "Damage Resistance (Resistance to the damage type associated with your Draconic Ancestry)"
+      ],
+      "subraces": []
+    },
+    {
+      "id": "gnome",
+      "name": "Gnome",
+      "size": "Small",
+      "speed": 25,
+      "abilityBonuses": { "INT": 2 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Gnomish"],
+      "traits": [
+        "Gnome Cunning (Advantage on all Intelligence, Wisdom, and Charisma saving throws against magic)"
+      ],
+      "subraces": [
+        {
+          "id": "forest-gnome",
+          "name": "Forest Gnome",
+          "abilityBonuses": { "DEX": 1 },
+          "traits": [
+            "Natural Illusionist (Minor Illusion cantrip using INT)",
+            "Speak with Small Beasts (Communicate simple ideas with Small or smaller beasts)"
+          ]
+        },
+        {
+          "id": "rock-gnome",
+          "name": "Rock Gnome",
+          "abilityBonuses": { "CON": 1 },
+          "traits": [
+            "Artificer's Lore (Double proficiency bonus on INT [History] checks related to magic items, alchemical objects, or technological devices)",
+            "Tinker (Proficiency with tinker's tools; construct tiny clockwork devices)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "half-elf",
+      "name": "Half-Elf",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "CHA": 2, "ANY_TWO": 1 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Elvish", "One extra language of choice"],
+      "traits": [
+        "Fey Ancestry (Advantage on saving throws against being Charmed; magic can't put you to sleep)",
+        "Skill Versatility (Gain proficiency in two skills of your choice)"
+      ],
+      "subraces": []
+    },
+    {
+      "id": "half-orc",
+      "name": "Half-Orc",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "STR": 2, "CON": 1 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Orc"],
+      "traits": [
+        "Menacing (Proficiency in the Intimidation skill)",
+        "Relentless Endurance (1/Long Rest: When reduced to 0 HP but not killed outright, drop to 1 HP instead)",
+        "Savage Attacks (When you score a Critical Hit with a melee weapon attack, roll one of the weapon's damage dice one additional time and add it to the extra damage)"
+      ],
+      "subraces": []
+    },
+    {
+      "id": "tiefling",
+      "name": "Tiefling",
+      "size": "Medium",
+      "speed": 30,
+      "abilityBonuses": { "CHA": 2, "INT": 1 },
+      "senses": ["Darkvision 60 ft."],
+      "languages": ["Common", "Infernal"],
+      "traits": [
+        "Hellish Resistance (Resistance to Fire damage)",
+        "Infernal Legacy (Thaumaturgy cantrip; Hellish Rebuke as a 2nd-level spell 1/Long Rest at L3; Darkness 1/Long Rest at L5, using CHA)"
+      ],
+      "subraces": []
+    }
+  ],
+  "classes": [
+    {
+      "id": "barbarian",
+      "name": "Barbarian",
+      "hitDie": "d12",
+      "primaryAbility": ["STR"],
+      "savingThrows": ["STR", "CON"],
+      "armorProficiencies": ["Light armor", "Medium armor", "Shields"],
+      "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+      "spellcasting": { "isSpellcaster": false, "ability": null, "progression": "None" },
+      "coreFeatures": [
+        { "level": 1, "name": "Rage", "description": "Bonus Action (2/Long Rest at L1, 3 at L3): Advantage on STR checks and STR saves, +2 melee damage using STR, and Resistance to Bludgeoning, Piercing, and Slashing damage for 1 minute." },
+        { "level": 1, "name": "Unarmored Defense", "description": "While not wearing armor, AC = 10 + DEX mod + CON mod (can use a shield)." },
+        { "level": 2, "name": "Reckless Attack", "description": "Gain Advantage on melee weapon attack rolls using STR this turn, but attack rolls against you have Advantage until your next turn." },
+        { "level": 2, "name": "Danger Sense", "description": "Advantage on DEX saving throws against effects you can see (such as traps and spells)." },
+        { "level": 3, "name": "Primal Path", "description": "Choose a subclass (e.g., Path of the Berserker or Path of the Totem Warrior)." },
+        { "level": 5, "name": "Extra Attack & Fast Movement", "description": "Attack twice when taking the Attack action; speed increases by +10 ft. while not wearing heavy armor." }
+      ]
+    },
+    {
+      "id": "bard",
+      "name": "Bard",
+      "hitDie": "d8",
+      "primaryAbility": ["CHA"],
+      "savingThrows": ["DEX", "CHA"],
+      "armorProficiencies": ["Light armor"],
+      "weaponProficiencies": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+      "spellcasting": { "isSpellcaster": true, "ability": "CHA", "progression": "Full", "ritualCasting": true },
+      "coreFeatures": [
+        { "level": 1, "name": "Bardic Inspiration", "description": "Bonus Action (CHA mod times per Long Rest; Short Rest at L5+): Grant one creature within 60 ft. a d6 Inspiration die (d8 at L5, d10 at L10, d12 at L15) to add to an ability check, attack roll, or saving throw." },
+        { "level": 2, "name": "Jack of All Trades", "description": "Add half your Proficiency Bonus (rounded down) to any ability check you make that doesn't already include your PB." },
+        { "level": 2, "name": "Song of Rest", "description": "Allies spending Hit Dice during a Short Rest regain an extra 1d6 HP." },
+        { "level": 3, "name": "Bard College & Expertise", "description": "Choose a subclass (e.g., College of Lore or College of Valor) and double PB for two chosen skill proficiencies." },
+        { "level": 5, "name": "Font of Inspiration", "description": "Regain all expended uses of Bardic Inspiration on a Short or Long Rest; die upgrades to d8." }
+      ]
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "hitDie": "d8",
+      "primaryAbility": ["WIS"],
+      "savingThrows": ["WIS", "CHA"],
+      "armorProficiencies": ["Light armor", "Medium armor", "Shields (Heavy armor with Life/Tempest/War Domains)"],
+      "weaponProficiencies": ["Simple weapons"],
+      "spellcasting": { "isSpellcaster": true, "ability": "WIS", "progression": "Full", "ritualCasting": true, "preparedFormula": "WIS mod + Cleric level" },
+      "coreFeatures": [
+        { "level": 1, "name": "Divine Domain", "description": "Choose a domain (e.g., Life, Light, Trickery, Knowledge, Tempest, War) granting always-prepared domain spells and bonus proficiencies." },
+        { "level": 2, "name": "Channel Divinity (1/Short Rest)", "description": "Turn Undead (Action: Each Undead within 30 ft. must make a WIS save or be Turned for 1 minute) or use your Domain's Channel Divinity option." },
+        { "level": 5, "name": "Destroy Undead (CR 1/2)", "description": "Undead of CR 1/2 or lower that fail their saving throw against your Turn Undead are instantly destroyed." }
+      ]
+    },
+    {
+      "id": "druid",
+      "name": "Druid",
+      "hitDie": "d8",
+      "primaryAbility": ["WIS"],
+      "savingThrows": ["INT", "WIS"],
+      "armorProficiencies": ["Light armor", "Medium armor", "Shields (nonmetal)"],
+      "weaponProficiencies": ["Clubs", "Daggers", "Darts", "Javelins", "Maces", "Quarterstaffs", "Scimitars", "Sickles", "Slings", "Spears"],
+      "spellcasting": { "isSpellcaster": true, "ability": "WIS", "progression": "Full", "ritualCasting": true, "preparedFormula": "WIS mod + Druid level" },
+      "coreFeatures": [
+        { "level": 1, "name": "Druidic", "description": "Know the secret language of druids and leave hidden nature symbols." },
+        { "level": 2, "name": "Wild Shape (2/Short Rest)", "description": "Magically assume the shape of a Beast you have seen before (Action, or Bonus Action for Circle of the Moon)." },
+        { "level": 2, "name": "Druid Circle", "description": "Choose a subclass (e.g., Circle of the Land or Circle of the Moon)." }
+      ]
+    },
+    {
+      "id": "fighter",
+      "name": "Fighter",
+      "hitDie": "d10",
+      "primaryAbility": ["STR", "DEX"],
+      "savingThrows": ["STR", "CON"],
+      "armorProficiencies": ["All armor", "Shields"],
+      "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+      "spellcasting": { "isSpellcaster": false, "ability": "INT (Eldritch Knight only)", "progression": "Third (Subclass)" },
+      "coreFeatures": [
+        { "level": 1, "name": "Fighting Style", "description": "Choose Archery (+2 ranged attack rolls), Defense (+1 AC in armor), Dueling (+2 melee damage with 1H weapon), Great Weapon Fighting, Protection, or Two-Weapon Fighting." },
+        { "level": 1, "name": "Second Wind (1/Short Rest)", "description": "Bonus Action: Regain Hit Points equal to 1d10 + Fighter level." },
+        { "level": 2, "name": "Action Surge (1/Short Rest)", "description": "On your turn, take one additional Action on top of your regular Action and a possible Bonus Action." },
+        { "level": 3, "name": "Martial Archetype", "description": "Choose Champion (Improved Critical 19-20), Battle Master (4 Superiority Dice d8 & Maneuvers), or Eldritch Knight (Arcane spellcasting)." },
+        { "level": 5, "name": "Extra Attack", "description": "Attack twice, instead of once, whenever you take the Attack action on your turn (3 times at L11, 4 times at L20)." }
+      ]
+    },
+    {
+      "id": "monk",
+      "name": "Monk",
+      "hitDie": "d8",
+      "primaryAbility": ["DEX", "WIS"],
+      "savingThrows": ["STR", "DEX"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Simple weapons", "Shortswords"],
+      "spellcasting": { "isSpellcaster": false, "ability": "WIS (Ki Save DC)", "progression": "None" },
+      "coreFeatures": [
+        { "level": 1, "name": "Unarmored Defense", "description": "While wearing no armor and not wielding a shield, AC = 10 + DEX mod + WIS mod." },
+        { "level": 1, "name": "Martial Arts", "description": "Use DEX instead of STR for unarmed strikes and monk weapons; roll d4 (d6 at L5, d8 at L11, d10 at L17) for unarmed damage; make 1 unarmed strike as a Bonus Action after attacking." },
+        { "level": 2, "name": "Ki (Recharges on Short Rest)", "description": "Spend Ki Points (equal to Monk level) for Flurry of Blows (2 unarmed strikes as Bonus Action), Patient Defense (Dodge as Bonus Action), or Step of the Wind (Dash/Disengage as Bonus Action)." },
+        { "level": 3, "name": "Monastic Tradition & Deflect Missiles", "description": "Choose Way of the Open Hand, Way of Shadow, or Way of the Four Elements; use Reaction to reduce ranged weapon damage by 1d10 + DEX mod + Monk level." },
+        { "level": 5, "name": "Extra Attack & Stunning Strike", "description": "Attack twice per Attack action; spend 1 Ki Point on hit to force CON save (DC 8 + PB + WIS mod) or target is Stunned until the end of your next turn." }
+      ]
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "hitDie": "d10",
+      "primaryAbility": ["STR", "CHA"],
+      "savingThrows": ["WIS", "CHA"],
+      "armorProficiencies": ["All armor", "Shields"],
+      "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+      "spellcasting": { "isSpellcaster": true, "ability": "CHA", "progression": "Half", "preparedFormula": "CHA mod + floor(Paladin level / 2)" },
+      "coreFeatures": [
+        { "level": 1, "name": "Divine Sense & Lay on Hands", "description": "Detect Celestials, Fiends, and Undead within 60 ft.; healing pool of (Paladin level * 5) HP that restores HP or cures 1 disease/poison for 5 HP." },
+        { "level": 2, "name": "Fighting Style, Spellcasting & Divine Smite", "description": "When you hit with a melee weapon attack, expend one spell slot to deal an extra 2d8 Radiant damage (+1d8 per slot level above 1st, +1d8 vs. Undead or Fiends)." },
+        { "level": 3, "name": "Sacred Oath & Divine Health", "description": "Immune to disease; swear Oath of Devotion, Oath of the Ancients, or Oath of Vengeance (granting Channel Divinity)." },
+        { "level": 5, "name": "Extra Attack", "description": "Attack twice whenever you take the Attack action." },
+        { "level": 6, "name": "Aura of Protection", "description": "You and friendly creatures within 10 ft. gain a bonus to all saving throws equal to your CHA modifier (minimum +1)." }
+      ]
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "hitDie": "d10",
+      "primaryAbility": ["DEX", "WIS"],
+      "savingThrows": ["STR", "DEX"],
+      "armorProficiencies": ["Light armor", "Medium armor", "Shields"],
+      "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+      "spellcasting": { "isSpellcaster": true, "ability": "WIS", "progression": "Half" },
+      "coreFeatures": [
+        { "level": 1, "name": "Favored Enemy & Natural Explorer", "description": "Advantage on Survival checks to track and INT checks to recall lore about favored enemies; expertise and travel benefits in favored terrain." },
+        { "level": 2, "name": "Fighting Style & Spellcasting", "description": "Gain Fighting Style and Ranger spells (such as Hunter's Mark and Cure Wounds)." },
+        { "level": 3, "name": "Ranger Archetype", "description": "Choose Hunter (Colossus Slayer +1d8 damage once per turn against wounded foes) or Beast Master." },
+        { "level": 5, "name": "Extra Attack", "description": "Attack twice whenever you take the Attack action." }
+      ]
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "hitDie": "d8",
+      "primaryAbility": ["DEX"],
+      "savingThrows": ["DEX", "INT"],
+      "armorProficiencies": ["Light armor"],
+      "weaponProficiencies": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+      "spellcasting": { "isSpellcaster": false, "ability": "INT (Arcane Trickster only)", "progression": "Third (Subclass)" },
+      "coreFeatures": [
+        { "level": 1, "name": "Expertise, Sneak Attack & Thieves' Cant", "description": "Double PB for two skills/thieves' tools; once per turn deal extra 1d6 damage (2d6 at L3, 3d6 at L5, up to 10d6 at L19) with a Finesse or Ranged weapon if you have Advantage or an ally is within 5 ft. of the target." },
+        { "level": 2, "name": "Cunning Action", "description": "Take a Bonus Action on each of your turns in combat to Dash, Disengage, or Hide." },
+        { "level": 3, "name": "Roguish Archetype", "description": "Choose Thief (Fast Hands, Second-Story Work), Assassin (Assassinate), or Arcane Trickster (Mage Hand Legerdemain & spells)." },
+        { "level": 5, "name": "Uncanny Dodge", "description": "Reaction: When an attacker that you can see hits you with an attack, halve the attack's damage against you." },
+        { "level": 7, "name": "Evasion", "description": "Take 0 damage on a successful DEX save against half-damage AoE effects, and only half damage on a failed save." }
+      ]
+    },
+    {
+      "id": "sorcerer",
+      "name": "Sorcerer",
+      "hitDie": "d6",
+      "primaryAbility": ["CHA"],
+      "savingThrows": ["CON", "CHA"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+      "spellcasting": { "isSpellcaster": true, "ability": "CHA", "progression": "Full" },
+      "coreFeatures": [
+        { "level": 1, "name": "Sorcerous Origin", "description": "Choose Draconic Bloodline (Base AC 13 + DEX mod, +1 HP per level, elemental affinity) or Wild Magic (Tides of Chaos & Wild Magic Surge)." },
+        { "level": 2, "name": "Font of Magic", "description": "Gain Sorcery Points equal to Sorcerer level; convert Sorcery Points to Spell Slots and vice versa as a Bonus Action." },
+        { "level": 3, "name": "Metamagic", "description": "Twist spells using Sorcery Points: Careful Spell, Distant Spell, Empowered Spell, Extended Spell, Heightened Spell, Quickened Spell, Subtle Spell, or Twinned Spell." }
+      ]
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "hitDie": "d8",
+      "primaryAbility": ["CHA"],
+      "savingThrows": ["WIS", "CHA"],
+      "armorProficiencies": ["Light armor"],
+      "weaponProficiencies": ["Simple weapons"],
+      "spellcasting": { "isSpellcaster": true, "ability": "CHA", "progression": "Pact Magic (Recharges on Short Rest)" },
+      "coreFeatures": [
+        { "level": 1, "name": "Otherworldly Patron & Pact Magic", "description": "Forge a pact with The Archfey, The Fiend (Dark One's Blessing temp HP on kill), or The Great Old One; Pact Magic slots always cast at highest available slot level and recharge on a Short Rest." },
+        { "level": 2, "name": "Eldritch Invocations", "description": "Learn permanent arcane augmentations such as Agonizing Blast (+CHA mod to Eldritch Blast damage), Devil's Sight (120 ft. magical darkvision), or Mask of Many Faces (Disguise Self at will)." },
+        { "level": 3, "name": "Pact Boon", "description": "Choose Pact of the Chain (upgraded Familiar), Pact of the Blade (summon magical pact weapon), or Pact of the Tome (Book of Shadows cantrips/rituals)." }
+      ]
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard",
+      "hitDie": "d6",
+      "primaryAbility": ["INT"],
+      "savingThrows": ["INT", "WIS"],
+      "armorProficiencies": [],
+      "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+      "spellcasting": { "isSpellcaster": true, "ability": "INT", "progression": "Full", "ritualCasting": true, "preparedFormula": "INT mod + Wizard level" },
+      "coreFeatures": [
+        { "level": 1, "name": "Spellbook & Arcane Recovery", "description": "Maintain a spellbook (cast any ritual spell in your book without preparing it); 1/Day on a Short Rest recover spell slots with combined level up to ceil(Wizard level / 2)." },
+        { "level": 2, "name": "Arcane Tradition", "description": "Specialize in one of the 8 Schools of Magic: Abjuration (Arcane Ward), Evocation (Sculpt Spells to protect allies from AoE), Divination (Portent 2d20 rolls), Necromancy, Conjuration, Enchantment, Illusion, or Transmutation." }
+      ]
+    }
+  ]
+}

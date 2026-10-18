@@ -1,0 +1,244 @@
+{
+  "sheetVersion": "1.0.0",
+  "system": "D&D 5e Hybrid Engine (PHB 2014 + DMG 2024)",
+  "adventureState": {
+    "adventureId": "cragmaw-ambush-delve",
+    "adventureTitle": "The Cragmaw Ambush & Goblin Delve",
+    "currentAct": 1,
+    "currentNodeId": "node_1_triboar_trail",
+    "timeOfDay": "Afternoon",
+    "lightCondition": "Bright Light",
+    "marchingOrder": ["Kaelen Vane (Paladin/Fighter)", "Sister Lyra (Cleric Sidekick)"],
+    "activeFlags": [
+      "accepted_gundren_contract"
+    ],
+    "questLog": [
+      {
+        "questId": "escort_wagon",
+        "title": "Deliver the Supply Wagon to Phandalin",
+        "status": "In Progress",
+        "objective": "Escort Gundren Rockseeker's mining supplies along the Triboar Trail and discover what happened to Gundren and Sildar Hallwinter."
+      }
+    ]
+  },
+  "hero": {
+    "name": "Kaelen Vane",
+    "player": "Solo Hero",
+    "level": 2,
+    "xp": 300,
+    "nextLevelXp": 900,
+    "proficiencyBonus": 2,
+    "inspiration": true,
+    "race": "Human (Variant)",
+    "subrace": "Variant Human",
+    "class": "Paladin",
+    "subclass": "Oath of Devotion (Unlocks at Level 3)",
+    "background": "Soldier",
+    "alignment": "Lawful Good",
+    "size": "Medium",
+    "speed": 30,
+    "senses": {
+      "vision": "Normal Vision",
+      "passivePerception": 13,
+      "passiveInvestigation": 10,
+      "passiveInsight": 13
+    },
+    "languages": ["Common", "Dwarvish", "Goblin"],
+    "combatStats": {
+      "ac": 18,
+      "acBreakdown": "Chain Mail (16) + Shield (+2)",
+      "initiativeMod": 1,
+      "hp": 22,
+      "maxHp": 22,
+      "tempHp": 0,
+      "hitDice": {
+        "dieType": "d10",
+        "total": 2,
+        "remaining": 2
+      },
+      "deathSaves": {
+        "successes": 0,
+        "failures": 0,
+        "isStable": true
+      },
+      "conditions": [],
+      "exhaustionLevel": 0
+    },
+    "abilities": {
+      "STR": { "score": 16, "mod": 3, "saveProficient": false, "saveBonus": 3 },
+      "DEX": { "score": 12, "mod": 1, "saveProficient": false, "saveBonus": 1 },
+      "CON": { "score": 14, "mod": 2, "saveProficient": false, "saveBonus": 2 },
+      "INT": { "score": 10, "mod": 0, "saveProficient": false, "saveBonus": 0 },
+      "WIS": { "score": 12, "mod": 1, "saveProficient": true, "saveBonus": 3 },
+      "CHA": { "score": 16, "mod": 3, "saveProficient": true, "saveBonus": 5 }
+    },
+    "skills": {
+      "Acrobatics": { "ability": "DEX", "proficient": false, "expertise": false, "bonus": 1 },
+      "Animal Handling": { "ability": "WIS", "proficient": false, "expertise": false, "bonus": 1 },
+      "Arcana": { "ability": "INT", "proficient": false, "expertise": false, "bonus": 0 },
+      "Athletics": { "ability": "STR", "proficient": true, "expertise": false, "bonus": 5 },
+      "Deception": { "ability": "CHA", "proficient": false, "expertise": false, "bonus": 3 },
+      "History": { "ability": "INT", "proficient": false, "expertise": false, "bonus": 0 },
+      "Insight": { "ability": "WIS", "proficient": true, "expertise": false, "bonus": 3 },
+      "Intimidation": { "ability": "CHA", "proficient": true, "expertise": false, "bonus": 5 },
+      "Investigation": { "ability": "INT", "proficient": false, "expertise": false, "bonus": 0 },
+      "Medicine": { "ability": "WIS", "proficient": false, "expertise": false, "bonus": 1 },
+      "Nature": { "ability": "INT", "proficient": false, "expertise": false, "bonus": 0 },
+      "Perception": { "ability": "WIS", "proficient": true, "expertise": false, "bonus": 3 },
+      "Performance": { "ability": "CHA", "proficient": false, "expertise": false, "bonus": 3 },
+      "Persuasion": { "ability": "CHA", "proficient": true, "expertise": false, "bonus": 5 },
+      "Religion": { "ability": "INT", "proficient": false, "expertise": false, "bonus": 0 },
+      "Sleight of Hand": { "ability": "DEX", "proficient": false, "expertise": false, "bonus": 1 },
+      "Stealth": { "ability": "DEX", "proficient": false, "expertise": false, "bonus": 1, "armorDisadvantage": true },
+      "Survival": { "ability": "WIS", "proficient": false, "expertise": false, "bonus": 1 }
+    },
+    "attacks": [
+      {
+        "name": "Longsword (One-Handed w/ Dueling Style)",
+        "type": "Melee Weapon Attack",
+        "attackBonus": 5,
+        "reachOrRange": "5 ft.",
+        "damage": "1d8 + 5",
+        "damageType": "Slashing",
+        "notes": "Versatile (1d10 two-handed); Dueling Fighting Style adds +2 damage while wielding in one hand."
+      },
+      {
+        "name": "Javelin",
+        "type": "Melee or Ranged Weapon Attack",
+        "attackBonus": 5,
+        "reachOrRange": "5 ft. or 30/120 ft.",
+        "damage": "1d6 + 3",
+        "damageType": "Piercing",
+        "notes": "Thrown property (4 carried)."
+      }
+    ],
+    "classResources": [
+      {
+        "name": "Lay on Hands Pool",
+        "current": 10,
+        "max": 10,
+        "recharge": "Long Rest",
+        "description": "Action: Restore up to remaining pool in HP, or expend 5 HP to cure one poison or disease."
+      },
+      {
+        "name": "Divine Sense",
+        "current": 4,
+        "max": 4,
+        "recharge": "Long Rest",
+        "description": "Action: Detect the location of any Celestial, Fiend, or Undead within 60 ft. that is not behind Total Cover."
+      }
+    ],
+    "featsAndTraits": [
+      {
+        "name": "Sentinel (Variant Human Feat)",
+        "description": "Creatures hit by your Opportunity Attack have their speed reduced to 0 for the rest of the turn; creatures within 5 ft. provoke Opportunity Attacks even if they Disengage; use Reaction to attack a foe within 5 ft. that attacks an ally other than you."
+      },
+      {
+        "name": "Fighting Style: Dueling",
+        "description": "+2 bonus to damage rolls when wielding a melee weapon in one hand and no other weapons."
+      },
+      {
+        "name": "Divine Smite",
+        "description": "When you hit a creature with a melee weapon attack, expend one spell slot to deal 2d8 extra Radiant damage to the target (+1d8 against Undead or Fiends)."
+      }
+    ],
+    "spellcasting": {
+      "isSpellcaster": true,
+      "spellcastingAbility": "CHA",
+      "spellSaveDC": 13,
+      "spellAttackBonus": 5,
+      "activeConcentrationSpell": null,
+      "spellSlots": {
+        "1": { "total": 2, "remaining": 2 },
+        "2": { "total": 0, "remaining": 0 },
+        "3": { "total": 0, "remaining": 0 },
+        "4": { "total": 0, "remaining": 0 },
+        "5": { "total": 0, "remaining": 0 }
+      },
+      "cantrips": [],
+      "preparedSpells": [
+        {
+          "name": "Bless",
+          "level": 1,
+          "castingTime": "1 Action",
+          "concentration": true,
+          "effect": "Up to 3 creatures add 1d4 to all attack rolls and saving throws for 1 minute."
+        },
+        {
+          "name": "Cure Wounds",
+          "level": 1,
+          "castingTime": "1 Action",
+          "concentration": false,
+          "effect": "Touch a creature to restore 1d8 + 3 Hit Points."
+        },
+        {
+          "name": "Shield of Faith",
+          "level": 1,
+          "castingTime": "1 Bonus Action",
+          "concentration": true,
+          "effect": "Grant a creature within 60 ft. a +2 bonus to AC for 10 minutes."
+        },
+        {
+          "name": "Thunderous Smite",
+          "level": 1,
+          "castingTime": "1 Bonus Action",
+          "concentration": true,
+          "effect": "Next melee hit deals +2d6 Thunder damage and forces a DC 13 STR save or pushes target 10 ft. and knocks it Prone."
+        }
+      ]
+    },
+    "equippedItems": {
+      "armor": "Chain Mail (AC 16, STR 13 required, Stealth Disadvantage)",
+      "shield": "Steel Shield (+2 AC, emblazoned with a silver sun)",
+      "mainHand": "Longsword (1d8 Slashing)",
+      "rangedOrThrown": "4x Javelins (1d6 Piercing, range 30/120 ft.)",
+      "holySymbol": "Silver Amulet of the Morninglord (worn around neck)",
+      "attunedItems": []
+    },
+    "inventory": [
+      { "item": "Potion of Healing (2024 Bonus Action)", "quantity": 2, "effect": "Restores 2d4 + 2 HP as a Bonus Action" },
+      { "item": "Healer's Kit", "quantity": 1, "charges": 10, "effect": "Stabilize a dying creature at 0 HP without a Medicine check" },
+      { "item": "Torch", "quantity": 5, "effect": "Bright light 20 ft., Dim light +20 ft. for 1 hour" },
+      { "item": "Hempen Rope (50 ft.) & Grappling Hook", "quantity": 1, "effect": "Grants Advantage or lowers Athletics DC to climb" },
+      { "item": "Crowbar", "quantity": 1, "effect": "Grants Advantage on Strength checks where leverage can be applied" },
+      { "item": "Rations (1 day)", "quantity": 5, "effect": "Required for Long Rest recovery" },
+      { "item": "Thieves' Tools", "quantity": 1, "effect": "Used to pick locks and disarm mechanical traps" }
+    ],
+    "currency": {
+      "cp": 0,
+      "sp": 15,
+      "ep": 0,
+      "gp": 35,
+      "pp": 0
+    }
+  },
+  "partyCompanions": [
+    {
+      "id": "sister_lyra",
+      "name": "Sister Lyra of Neverwinter",
+      "role": "Acolyte Healer & Arcane Scholar (Sidekick)",
+      "level": 2,
+      "ac": 16,
+      "acType": "Scale Mail",
+      "hp": 15,
+      "maxHp": 15,
+      "speed": 30,
+      "initiativeMod": 1,
+      "abilities": { "STR": 10, "DEX": 12, "CON": 12, "INT": 14, "WIS": 16, "CHA": 13 },
+      "keySkills": { "Medicine": 5, "Religion": 4, "Insight": 5, "Arcana": 4 },
+      "actions": [
+        "Mace: +2 to hit, 1d6 Bludgeoning",
+        "Sacred Flame (At Will): DEX Save DC 13 or 1d8 Radiant damage (ignores cover)",
+        "Healing Word (2/Day, Bonus Action): Restore 1d4 + 3 HP to an ally within 60 ft.",
+        "Guiding Bolt (1/Day, Action): +5 to hit, 4d6 Radiant damage and next attack against target has Advantage"
+      ],
+      "conditions": []
+    }
+  ],
+  "bastion": {
+    "unlockedAtLevel": 5,
+    "isActive": false,
+    "bastionName": "Unclaimed Stronghold",
+    "specialFacilities": []
+  }
+}

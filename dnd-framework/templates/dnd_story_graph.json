@@ -1,0 +1,455 @@
+{
+  "schemaVersion": "1.0.0",
+  "system": "D&D 5e Hybrid Adventure Graph (PHB 2014 + DMG 2024 + MM 2014/2024)",
+  "adventureMetadata": {
+    "adventureId": "cragmaw-ambush-delve",
+    "title": "The Cragmaw Ambush & Goblin Delve",
+    "recommendedLevel": 2,
+    "partySize": "Solo Hero (Level 2) + 1 Companion Sidekick (Effective 2-Character Party)",
+    "campaignFlavor": "Heroic Fantasy (Forgotten Realms — Sword Coast)",
+    "patron": "Gundren Rockseeker (Dwarven Prospector) & Sildar Hallwinter (Lords' Alliance)",
+    "primaryVillain": "Klarg the Bugbear Warlord & Yeemik the Goblin Boss",
+    "fourActStructure": {
+      "act1_hook": ["node_1_triboar_trail"],
+      "act2_exploration": [
+        "node_2_forest_snare_trail",
+        "node_3_cave_mouth_kennel",
+        "node_4_flood_trap_passage",
+        "node_5_yeemik_parley_den",
+        "node_6_secret_provisions_shrine"
+      ],
+      "act3_climax": ["node_7_klarg_throne_cavern"],
+      "act4_resolution": ["node_8_phandalin_victory"]
+    },
+    "xpBudgetAudit2024": {
+      "partyLevel": 2,
+      "effectivePartySize": 2,
+      "lowBudgetThreshold": 200,
+      "moderateBudgetThreshold": 300,
+      "highBudgetThreshold": 400,
+      "encounters": [
+        { "nodeId": "node_1_triboar_trail", "difficulty": "Low", "monsters": ["3x Goblin"], "totalXp": 150 },
+        { "nodeId": "node_3_cave_mouth_kennel", "difficulty": "Low (or Bypassed via Animal Handling)", "monsters": ["2x Wolf"], "totalXp": 100 },
+        { "nodeId": "node_5_yeemik_parley_den", "difficulty": "Moderate (or Resolved via Social Influence)", "monsters": ["1x Goblin Boss (Yeemik)", "2x Goblin"], "totalXp": 300 },
+        { "nodeId": "node_7_klarg_throne_cavern", "difficulty": "High (Act III Boss Climax)", "monsters": ["1x Bugbear (Klarg)", "1x Wolf (Ripper)", "2x Goblin"], "totalXp": 350 }
+      ]
+    },
+    "graphIntegrity": {
+      "startNode": "node_1_triboar_trail",
+      "victoryNodes": ["node_8_phandalin_victory"],
+      "totalNodes": 8,
+      "orphanNodes": [],
+      "deadEndNodesWithoutExit": [],
+      "criticalPathVerified": true,
+      "criticalPathSample": [
+        "node_1_triboar_trail",
+        "node_2_forest_snare_trail",
+        "node_3_cave_mouth_kennel",
+        "node_4_flood_trap_passage",
+        "node_7_klarg_throne_cavern",
+        "node_8_phandalin_victory"
+      ],
+      "keyItemsAndLocations": {
+        "silver_signet_of_neverwinter": "Found in node_5_yeemik_parley_den (proof of Sildar's capture)",
+        "jade_frog_statuette_and_potion": "Found in node_6_secret_provisions_shrine (bonus Short Rest & Arcane/Relic loot)",
+        "cragmaw_castle_cipher_map": "Found in node_7_klarg_throne_cavern (Act III Boss Hoard reward)"
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_1_triboar_trail",
+      "act": 1,
+      "title": "Section 1: The Dead Horses on the Triboar Trail",
+      "nodeType": "Hook & Combat Ambush",
+      "environment": {
+        "terrain": "Wooded Dirt Road (Half Cover +2 AC behind thicket or wagon)",
+        "lighting": "Bright Light",
+        "hazards": []
+      },
+      "summary": "Two dead horses bristling with black-feathered goblin arrows block the sunken road. Three Cragmaw goblins wait in the briar thickets to spring an ambush.",
+      "skillChecks": [
+        {
+          "skill": "Perception",
+          "ability": "WIS",
+          "dc": 12,
+          "difficultyLabel": "Easy-Medium (Contested vs. Goblin Stealth)",
+          "onSuccess": "You spot the glint of rusted arrowheads in the briars! Neither you nor Sister Lyra are Surprised in Round 1.",
+          "onSuccessAtCost": "Miss by 1-2: You shout a warning just as bowstrings twang — you avoid Surprise, but the goblins gain +2 Initiative.",
+          "onFailure": "The Cragmaw ambushers fire from hidden cover before you can raise your shield (Goblin Shortbows attack with Advantage in Round 1)."
+        },
+        {
+          "skill": "Survival",
+          "ability": "WIS",
+          "dc": 10,
+          "difficultyLabel": "Easy",
+          "onSuccess": "After the fight, you discover a well-worn goblin footpath heading northwest into the forest, dragging two humanoid bodies.",
+          "onFailure": "After 10 minutes of searching the trampled brush, you still locate the northwest trail, though the goblins in the caves ahead are more alert."
+        }
+      ],
+      "combatEncounter": {
+        "difficulty": "Low",
+        "xpValue": 150,
+        "monsters": [
+          { "monsterId": "goblin", "name": "Cragmaw Bushwhacker", "count": 3, "hpEach": 10, "ac": 15, "initiativeStatic": 12 }
+        ],
+        "tactics": "Two goblins fire Shortbows (+4 to hit, 1d6+2 Piercing) from Half Cover (+2 AC) and use Nimble Escape (Bonus Action) to Hide; one charges with a Scimitar. If two goblins fall, the last attempts to flee up the trail."
+      },
+      "treasure": {
+        "coins": "12 SP, 4 GP in leather pouches",
+        "items": ["Empty leather map case stamped with Gundren Rockseeker's dwarven rune"]
+      },
+      "exits": [
+        {
+          "targetNodeId": "node_2_forest_snare_trail",
+          "label": "Follow the goblin drag-marks northwest along the shaded forest trail (Go to Section 2)",
+          "condition": "Always available after resolving the ambush"
+        }
+      ]
+    },
+    {
+      "id": "node_2_forest_snare_trail",
+      "act": 2,
+      "title": "Section 2: The Snare-Lined Forest Trail",
+      "nodeType": "Exploration & Mechanical Traps",
+      "environment": {
+        "terrain": "Dense Pine Thicket & Creek Bed",
+        "lighting": "Dim Light (Canopy Shadows)",
+        "hazards": ["Rope Snare (DC 12)", "Camouflaged Spiked Pit (DC 15)"]
+      },
+      "summary": "A winding five-mile trail along a rushing stream leads toward the twin crags of Cragmaw Hideout, guarded by two cunning goblin traps.",
+      "traps": [
+        {
+          "name": "Counterweight Rope Snare",
+          "severity": "Level 1-4 Nuisance",
+          "trigger": "Stepping into the leaf-covered hemp loop in the center of the path.",
+          "detectSkill": "Perception",
+          "detectDC": 12,
+          "disarmSkill": "Thieves' Tools or Sleight of Hand",
+          "disarmDC": 10,
+          "saveAbility": "DEX",
+          "saveDC": 12,
+          "effectOnFail": "Hoisted upside-down 10 feet in the air (Restrained until cut down with 1 Slashing attack or DC 10 Acrobatics; falling deals 1d6 Bludgeoning damage unless lowered)."
+        },
+        {
+          "name": "Camouflaged 10-Foot Spiked Pit",
+          "severity": "Level 1-4 Nuisance",
+          "trigger": "Walking across the rotten twigs and moss latticework 100 yards before the cave mouth.",
+          "detectSkill": "Perception or Investigation",
+          "detectDC": 15,
+          "disarmSkill": "Survival or Thieves' Tools (wedge poles)",
+          "disarmDC": 12,
+          "saveAbility": "DEX",
+          "saveDC": 13,
+          "effectOnFail": "Fall 10 feet onto sharpened wooden stakes, taking 1d6 Bludgeoning + 1d10 Piercing damage (average 9)."
+        }
+      ],
+      "exits": [
+        {
+          "targetNodeId": "node_3_cave_mouth_kennel",
+          "label": "Approach the yawning cave mouth and the shallow stream emerging from the hillside (Go to Section 3)",
+          "condition": "Always available"
+        }
+      ]
+    },
+    {
+      "id": "node_3_cave_mouth_kennel",
+      "act": 2,
+      "title": "Section 3: The Cave Mouth & Chained Wolves",
+      "nodeType": "Branching Exploration / Beast Encounter",
+      "environment": {
+        "terrain": "Shallow Stream (Difficult Terrain if wading) & Narrow Fissure",
+        "lighting": "Dim Light at entrance; Darkness inside",
+        "hazards": ["Steep 30-ft Natural Chimney to Section 7"]
+      },
+      "summary": "Just inside the cave mouth, two mangy, half-starved wolves are chained to an iron stalagmite below a narrow rock chimney. Their snarls echo off the wet stone.",
+      "skillChecks": [
+        {
+          "skill": "Animal Handling",
+          "ability": "WIS",
+          "dc": 15,
+          "difficultyLabel": "Medium (Advantage if you toss 1 Ration of meat!)",
+          "onSuccess": "The wolves eagerly devour the meat and curl down quietly, allowing you to inspect the narrow rock chimney or move deeper up the stream passage in silence.",
+          "onFailure": "The wolves snap at their iron chains, pulling the iron spike loose from the crumbling stalagmite and lunging to attack!"
+        },
+        {
+          "skill": "Athletics",
+          "ability": "STR",
+          "dc": 15,
+          "difficultyLabel": "Medium (Shortcut Climb)",
+          "onSuccess": "Once the wolves are calm or defeated, you scale the 30-foot natural rock chimney directly into the back of Klarg's cavern (Section 7), surprising the boss!",
+          "onFailure": "You slip halfway up the slick stone chimney, taking 2d6 Bludgeoning damage and alerting the main passage."
+        }
+      ],
+      "combatEncounter": {
+        "difficulty": "Low (Optional if calmed with Animal Handling)",
+        "xpValue": 100,
+        "monsters": [
+          { "monsterId": "wolf", "name": "Starving Cragmaw Wolf", "count": 2, "hpEach": 11, "ac": 13, "initiativeStatic": 12 }
+        ],
+        "tactics": "Use Pack Tactics for Advantage and Bite (+4 to hit, 2d4+2 Piercing + automatic Prone on Medium or smaller targets)."
+      },
+      "exits": [
+        {
+          "targetNodeId": "node_4_flood_trap_passage",
+          "label": "Follow the main rushing stream passage northward deeper into the cavern (Go to Section 4)",
+          "condition": "Always available"
+        },
+        {
+          "targetNodeId": "node_7_klarg_throne_cavern",
+          "label": "Climb the 30-foot rock chimney behind the kennel directly into Klarg's cavern (Go to Section 7)",
+          "condition": "Requires succeeding on the DC 15 Athletics climb check (or DC 10 with Rope & Grappling Hook)"
+        }
+      ]
+    },
+    {
+      "id": "node_4_flood_trap_passage",
+      "act": 2,
+      "title": "Section 4: The Shadowed Overpass & Flood Trap",
+      "nodeType": "Environmental Hazard & Dungeon Junction",
+      "environment": {
+        "terrain": "Slick Stream Tunnel with a 20-ft High Rope Bridge Overpass",
+        "lighting": "Darkness (Requires Torch, Light spell, or Darkvision)",
+        "hazards": ["Cragmaw Dam Flood Wave (4d10 / 2d6 Sweeping Water)"]
+      },
+      "summary": "The main passage climbs alongside the rushing brook. Twenty feet overhead, a rickety wooden bridge spans the tunnel. To the west, steep stone steps lead up to a flickering torchlit den; to the east, a mossy stone wall hides an older dwarven masonry seam.",
+      "skillChecks": [
+        {
+          "skill": "Stealth",
+          "ability": "DEX",
+          "dc": 10,
+          "difficultyLabel": "Easy (Disadvantage if carrying an unshielded Torch or Light spell)",
+          "onSuccess": "You slip beneath the rope bridge unseen by the goblin lookout above.",
+          "onFailure": "The lookout on the bridge spots your light and yells in Goblin, knocking loose the wooden floodgate supports upstream!"
+        },
+        {
+          "skill": "Perception",
+          "ability": "WIS",
+          "dc": 15,
+          "difficultyLabel": "Medium (Secret Door)",
+          "onSuccess": "You notice dressed dwarven stonework and a concealed pivot latch in the eastern wall leading to a forgotten shrine (Section 6)!",
+          "onFailure": "The eastern wall appears to be solid damp limestone."
+        }
+      ],
+      "traps": [
+        {
+          "name": "Cragmaw Dam Flash Flood",
+          "severity": "Level 1-4 Nuisance/Deadly Hazard",
+          "trigger": "Being spotted by the bridge sentry without silencing him in 1 round.",
+          "detectSkill": "Investigation",
+          "detectDC": 12,
+          "disarmSkill": "Athletics (brace in side alcove)",
+          "disarmDC": 10,
+          "saveAbility": "STR",
+          "saveDC": 15,
+          "effectOnFail": "A wall of pent-up water roars down the tunnel! Take 2d6 Bludgeoning damage, fall Prone, and get swept back to Section 3 (half damage and hold position on a successful DC 15 STR save, or 0 damage if braced in the western stairway)."
+        }
+      ],
+      "exits": [
+        {
+          "targetNodeId": "node_5_yeemik_parley_den",
+          "label": "Ascend the western stone steps toward the sound of bickering goblins and clinking chains (Go to Section 5)",
+          "condition": "Always available"
+        },
+        {
+          "targetNodeId": "node_6_secret_provisions_shrine",
+          "label": "Press the hidden dwarven pivot stone in the eastern wall to enter the sealed shrine (Go to Section 6)",
+          "condition": "Requires spotting the Secret Door (Perception DC 15)"
+        },
+        {
+          "targetNodeId": "node_7_klarg_throne_cavern",
+          "label": "Climb the eastern ledge and cross the rope bridge toward the roaring waterfall chamber (Go to Section 7)",
+          "condition": "Always available"
+        }
+      ]
+    },
+    {
+      "id": "node_5_yeemik_parley_den",
+      "act": 2,
+      "title": "Section 5: Yeemik's Den & The Hostage Parley",
+      "nodeType": "Social Interaction (2024 Influence Engine) or Combat",
+      "environment": {
+        "terrain": "Two-Tiered Cavern with a 10-ft High Stone Ledge",
+        "lighting": "Dim Light (Cooking Fire)",
+        "hazards": ["Hostage at 1 HP held over a 10-ft ledge"]
+      },
+      "summary": "Yeemik, a scarred Goblin Boss wearing a tarnished silver medallion, stands on a 10-foot high stone ledge holding a blade to the throat of a battered human warrior — Sildar Hallwinter! Yeemik sneers and shouts: 'Halt, tall-folk! Help me get rid of that arrogant bugbear Klarg across the bridge, and you can have this human back alive!'",
+      "socialEncounter": {
+        "npcName": "Yeemik the Goblin Second-in-Command",
+        "startingAttitude": "Indifferent (Self-Interested & Opportunistic; turns Hostile if attacked)",
+        "influenceDC": 15,
+        "leverage": "Appealing to Yeemik's ambition to become Chief of Cragmaw Hideout shifts his attitude to Friendly (granting Advantage on your Charisma check!).",
+        "skillOptions": [
+          {
+            "skill": "Persuasion",
+            "ability": "CHA",
+            "dc": 15,
+            "outcome": "You strike a truce: Yeemik releases Sildar Hallwinter into Sister Lyra's care immediately in exchange for your word to slay Klarg, and reveals the secret dwarven shrine in Section 6!"
+          },
+          {
+            "skill": "Intimidation",
+            "ability": "CHA",
+            "dc": 15,
+            "outcome": "Cowed by your shining steel and bloodied blade, Yeemik releases Sildar and orders his goblins to stand down while you deal with Klarg."
+          },
+          {
+            "skill": "Deception",
+            "ability": "CHA",
+            "dc": 15,
+            "outcome": "You convince Yeemik that a detachment of Neverwinter knights is already surrounding the cave, prompting him to hand over Sildar and his silver signet for safe passage."
+          }
+        ]
+      },
+      "combatEncounter": {
+        "difficulty": "Moderate (Only triggers if parley is refused or fails badly)",
+        "xpValue": 300,
+        "monsters": [
+          { "monsterId": "goblin-boss", "name": "Yeemik the Goblin Boss", "count": 1, "hpEach": 21, "ac": 17, "initiativeStatic": 12 },
+          { "monsterId": "goblin", "name": "Cragmaw Den Guard", "count": 2, "hpEach": 10, "ac": 15, "initiativeStatic": 12 }
+        ],
+        "tactics": "Yeemik uses Redirect Attack (Reaction) to swap places with a minion when targeted by a melee attack."
+      },
+      "treasure": {
+        "coins": "3 pouches containing 25 GP and 60 SP",
+        "items": [
+          "Silver Signet Ring of Neverwinter (Sildar's ring)",
+          "Sildar's Intel: Confirms Gundren Rockseeker and the Wave Echo Cave map were sent ahead to Cragmaw Castle, and Klarg has the cipher map!"
+        ]
+      },
+      "exits": [
+        {
+          "targetNodeId": "node_6_secret_provisions_shrine",
+          "label": "Use Yeemik's clue (or your own discovery) to enter the hidden dwarven shrine across the stream (Go to Section 6)",
+          "condition": "Available if Yeemik told you about the shrine or you passed Perception DC 15"
+        },
+        {
+          "targetNodeId": "node_7_klarg_throne_cavern",
+          "label": "Cross the swaying rope bridge over the stream to confront Klarg the Bugbear in his throne cavern (Go to Section 7)",
+          "condition": "Always available"
+        }
+      ]
+    },
+    {
+      "id": "node_6_secret_provisions_shrine",
+      "act": 2,
+      "title": "Section 6: The Forgotten Dwarven Shrine (Safe Short Rest)",
+      "nodeType": "Safe Short Rest & Relic Treasure Node",
+      "environment": {
+        "terrain": "Dry, Sealable Dwarven Stone Chamber",
+        "lighting": "Dim Light (Glowing Phosphorescent Runes)",
+        "hazards": []
+      },
+      "summary": "Behind the pivoting stone slab lies a dry, untouched dwarven prayer alcove carved with the symbol of Dumathoin, Keeper of Secrets Under the Mountain. The goblins have never found this room, making it a completely secure refuge.",
+      "restMechanics": {
+        "restType": "Short Rest (1 Hour)",
+        "benefits": [
+          "Spend Hit Dice (d10 + CON mod) to restore lost HP",
+          "Sister Lyra's Prayer of Healing restores an extra +1d4 HP to everyone",
+          "Touching the altar of Dumathoin with a successful DC 12 Intelligence (Religion) check grants Heroic Inspiration (reroll any 1 die during the boss fight!)"
+        ]
+      },
+      "skillChecks": [
+        {
+          "skill": "Religion",
+          "ability": "INT",
+          "dc": 12,
+          "difficultyLabel": "Easy",
+          "onSuccess": "You recite the traditional dwarven blessing of the Silent Keeper. A hidden compartment in the altar clicks open, revealing a blessed relic and a healing draught!",
+          "onFailure": "You still find the alcove behind the altar by searching carefully, though without the divine blessing."
+        }
+      ],
+      "treasure": {
+        "theme": "Relics",
+        "coins": "30 GP in ancient dwarven electrum-stamped coins",
+        "items": [
+          "Jade Frog Statuette with tiny golden ruby eyes (40 GP art object)",
+          "Potion of Healing (2024 Bonus Action: restores 2d4 + 2 HP)",
+          "Scroll of Shield of Faith (+2 AC)"
+        ]
+      },
+      "exits": [
+        {
+          "targetNodeId": "node_7_klarg_throne_cavern",
+          "label": "Slip out of the secret shrine and advance up the ledge into Klarg's waterfall cavern (Go to Section 7)",
+          "condition": "Always available"
+        }
+      ]
+    },
+    {
+      "id": "node_7_klarg_throne_cavern",
+      "act": 3,
+      "title": "Section 7: Klarg's Waterfall Sanctum (Act III Boss Climax)",
+      "nodeType": "Boss Climax Encounter (High Difficulty)",
+      "environment": {
+        "terrain": "Twin Retaining Pools, Stacked Supply Crates (Half Cover +2 AC), and a Roaring Brazier",
+        "lighting": "Dim Light (Firepit & Torchlight)",
+        "hazards": ["Roaring Brazier (Shove a creature into the coals for 1d10 Fire damage!)"]
+      },
+      "summary": "Sacks and crates of stolen Lionshield Coster provisions are piled around a crude throne of pelts and barrels. Standing atop the dais is Klarg — a towering, megalomaniacal Bugbear wielding a spiked morningstar — flanked by his mangy dire-wolf pet Ripper and two goblin archers!",
+      "skillChecks": [
+        {
+          "skill": "Stealth",
+          "ability": "DEX",
+          "dc": 12,
+          "difficultyLabel": "Easy-Medium (Automatic Advantage if entering via the Section 3 Chimney or because of the roaring waterfall!)",
+          "onSuccess": "The roar of the waterfall masks your approach! You gain a Surprise round / Advantage on Initiative against Klarg and his minions.",
+          "onFailure": "Ripper the wolf catches your scent and barks a warning as Klarg hefts his morningstar and roars: 'Who dares defy Klarg?!'"
+        },
+        {
+          "skill": "Athletics",
+          "ability": "STR",
+          "dc": 14,
+          "difficultyLabel": "Medium (Environmental Interaction)",
+          "onSuccess": "During combat, you kick over the blazing iron brazier or topple a stack of heavy mining crates onto Klarg/his goblins, dealing 1d10 Fire/Bludgeoning damage and knocking them Prone!",
+          "onFailure": "The heavy crate shifts only a few inches, providing Half Cover (+2 AC) instead."
+        }
+      ],
+      "combatEncounter": {
+        "difficulty": "High (Act III Boss Fight)",
+        "xpValue": 350,
+        "monsters": [
+          { "monsterId": "bugbear", "name": "Klarg the Bugbear Warlord", "count": 1, "hpEach": 27, "ac": 16, "initiativeStatic": 12 },
+          { "monsterId": "wolf", "name": "Ripper (Klarg's Pet Wolf)", "count": 1, "hpEach": 11, "ac": 13, "initiativeStatic": 12 },
+          { "monsterId": "goblin", "name": "Cragmaw Bodyguard", "count": 2, "hpEach": 10, "ac": 15, "initiativeStatic": 12 }
+        ],
+        "tactics": "Klarg orders Ripper to flank for Pack Tactics while swinging his Morningstar (+4 to hit, reach 10 ft., 2d8+2 Piercing). If Ripper is slain, Klarg becomes rattled (Disadvantage on his next attack roll) and tries to flee down the chimney if reduced below 7 HP!"
+      },
+      "treasure": {
+        "theme": "Armaments & Implements (Act III Boss Hoard)",
+        "coins": "600 CP, 110 SP, 50 GP in Klarg's ironbound strongbox",
+        "items": [
+          "+1 Longsword ('Talon', silver-hilted blade shaped like a hawk's wing — Uncommon Armament)",
+          "2x Potions of Healing (2d4 + 2 HP each)",
+          "Cragmaw Castle Cipher Map (Key Quest Item showing the trail to King Grol's fortress)",
+          "Lionshield Coster Stolen Provisions (Worth a 50 GP reward in Phandalin)"
+        ]
+      },
+      "exits": [
+        {
+          "targetNodeId": "node_8_phandalin_victory",
+          "label": "Claim Klarg's treasure hoard, load the recovered provisions onto your wagon, and ride victoriously into Phandalin (Go to Section 8)",
+          "condition": "Requires defeating or driving off Klarg"
+        }
+      ]
+    },
+    {
+      "id": "node_8_phandalin_victory",
+      "act": 4,
+      "title": "Section 8: Triumph in Phandalin (Resolution & Level Up)",
+      "nodeType": "Act IV Resolution, Rewards & Next Adventure Seed",
+      "environment": {
+        "terrain": "Frontier Town of Phandalin (Stonehill Inn)",
+        "lighting": "Warm Lantern Light",
+        "hazards": []
+      },
+      "summary": "Your wagon rolls into the frontier town of Phandalin as lanterns flicker to life along the rutted main street. Barthen's Provisions and the Lionshield Coster pay out your reward in gleaming gold, Sildar Hallwinter pledges the support of the Lords' Alliance, and you study the captured cipher map pointing toward Cragmaw Castle and the lost Wave Echo Cave!",
+      "rewards": {
+        "xpAwarded": 600,
+        "milestone": "Advance to Character Level 3 (Unlock Sacred Oath / Martial Archetype & 2nd-Level Features!)",
+        "goldReward": "100 GP (50 GP from Barthen + 50 GP from Lionshield Coster + 50 GP from Sildar Hallwinter)",
+        "nextAdventureSeed": "The Redbrand Ruffians of Tresendar Manor & The Siege of Cragmaw Castle"
+      },
+      "exits": []
+    }
+  ]
+}

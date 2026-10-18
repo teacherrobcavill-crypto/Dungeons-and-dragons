@@ -1,0 +1,2036 @@
+{
+  "bestiaryVersion": "1.0.0",
+  "system": "D&D 5e Hybrid Bestiary (MM 2024 Stat Block Engine + MM 2014 Ecology & Lore)",
+  "monsterCount": 28,
+  "monsters": [
+    {
+      "id": "kobold",
+      "name": "Kobold",
+      "size": "Small",
+      "type": "Dragon (Humanoid/Draconic)",
+      "alignment": "Lawful Evil",
+      "habitat": ["Underdark", "Mountain", "Forest", "Dungeon"],
+      "treasureTheme": "Armaments",
+      "ac": 12,
+      "acType": "Natural Agility",
+      "hp": 7,
+      "hpFormula": "3d6 - 3",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 7, "mod": -2, "save": -2 },
+        "dex": { "score": 15, "mod": 2, "save": 2 },
+        "con": { "score": 9, "mod": -1, "save": -1 },
+        "int": { "score": 8, "mod": -1, "save": -1 },
+        "wis": { "score": 7, "mod": -2, "save": -2 },
+        "cha": { "score": 8, "mod": -1, "save": -1 }
+      },
+      "skills": { "Perception": 0, "Stealth": 4 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 8",
+      "languages": ["Common", "Draconic"],
+      "cr": "1/8",
+      "xp": 25,
+      "pb": 2,
+      "lore2014": "Kobolds are craven, reptilian humanoids that worship evil dragons as demigods and serve them as minions and toadies. What they lack in physical bulk they make up for in cunning trap-making, claustrophobic tunnel ambushes, and overwhelming numbers.",
+      "tacticalRole": "Minion / Swarm & Trap-Layer",
+      "traits": [
+        {
+          "name": "Pack Tactics",
+          "description": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally isn't Incapacitated."
+        },
+        {
+          "name": "Sunlight Sensitivity",
+          "description": "While in sunlight, the kobold has Disadvantage on attack rolls and on Wisdom (Perception) checks that rely on sight."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Dagger",
+          "type": "Melee or Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft. or range 20/60 ft.",
+          "damageDice": "1d4 + 2",
+          "damageAverage": 4,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Sling",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "range 30/120 ft.",
+          "damageDice": "1d4 + 2",
+          "damageAverage": 4,
+          "damageType": "Bludgeoning",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "bandit",
+      "name": "Bandit",
+      "size": "Medium",
+      "type": "Humanoid (Any Lineage)",
+      "alignment": "Any Non-Lawful Alignment",
+      "habitat": ["Coastal", "Forest", "Hill", "Urban", "Road"],
+      "treasureTheme": "Armaments",
+      "ac": 12,
+      "acType": "Leather Armor",
+      "hp": 11,
+      "hpFormula": "2d8 + 2",
+      "speed": "30 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 12, "mod": 1, "save": 1 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 10, "mod": 0, "save": 0 },
+        "cha": { "score": 10, "mod": 0, "save": 0 }
+      },
+      "skills": { "Intimidation": 2, "Stealth": 3 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Passive Perception 10",
+      "languages": ["Common", "Thieves' Cant"],
+      "cr": "1/8",
+      "xp": 25,
+      "pb": 2,
+      "lore2014": "Bandits rove in gangs and are sometimes led by thugs, veterans, or spellcasters. Not all bandits are evil — oppression, drought, disease, or famine can often drive otherwise honest folk to a life of highway robbery.",
+      "tacticalRole": "Minion / Skirmisher",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Scimitar",
+          "type": "Melee Attack Roll",
+          "attackBonus": 3,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 1",
+          "damageAverage": 4,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Light Crossbow",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 3,
+          "reachOrRange": "range 80/320 ft.",
+          "damageDice": "1d8 + 1",
+          "damageAverage": 5,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "cultist",
+      "name": "Cultist",
+      "size": "Medium",
+      "type": "Humanoid (Any Lineage)",
+      "alignment": "Any Non-Good Alignment",
+      "habitat": ["Urban", "Dungeon", "Ruins"],
+      "treasureTheme": "Relics",
+      "ac": 12,
+      "acType": "Leather Armor",
+      "hp": 9,
+      "hpFormula": "2d8",
+      "speed": "30 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 10, "mod": 0, "save": 0 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 11, "mod": 0, "save": 2 },
+        "cha": { "score": 10, "mod": 0, "save": 0 }
+      },
+      "skills": { "Deception": 2, "Religion": 2 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Passive Perception 10",
+      "languages": ["Common"],
+      "cr": "1/8",
+      "xp": 25,
+      "pb": 2,
+      "lore2014": "Cultists swear allegiance to dark powers — elemental princes, archdevils, demon lords, or undying aberrations. Most conceal their loyalties to avoid being ostracized, imprisoned, or executed for their beliefs.",
+      "tacticalRole": "Minion / Fanatical Zealot",
+      "traits": [
+        {
+          "name": "Dark Devotion",
+          "description": "The cultist has Advantage on saving throws against being Charmed or Frightened."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Ritual Sickle",
+          "type": "Melee Attack Roll",
+          "attackBonus": 3,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d4 + 1",
+          "damageAverage": 3,
+          "damageType": "Slashing",
+          "riderEffect": "Plus 2 (1d4) Necrotic damage on hit."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "goblin",
+      "name": "Goblin",
+      "size": "Small",
+      "type": "Fey (Goblinoid)",
+      "alignment": "Neutral Evil",
+      "habitat": ["Forest", "Hill", "Underdark", "Dungeon"],
+      "treasureTheme": "Implements",
+      "ac": 15,
+      "acType": "Leather Armor, Shield",
+      "hp": 10,
+      "hpFormula": "3d6",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 8, "mod": -1, "save": -1 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 10, "mod": 0, "save": 0 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 8, "mod": -1, "save": -1 },
+        "cha": { "score": 8, "mod": -1, "save": -1 }
+      },
+      "skills": { "Stealth": 6 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 9",
+      "languages": ["Common", "Goblin"],
+      "cr": "1/4",
+      "xp": 50,
+      "pb": 2,
+      "lore2014": "Goblins are small, black-hearted gatherers and raiders that lair in despoiled dungeons and dismal caves. Individually weak, they gather in large, noisy tribes and delight in ambushing travelers from shadowed brush and murder holes.",
+      "tacticalRole": "Skirmisher / Ambush Archer",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Scimitar",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Shortbow",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "range 80/320 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Piercing",
+          "riderEffect": "If the goblin attacks from hiding, it deals an extra 2 (1d4) Piercing damage."
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Nimble Escape",
+          "description": "The goblin takes the Disengage or Hide action."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "skeleton",
+      "name": "Skeleton",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Lawful Evil",
+      "habitat": ["Dungeon", "Ruins", "Shadowfell", "Underdark"],
+      "treasureTheme": "Armaments",
+      "ac": 13,
+      "acType": "Armor Scraps",
+      "hp": 13,
+      "hpFormula": "2d8 + 4",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 10, "mod": 0, "save": 0 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 15, "mod": 2, "save": 2 },
+        "int": { "score": 6, "mod": -2, "save": -2 },
+        "wis": { "score": 8, "mod": -1, "save": -1 },
+        "cha": { "score": 5, "mod": -3, "save": -3 }
+      },
+      "skills": {},
+      "resistances": [],
+      "immunities": ["Poison", "Exhaustion", "Poisoned"],
+      "vulnerabilities": ["Bludgeoning"],
+      "senses": "Darkvision 60 ft.; Passive Perception 9",
+      "languages": ["Understands languages it knew in life but can't speak"],
+      "cr": "1/4",
+      "xp": 50,
+      "pb": 2,
+      "lore2014": "Skeletons arise when animated by dark necromancy. They heed the summons of spellcasters who call them from their stony tombs and ancient battlefields, obeying literal commands to the letter and retaining habitual reflexes from life.",
+      "tacticalRole": "Minion / Undead Guard & Archer",
+      "traits": [
+        {
+          "name": "Brittle Bones",
+          "description": "The skeleton has Vulnerability to Bludgeoning damage."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Shortsword",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Shortbow",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "range 80/320 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "zombie",
+      "name": "Zombie",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Neutral Evil",
+      "habitat": ["Dungeon", "Ruins", "Shadowfell", "Swamp"],
+      "treasureTheme": "None",
+      "ac": 8,
+      "acType": "Decaying Flesh",
+      "hp": 22,
+      "hpFormula": "3d8 + 9",
+      "speed": "20 ft.",
+      "initiativeMod": -2,
+      "initiativeStatic": 8,
+      "abilities": {
+        "str": { "score": 13, "mod": 1, "save": 1 },
+        "dex": { "score": 6, "mod": -2, "save": -2 },
+        "con": { "score": 16, "mod": 3, "save": 3 },
+        "int": { "score": 3, "mod": -4, "save": -4 },
+        "wis": { "score": 6, "mod": -2, "save": 0 },
+        "cha": { "score": 5, "mod": -3, "save": -3 }
+      },
+      "skills": {},
+      "resistances": [],
+      "immunities": ["Poison", "Exhaustion", "Poisoned"],
+      "senses": "Darkvision 60 ft.; Passive Perception 8",
+      "languages": ["Understands the languages it knew in life but can't speak"],
+      "cr": "1/4",
+      "xp": 50,
+      "pb": 2,
+      "lore2014": "From somewhere in the darkness, a gurgling moan is heard. A form lurches into view, dragging one foot as it raises bloated arms and broken hands. The zombie advances, driven to kill anyone too slow to escape its relentless grasp.",
+      "tacticalRole": "Brute / Relentless Tar-Pit",
+      "traits": [
+        {
+          "name": "Undead Fortitude",
+          "description": "If damage reduces the zombie to 0 Hit Points, it must make a Constitution saving throw with a DC of 5 + the damage taken, unless the damage is Radiant or from a Critical Hit. On a success, the zombie drops to 1 Hit Point instead."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Slam",
+          "type": "Melee Attack Roll",
+          "attackBonus": 3,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 1",
+          "damageAverage": 4,
+          "damageType": "Bludgeoning",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "size": "Medium",
+      "type": "Beast",
+      "alignment": "Unaligned",
+      "habitat": ["Forest", "Grassland", "Hill"],
+      "treasureTheme": "None",
+      "ac": 13,
+      "acType": "Natural Armor",
+      "hp": 11,
+      "hpFormula": "2d8 + 2",
+      "speed": "40 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 12, "mod": 1, "save": 1 },
+        "dex": { "score": 15, "mod": 2, "save": 2 },
+        "con": { "score": 12, "mod": 1, "save": 1 },
+        "int": { "score": 3, "mod": -4, "save": -4 },
+        "wis": { "score": 12, "mod": 1, "save": 1 },
+        "cha": { "score": 6, "mod": -2, "save": -2 }
+      },
+      "skills": { "Perception": 5, "Stealth": 4 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Passive Perception 15",
+      "languages": [],
+      "cr": "1/4",
+      "xp": 50,
+      "pb": 2,
+      "lore2014": "Pack-hunting predators of forests and hills, wolves often den in the mouths of goblin caves where they are chained as sentries or trained as vicious war-mounts.",
+      "tacticalRole": "Skirmisher / Pack Knockdown",
+      "traits": [
+        {
+          "name": "Keen Hearing and Smell",
+          "description": "The wolf has Advantage on Wisdom (Perception) checks that rely on hearing or smell."
+        },
+        {
+          "name": "Pack Tactics",
+          "description": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally isn't Incapacitated."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d4 + 2",
+          "damageAverage": 7,
+          "damageType": "Piercing",
+          "riderEffect": "2024 Auto-Rider: If the target is a Medium or smaller creature, it has the Prone condition."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "orc",
+      "name": "Orc",
+      "size": "Medium",
+      "type": "Humanoid (Orc)",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Arctic", "Forest", "Hill", "Mountain", "Underdark"],
+      "treasureTheme": "Armaments",
+      "ac": 13,
+      "acType": "Hide Armor",
+      "hp": 15,
+      "hpFormula": "2d8 + 6",
+      "speed": "30 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 16, "mod": 3, "save": 3 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 16, "mod": 3, "save": 3 },
+        "int": { "score": 7, "mod": -2, "save": -2 },
+        "wis": { "score": 11, "mod": 0, "save": 0 },
+        "cha": { "score": 10, "mod": 0, "save": 0 }
+      },
+      "skills": { "Intimidation": 2 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 10",
+      "languages": ["Common", "Orc"],
+      "cr": "1/2",
+      "xp": 100,
+      "pb": 2,
+      "lore2014": "Fierce raiders and shock warriors who test their strength in relentless border skirmishes. Orc warbands close distance with terrifying speed, hurling heavy javelins before cleaving through shield walls with greataxes.",
+      "tacticalRole": "Brute / Gap-Closing Charger",
+      "traits": [
+        {
+          "name": "Relentless Endurance (1/Day)",
+          "description": "If the orc is reduced to 0 Hit Points but not killed outright, it drops to 1 Hit Point instead."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Greataxe",
+          "type": "Melee Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d12 + 3",
+          "damageAverage": 9,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Javelin",
+          "type": "Melee or Ranged Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "reach 5 ft. or range 30/120 ft.",
+          "damageDice": "1d6 + 3",
+          "damageAverage": 6,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Aggressive",
+          "description": "The orc moves up to its Speed toward a hostile creature that it can see."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "goblin-boss",
+      "name": "Goblin Boss",
+      "size": "Small",
+      "type": "Fey (Goblinoid)",
+      "alignment": "Neutral Evil",
+      "habitat": ["Forest", "Hill", "Underdark", "Dungeon"],
+      "treasureTheme": "Implements",
+      "ac": 17,
+      "acType": "Chain Shirt, Shield",
+      "hp": 21,
+      "hpFormula": "6d6",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 10, "mod": 0, "save": 0 },
+        "dex": { "score": 14, "mod": 2, "save": 4 },
+        "con": { "score": 10, "mod": 0, "save": 0 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 8, "mod": -1, "save": -1 },
+        "cha": { "score": 10, "mod": 0, "save": 0 }
+      },
+      "skills": { "Stealth": 6 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 9",
+      "languages": ["Common", "Goblin"],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "The cunning chieftain of a goblin warren rules through a mix of bullying, swagger, and self-preservation — never hesitating to yank a lesser goblin into the path of an incoming blade.",
+      "tacticalRole": "Leader / Skirmisher Commander",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The goblin makes two attacks with its Scimitar or Shortbow. The second attack has Disadvantage."
+        },
+        {
+          "name": "Scimitar",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Shortbow",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "range 80/320 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Nimble Escape",
+          "description": "The goblin takes the Disengage or Hide action."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Redirect Attack",
+          "description": "Trigger: A creature the goblin can see targets it with an attack. Response: The goblin chooses another goblin within 5 feet of it. The two goblins swap places, and the chosen goblin becomes the target instead."
+        }
+      ],
+      "legendaryActions": []
+    },
+    {
+      "id": "bugbear",
+      "name": "Bugbear",
+      "size": "Medium",
+      "type": "Fey (Goblinoid)",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Forest", "Grassland", "Underdark", "Dungeon"],
+      "treasureTheme": "Armaments",
+      "ac": 16,
+      "acType": "Hide Armor, Shield",
+      "hp": 27,
+      "hpFormula": "5d8 + 5",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 15, "mod": 2, "save": 2 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 13, "mod": 1, "save": 1 },
+        "int": { "score": 8, "mod": -1, "save": -1 },
+        "wis": { "score": 11, "mod": 0, "save": 0 },
+        "cha": { "score": 9, "mod": -1, "save": -1 }
+      },
+      "skills": { "Stealth": 6, "Survival": 2 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 10",
+      "languages": ["Common", "Goblin"],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "Bugbears are hairy, hulking goblinoids born for battle and mayhem. Despite their intimidating build, bugbears move with surprising stealth, fond of setting ambushes and crushing foes before they can draw steel.",
+      "tacticalRole": "Ambusher / Heavy Brute",
+      "traits": [
+        {
+          "name": "Brute & Surprise Attack",
+          "description": "The bugbear's melee weapons deal one extra die of their damage (included in the attack). If the bugbear hits a creature that hasn't taken a turn yet in the current combat, the target takes an extra 7 (2d6) damage."
+        },
+        {
+          "name": "Long-Limbed",
+          "description": "The bugbear has a reach of 10 feet with melee attacks on its turn."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Morningstar",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 10 ft.",
+          "damageDice": "2d8 + 2",
+          "damageAverage": 11,
+          "damageType": "Piercing",
+          "riderEffect": "Deals an extra 7 (2d6) Piercing damage if target is Surprised or hasn't acted yet in Round 1."
+        },
+        {
+          "name": "Javelin",
+          "type": "Melee or Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 10 ft. or range 30/120 ft.",
+          "damageDice": "2d6 + 2",
+          "damageAverage": 9,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "ghoul",
+      "name": "Ghoul",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Swamp", "Underdark", "Urban", "Dungeon"],
+      "treasureTheme": "Relics",
+      "ac": 12,
+      "acType": "Natural Agility",
+      "hp": 22,
+      "hpFormula": "5d8",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 13, "mod": 1, "save": 1 },
+        "dex": { "score": 15, "mod": 2, "save": 2 },
+        "con": { "score": 10, "mod": 0, "save": 0 },
+        "int": { "score": 7, "mod": -2, "save": -2 },
+        "wis": { "score": 10, "mod": 0, "save": 0 },
+        "cha": { "score": 6, "mod": -2, "save": -2 }
+      },
+      "skills": { "Perception": 2, "Stealth": 4 },
+      "resistances": [],
+      "immunities": ["Poison", "Charmed", "Exhaustion", "Poisoned"],
+      "senses": "Darkvision 60 ft.; Passive Perception 12",
+      "languages": ["Common"],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "Ghouls roam the night in packs, driven by an insatiable hunger for humanoid flesh. They thrive in crypts and catacombs where decay is thick, using their filthy, paralyzing claws to immobilize prey before feasting.",
+      "tacticalRole": "Skirmisher / Crowd-Control Paralyzer",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 2,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d6 + 2",
+          "damageAverage": 9,
+          "damageType": "Piercing",
+          "riderEffect": "Deals an extra 3 (1d6) Necrotic damage if the target is Paralyzed."
+        },
+        {
+          "name": "Claws",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d4 + 2",
+          "damageAverage": 7,
+          "damageType": "Slashing",
+          "riderEffect": "If the target is a creature other than an Elf or Undead, it must succeed on a DC 10 Constitution saving throw or have the Paralyzed condition for 1 minute (repeats save at end of each of its turns)."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "giant-spider",
+      "name": "Giant Spider",
+      "size": "Large",
+      "type": "Beast",
+      "alignment": "Unaligned",
+      "habitat": ["Desert", "Forest", "Swamp", "Underdark", "Urban"],
+      "treasureTheme": "None",
+      "ac": 14,
+      "acType": "Natural Armor",
+      "hp": 26,
+      "hpFormula": "4d10 + 4",
+      "speed": "30 ft., Climb 30 ft.",
+      "initiativeMod": 3,
+      "initiativeStatic": 13,
+      "abilities": {
+        "str": { "score": 14, "mod": 2, "save": 2 },
+        "dex": { "score": 16, "mod": 3, "save": 3 },
+        "con": { "score": 12, "mod": 1, "save": 1 },
+        "int": { "score": 2, "mod": -4, "save": -4 },
+        "wis": { "score": 11, "mod": 0, "save": 0 },
+        "cha": { "score": 4, "mod": -3, "save": -3 }
+      },
+      "skills": { "Stealth": 7 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Blindsight 10 ft., Darkvision 60 ft.; Passive Perception 10",
+      "languages": [],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "To snare its prey, a giant spider spins elaborate webs or shoots sticky strands of webbing from its abdomen. Giant spiders lair in dark ceilings and subterranean crevices, waiting for vibrations along their silk threads.",
+      "tacticalRole": "Ambusher / Web Controller",
+      "traits": [
+        {
+          "name": "Spider Climb",
+          "description": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+        },
+        {
+          "name": "Web Sense & Web Walker",
+          "description": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web, and ignores movement restrictions caused by webbing."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d8 + 3",
+          "damageAverage": 7,
+          "damageType": "Piercing",
+          "riderEffect": "Target must make a DC 11 Constitution saving throw, taking 9 (2d8) Poison damage on a failed save, or half as much on a success. If the poison damage reduces the target to 0 HP, the target is Stable but Poisoned and Paralyzed for 1 hour."
+        },
+        {
+          "name": "Web (Recharge 5-6)",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "range 30/60 ft.",
+          "damageDice": "0",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "On hit, the target has the Restrained condition by webbing. As an Action, the Restrained target can make a DC 12 Strength (Athletics) check, bursting the webbing on a success. The webbing can also be attacked and destroyed (AC 10; HP 5; Vulnerability to Fire)."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "specter",
+      "name": "Specter",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Underdark", "Urban", "Shadowfell", "Ruins"],
+      "treasureTheme": "None",
+      "ac": 12,
+      "acType": "Incorporeal Agility",
+      "hp": 22,
+      "hpFormula": "5d8",
+      "speed": "0 ft., Fly 50 ft. (Hover)",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 1, "mod": -5, "save": -5 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 11, "mod": 0, "save": 0 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 10, "mod": 0, "save": 0 },
+        "cha": { "score": 11, "mod": 0, "save": 0 }
+      },
+      "skills": {},
+      "resistances": ["Acid", "Cold", "Fire", "Lightning", "Thunder", "Bludgeoning, Piercing, and Slashing from nonmagical attacks"],
+      "immunities": ["Necrotic", "Poison", "Charmed", "Exhaustion", "Grappled", "Paralyzed", "Petrified", "Poisoned", "Prone", "Restrained", "Unconscious"],
+      "senses": "Darkvision 60 ft.; Passive Perception 10",
+      "languages": ["Understands all languages it knew in life but can't speak"],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "A specter is the angry, unfettered spirit of a humanoid that has been prevented from passing to the afterlife. Condemned to walk the world forever, it despise all living things that still enjoy warmth and breath.",
+      "tacticalRole": "Incorporeal Skirmisher / Life Drainer",
+      "traits": [
+        {
+          "name": "Incorporeal Movement",
+          "description": "The specter can move through other creatures and objects as if they were difficult terrain. It takes 5 (1d10) Force damage if it ends its turn inside an object."
+        },
+        {
+          "name": "Sunlight Sensitivity",
+          "description": "While in sunlight, the specter has Disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Life Drain",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "3d6",
+          "damageAverage": 10,
+          "damageType": "Necrotic",
+          "riderEffect": "The target must succeed on a DC 10 Constitution saving throw or its Hit Point Maximum is reduced by an amount equal to the damage taken until it finishes a Long Rest. The target dies if this effect reduces its HP Maximum to 0."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "animated-armor",
+      "name": "Animated Armor",
+      "size": "Medium",
+      "type": "Construct",
+      "alignment": "Unaligned",
+      "habitat": ["Urban", "Dungeon"],
+      "treasureTheme": "Armaments",
+      "ac": 18,
+      "acType": "Natural Armor (Plate)",
+      "hp": 33,
+      "hpFormula": "6d8 + 6",
+      "speed": "25 ft.",
+      "initiativeMod": 0,
+      "initiativeStatic": 10,
+      "abilities": {
+        "str": { "score": 14, "mod": 2, "save": 2 },
+        "dex": { "score": 11, "mod": 0, "save": 0 },
+        "con": { "score": 13, "mod": 1, "save": 1 },
+        "int": { "score": 1, "mod": -5, "save": -5 },
+        "wis": { "score": 3, "mod": -4, "save": -4 },
+        "cha": { "score": 1, "mod": -5, "save": -5 }
+      },
+      "skills": {},
+      "resistances": [],
+      "immunities": ["Poison", "Psychic", "Blinded", "Charmed", "Deafened", "Exhaustion", "Frightened", "Paralyzed", "Petrified", "Poisoned"],
+      "senses": "Blindsight 60 ft. (blind beyond this radius); Passive Perception 6",
+      "languages": [],
+      "cr": "1",
+      "xp": 200,
+      "pb": 2,
+      "lore2014": "This empty suit of steel plate armor clatters as it moves, heavy gauntlets swinging with the force of a battering ram. Wizards and castle lords often place animated suits of armor along hallways with spoken passphrases.",
+      "tacticalRole": "Dungeon Trap-in-Disguise / High-AC Tank",
+      "traits": [
+        {
+          "name": "Antimagic Susceptibility",
+          "description": "The armor is Incapacitated while in the area of an Antimagic Field. If targeted by Dispel Magic, the armor must succeed on a Constitution saving throw against the caster's spell save DC or fall Unconscious for 1 minute."
+        },
+        {
+          "name": "False Appearance",
+          "description": "While the armor remains motionless, it is indistinguishable from a normal suit of armor."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The armor makes two melee Slam attacks."
+        },
+        {
+          "name": "Slam",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Bludgeoning",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "mimic",
+      "name": "Mimic",
+      "size": "Medium",
+      "type": "Monstrosity (Shapechanger)",
+      "alignment": "Neutral",
+      "habitat": ["Underdark", "Urban", "Dungeon"],
+      "treasureTheme": "Implements",
+      "ac": 12,
+      "acType": "Natural Armor",
+      "hp": 58,
+      "hpFormula": "9d8 + 18",
+      "speed": "15 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 17, "mod": 3, "save": 3 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 15, "mod": 2, "save": 2 },
+        "int": { "score": 5, "mod": -3, "save": -3 },
+        "wis": { "score": 13, "mod": 1, "save": 1 },
+        "cha": { "score": 8, "mod": -1, "save": -1 }
+      },
+      "skills": { "Stealth": 5 },
+      "resistances": [],
+      "immunities": ["Acid", "Prone"],
+      "senses": "Darkvision 60 ft.; Passive Perception 11",
+      "languages": [],
+      "cr": "2",
+      "xp": 450,
+      "pb": 2,
+      "lore2014": "Mimics are predatory, amorphous creatures able to alter their outward texture to resemble wood, stone, and iron. In dungeons, they almost always assume the form of treasure chests or heavy doors, secreting a powerful adhesive that traps greedy adventurers.",
+      "tacticalRole": "Dungeon Trap-in-Disguise / Adhesive Grappler",
+      "traits": [
+        {
+          "name": "Adhesive (Object Form Only)",
+          "description": "The mimic adheres to anything that touches it. A Huge or smaller creature adhered to the mimic is also Grappled by it (escape DC 13). Ability checks made to escape this grapple have Disadvantage."
+        },
+        {
+          "name": "False Appearance (Object Form Only)",
+          "description": "While the mimic remains motionless, it is indistinguishable from an ordinary object."
+        },
+        {
+          "name": "Grappler",
+          "description": "The mimic has Advantage on attack rolls against any creature Grappled by it."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Pseudopod",
+          "type": "Melee Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d8 + 3",
+          "damageAverage": 7,
+          "damageType": "Bludgeoning",
+          "riderEffect": "If the mimic is in object form, the target is subjected to its Adhesive trait (automatically Grappled, escape DC 13 with Disadvantage)."
+        },
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 5,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d8 + 3",
+          "damageAverage": 7,
+          "damageType": "Piercing",
+          "riderEffect": "Plus 4 (1d8) Acid damage."
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Shapechange",
+          "description": "The mimic polymorphs into an object or back into its true, amorphous form. Its statistics are the same in each form."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "gelatinous-cube",
+      "name": "Gelatinous Cube",
+      "size": "Large",
+      "type": "Ooze",
+      "alignment": "Unaligned",
+      "habitat": ["Underdark", "Dungeon"],
+      "treasureTheme": "Armaments",
+      "ac": 6,
+      "acType": "Protoplasmic Mass",
+      "hp": 84,
+      "hpFormula": "8d10 + 40",
+      "speed": "15 ft.",
+      "initiativeMod": -4,
+      "initiativeStatic": 6,
+      "abilities": {
+        "str": { "score": 14, "mod": 2, "save": 2 },
+        "dex": { "score": 3, "mod": -4, "save": -4 },
+        "con": { "score": 20, "mod": 5, "save": 5 },
+        "int": { "score": 1, "mod": -5, "save": -5 },
+        "wis": { "score": 6, "mod": -2, "save": -2 },
+        "cha": { "score": 1, "mod": -5, "save": -5 }
+      },
+      "skills": {},
+      "resistances": [],
+      "immunities": ["Acid", "Blinded", "Charmed", "Deafened", "Exhaustion", "Frightened", "Prone"],
+      "senses": "Blindsight 60 ft. (blind beyond this radius); Passive Perception 8",
+      "languages": [],
+      "cr": "2",
+      "xp": 450,
+      "pb": 2,
+      "lore2014": "Gelatinous cubes scour dungeon passages in silent, predictable patterns, leaving perfectly clean paths in their wake. Almost completely transparent, a ten-foot cube of digesting acid is often noticed only by the coins and skulls suspended inside it.",
+      "tacticalRole": "Dungeon Trap-in-Disguise / Engulfing Hazard",
+      "traits": [
+        {
+          "name": "Ooze Cube",
+          "description": "The cube takes up its entire 10-by-10-foot space. Other creatures can enter the space, but a creature that does so is subjected to the cube's Engulf and has Disadvantage on the saving throw."
+        },
+        {
+          "name": "Transparent",
+          "description": "Even when the cube is in plain sight, it takes a successful DC 15 Wisdom (Perception) check to spot a cube that has neither moved nor attacked. A creature that tries to enter the cube's space while unaware of the cube is surprised by the cube."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Pseudopod",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "3d6",
+          "damageAverage": 10,
+          "damageType": "Acid",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Engulf",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "10 ft. cube",
+          "damageDice": "3d6",
+          "damageAverage": 10,
+          "damageType": "Acid",
+          "riderEffect": "The cube moves up to its speed. Each Large or smaller creature in its path must make a DC 12 Dexterity saving throw. On a failed save, the creature takes 10 (3d6) Acid damage, is engulfed (Restrained, can't breathe, and takes 21 [6d6] Acid damage at the start of each of the cube's turns). Escaping requires an Action and a DC 12 Strength (Athletics) check."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "cult-fanatic",
+      "name": "Cult Fanatic",
+      "size": "Medium",
+      "type": "Humanoid (Any Lineage)",
+      "alignment": "Any Non-Good Alignment",
+      "habitat": ["Urban", "Dungeon", "Ruins"],
+      "treasureTheme": "Relics",
+      "ac": 13,
+      "acType": "Leather Armor",
+      "hp": 33,
+      "hpFormula": "6d8 + 6",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 12, "mod": 1, "save": 1 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 13, "mod": 1, "save": 3 },
+        "cha": { "score": 14, "mod": 2, "save": 2 }
+      },
+      "skills": { "Deception": 4, "Persuasion": 4, "Religion": 2 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Passive Perception 11",
+      "languages": ["Common", "Infernal or Abyssal"],
+      "cr": "2",
+      "xp": 450,
+      "pb": 2,
+      "lore2014": "Fanatics are often part of a cult's leadership, using their charisma and dogma to influence and prey on those of weak will. Most are interested in personal power above all else, wielding dark divine magic granted by their patron.",
+      "tacticalRole": "Artillery & Spellcaster / Control Leader",
+      "traits": [
+        {
+          "name": "Dark Devotion",
+          "description": "The fanatic has Advantage on saving throws against being Charmed or Frightened."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The fanatic makes two Pact Dagger or Necrotic Bolt attacks."
+        },
+        {
+          "name": "Pact Dagger",
+          "type": "Melee or Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft. or range 20/60 ft.",
+          "damageDice": "1d4 + 2",
+          "damageAverage": 4,
+          "damageType": "Piercing",
+          "riderEffect": "Plus 4 (1d8) Necrotic damage."
+        },
+        {
+          "name": "Spellcasting (2024 Slotless)",
+          "type": "Spellcasting",
+          "attackBonus": 3,
+          "reachOrRange": "60 ft.",
+          "damageDice": "3d10",
+          "damageAverage": 16,
+          "damageType": "Necrotic / Force",
+          "riderEffect": "Wisdom spellcasting (Save DC 11, +3 to hit). At Will: Light, Sacred Flame (1d8 Radiant), Thaumaturgy. 2/Day Each: Command, Hold Person, Inflict Wounds (3d10 Necrotic). 1/Day: Spiritual Weapon (Bonus Action)."
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Spiritual Weapon (1/Day)",
+          "description": "The fanatic conjures a floating spectral weapon within 60 ft. and makes a melee spell attack (+3 to hit) dealing 5 (1d8 + 1) Force damage."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "ogre",
+      "name": "Ogre",
+      "size": "Large",
+      "type": "Giant",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Arctic", "Forest", "Grassland", "Hill", "Mountain", "Swamp", "Underdark"],
+      "treasureTheme": "Armaments",
+      "ac": 11,
+      "acType": "Hide Armor",
+      "hp": 59,
+      "hpFormula": "7d10 + 21",
+      "speed": "40 ft.",
+      "initiativeMod": -1,
+      "initiativeStatic": 9,
+      "abilities": {
+        "str": { "score": 19, "mod": 4, "save": 4 },
+        "dex": { "score": 8, "mod": -1, "save": -1 },
+        "con": { "score": 16, "mod": 3, "save": 3 },
+        "int": { "score": 5, "mod": -3, "save": -3 },
+        "wis": { "score": 7, "mod": -2, "save": -2 },
+        "cha": { "score": 7, "mod": -2, "save": -2 }
+      },
+      "skills": {},
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 8",
+      "languages": ["Common", "Giant"],
+      "cr": "2",
+      "xp": 450,
+      "pb": 2,
+      "lore2014": "Ogres are as lazy of mind as they are strong of body. Standing between nine and ten feet tall, they live by raiding, scavenging, and bullying goblinoid tribes into serving them, flying into terrible rages when denied food or shiny loot.",
+      "tacticalRole": "Brute / Heavy Frontliner",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Greatclub",
+          "type": "Melee Attack Roll",
+          "attackBonus": 6,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d8 + 4",
+          "damageAverage": 13,
+          "damageType": "Bludgeoning",
+          "riderEffect": "2024 Rider: A Medium or smaller target hit by the greatclub is pushed 5 feet straight away."
+        },
+        {
+          "name": "Javelin",
+          "type": "Melee or Ranged Attack Roll",
+          "attackBonus": 6,
+          "reachOrRange": "reach 5 ft. or range 30/120 ft.",
+          "damageDice": "2d6 + 4",
+          "damageAverage": 11,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "owlbear",
+      "name": "Owlbear",
+      "size": "Large",
+      "type": "Monstrosity",
+      "alignment": "Unaligned",
+      "habitat": ["Forest", "Hill"],
+      "treasureTheme": "None",
+      "ac": 13,
+      "acType": "Natural Armor",
+      "hp": 59,
+      "hpFormula": "7d10 + 21",
+      "speed": "40 ft., Climb 40 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 20, "mod": 5, "save": 5 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 17, "mod": 3, "save": 3 },
+        "int": { "score": 3, "mod": -4, "save": -4 },
+        "wis": { "score": 12, "mod": 1, "save": 1 },
+        "cha": { "score": 7, "mod": -2, "save": -2 }
+      },
+      "skills": { "Perception": 5 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 15",
+      "languages": [],
+      "cr": "3",
+      "xp": 700,
+      "pb": 2,
+      "lore2014": "An owlbear's screech echoes through dark valleys and benighted forests, piercing the quiet night to announce the death of its prey. Feathers cover the thick, shaggy coat of its bearlike body, and the limpid pupils of its great round eyes stare furiously from its owl-like head.",
+      "tacticalRole": "Brute / Apex Predator",
+      "traits": [
+        {
+          "name": "Keen Sight and Smell",
+          "description": "The owlbear has Advantage on Wisdom (Perception) checks that rely on sight or smell."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The owlbear makes two attacks: one with its Beak and one with its Claws."
+        },
+        {
+          "name": "Beak",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d10 + 5",
+          "damageAverage": 10,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Claws",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d8 + 5",
+          "damageAverage": 14,
+          "damageType": "Slashing",
+          "riderEffect": "2024 Rider: If the target is a Large or smaller creature, it has the Grappled condition (escape DC 15)."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "wight",
+      "name": "Wight",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Neutral Evil",
+      "habitat": ["Desert", "Swamp", "Underdark", "Urban", "Shadowfell"],
+      "treasureTheme": "Armaments",
+      "ac": 14,
+      "acType": "Studded Leather",
+      "hp": 45,
+      "hpFormula": "6d8 + 18",
+      "speed": "30 ft.",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 15, "mod": 2, "save": 2 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 16, "mod": 3, "save": 3 },
+        "int": { "score": 10, "mod": 0, "save": 0 },
+        "wis": { "score": 13, "mod": 1, "save": 1 },
+        "cha": { "score": 15, "mod": 2, "save": 2 }
+      },
+      "skills": { "Perception": 3, "Stealth": 4 },
+      "resistances": ["Necrotic", "Bludgeoning, Piercing, and Slashing from nonmagical attacks that aren't Silvered"],
+      "immunities": ["Poison", "Exhaustion", "Poisoned"],
+      "senses": "Darkvision 60 ft.; Passive Perception 13",
+      "languages": ["The languages it knew in life"],
+      "cr": "3",
+      "xp": 700,
+      "pb": 2,
+      "lore2014": "Barrow-kings and fallen warlords returned from death through dark oaths, wights possess the memories and martial prowess of their former lives. Glowing embers burn in their eye sockets, and any humanoid slain by their life-draining touch rises as a zombie under their command.",
+      "tacticalRole": "Leader / Martial Undead Commander",
+      "traits": [
+        {
+          "name": "Sunlight Sensitivity",
+          "description": "While in sunlight, the wight has Disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The wight makes two Longsword attacks or two Longbow attacks. It can use its Life Drain in place of one Longsword attack."
+        },
+        {
+          "name": "Life Drain",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 2",
+          "damageAverage": 5,
+          "damageType": "Necrotic",
+          "riderEffect": "Target must succeed on a DC 13 Constitution saving throw or its HP Maximum is reduced by an amount equal to the damage taken until a Long Rest. A humanoid slain by this attack rises 24 hours later as a Zombie under the wight's control."
+        },
+        {
+          "name": "Longsword (Two-Handed)",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d10 + 2",
+          "damageAverage": 7,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Longbow",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "range 150/600 ft.",
+          "damageDice": "1d8 + 2",
+          "damageAverage": 6,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "green-hag",
+      "name": "Green Hag",
+      "size": "Medium",
+      "type": "Fey",
+      "alignment": "Neutral Evil",
+      "habitat": ["Forest", "Hill", "Swamp"],
+      "treasureTheme": "Arcana",
+      "ac": 17,
+      "acType": "Natural Armor",
+      "hp": 82,
+      "hpFormula": "11d8 + 33",
+      "speed": "30 ft., Swim 30 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 18, "mod": 4, "save": 4 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 16, "mod": 3, "save": 3 },
+        "int": { "score": 13, "mod": 1, "save": 1 },
+        "wis": { "score": 14, "mod": 2, "save": 2 },
+        "cha": { "score": 14, "mod": 2, "save": 2 }
+      },
+      "skills": { "Arcana": 3, "Deception": 4, "Perception": 4, "Stealth": 3 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 14",
+      "languages": ["Common", "Draconic", "Sylvan"],
+      "cr": "3",
+      "xp": 700,
+      "pb": 2,
+      "lore2014": "Wretched, hateful fey creatures that dwell in dying woods and stagnant marshes, green hags delight in corrupting the pure and luring mortals into tragic bargains that always twist against the petitioner.",
+      "tacticalRole": "Spellcaster / Trickster & Illusory Ambusher",
+      "traits": [
+        {
+          "name": "Amphibious",
+          "description": "The hag can breathe air and water."
+        },
+        {
+          "name": "Mimicry",
+          "description": "The hag can mimic animal sounds and humanoid voices. A creature that hears the sounds can tell they are imitations with a successful DC 14 Wisdom (Insight) check."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Claws",
+          "type": "Melee Attack Roll",
+          "attackBonus": 6,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d8 + 4",
+          "damageAverage": 13,
+          "damageType": "Slashing",
+          "riderEffect": "Plus 3 (1d6) Poison damage."
+        },
+        {
+          "name": "Spellcasting (2024 Slotless)",
+          "type": "Spellcasting",
+          "attackBonus": 4,
+          "reachOrRange": "60 ft.",
+          "damageDice": "2d4",
+          "damageAverage": 5,
+          "damageType": "Psychic",
+          "riderEffect": "Charisma spellcasting (Save DC 12). At Will: Dancing Lights, Disguise Self (Illusory Appearance), Minor Illusion, Vicious Mockery (2d4 Psychic + Disadvantage on next attack)."
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Invisible Passage",
+          "description": "The hag magically turns Invisible until she attacks or casts a spell, or until her Concentration ends (as if concentrating on a spell). While Invisible, she leaves no physical evidence of her passage."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "doppelganger",
+      "name": "Doppelganger",
+      "size": "Medium",
+      "type": "Monstrosity (Shapechanger)",
+      "alignment": "Neutral",
+      "habitat": ["Underdark", "Urban", "Dungeon"],
+      "treasureTheme": "Implements",
+      "ac": 14,
+      "acType": "Natural Agility",
+      "hp": 52,
+      "hpFormula": "8d8 + 16",
+      "speed": "30 ft.",
+      "initiativeMod": 4,
+      "initiativeStatic": 14,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 18, "mod": 4, "save": 4 },
+        "con": { "score": 14, "mod": 2, "save": 2 },
+        "int": { "score": 11, "mod": 0, "save": 0 },
+        "wis": { "score": 12, "mod": 1, "save": 1 },
+        "cha": { "score": 14, "mod": 2, "save": 2 }
+      },
+      "skills": { "Deception": 6, "Insight": 3 },
+      "resistances": [],
+      "immunities": ["Charmed"],
+      "senses": "Darkvision 60 ft.; Passive Perception 11",
+      "languages": ["Common"],
+      "cr": "3",
+      "xp": 700,
+      "pb": 2,
+      "lore2014": "Doppelgangers are devious shapeshifters that take on the appearance of other humanoids, throwing off pursuit or luring victims to their doom with misdirection and disguise. By reading surface thoughts, they mimic a victim's speech and secrets flawlessly.",
+      "tacticalRole": "Infiltrator / Social & Combat Ambusher",
+      "traits": [
+        {
+          "name": "Ambusher & Surprise Attack",
+          "description": "The doppelganger has Advantage on attack rolls against any creature it has surprised. If it hits a surprised creature during the first round of combat, the target takes an extra 10 (3d6) damage from the attack."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The doppelganger makes two melee Slam attacks."
+        },
+        {
+          "name": "Slam",
+          "type": "Melee Attack Roll",
+          "attackBonus": 6,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 4",
+          "damageAverage": 7,
+          "damageType": "Bludgeoning",
+          "riderEffect": "Deals +10 (3d6) damage on Round 1 against a surprised target."
+        },
+        {
+          "name": "Read Thoughts",
+          "type": "Mental Action",
+          "attackBonus": null,
+          "reachOrRange": "60 ft.",
+          "damageDice": "0",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The doppelganger magically reads the surface thoughts of one creature within 60 feet. While reading the target's mind, the doppelganger has Advantage on Wisdom (Insight) and Charisma (Deception, Intimidation, and Persuasion) checks against the target."
+        }
+      ],
+      "bonusActions": [
+        {
+          "name": "Shapechange",
+          "description": "The doppelganger polymorphs into a Small or Medium humanoid it has seen, or back into its true form."
+        }
+      ],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "banshee",
+      "name": "Banshee",
+      "size": "Medium",
+      "type": "Undead",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Coastal", "Forest", "Swamp", "Ruins"],
+      "treasureTheme": "Relics",
+      "ac": 12,
+      "acType": "Incorporeal Agility",
+      "hp": 58,
+      "hpFormula": "13d8",
+      "speed": "0 ft., Fly 40 ft. (Hover)",
+      "initiativeMod": 2,
+      "initiativeStatic": 12,
+      "abilities": {
+        "str": { "score": 1, "mod": -5, "save": -5 },
+        "dex": { "score": 14, "mod": 2, "save": 2 },
+        "con": { "score": 10, "mod": 0, "save": 0 },
+        "int": { "score": 12, "mod": 1, "save": 1 },
+        "wis": { "score": 11, "mod": 0, "save": 2 },
+        "cha": { "score": 17, "mod": 3, "save": 5 }
+      },
+      "skills": {},
+      "resistances": ["Acid", "Fire", "Lightning", "Thunder", "Bludgeoning, Piercing, and Slashing from nonmagical attacks"],
+      "immunities": ["Cold", "Necrotic", "Poison", "Charmed", "Exhaustion", "Frightened", "Grappled", "Paralyzed", "Petrified", "Poisoned", "Prone", "Restrained"],
+      "senses": "Darkvision 60 ft.; Passive Perception 10",
+      "languages": ["Common", "Elvish"],
+      "cr": "4",
+      "xp": 1100,
+      "pb": 2,
+      "lore2014": "The nocturnal wail of a banshee portends death. A banshee is the hateful spirit of a female elf who was blessed with great beauty in life but used that gift to corrupt and control others, now bound to a haunted ruin where she hoards mirrors and jewelry.",
+      "tacticalRole": "High-Danger Controller / Lethal AoE Spirit",
+      "traits": [
+        {
+          "name": "Detect Life",
+          "description": "The banshee can magically sense the presence of creatures up to 5 miles away that aren't Undead or Constructs."
+        },
+        {
+          "name": "Incorporeal Movement",
+          "description": "The banshee can move through other creatures and objects as if they were difficult terrain. She takes 5 (1d10) Force damage if she ends her turn inside an object."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Corrupting Touch",
+          "type": "Melee Attack Roll",
+          "attackBonus": 4,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "3d6 + 2",
+          "damageAverage": 12,
+          "damageType": "Necrotic",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Horrifying Visage",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "60 ft.",
+          "damageDice": "0",
+          "damageAverage": 0,
+          "damageType": "Psychic",
+          "riderEffect": "Each non-Undead creature within 60 ft. that can see the banshee must succeed on a DC 13 Wisdom saving throw or be Frightened for 1 minute (repeats save at end of each turn)."
+        },
+        {
+          "name": "Wail (1/Day)",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "30 ft. emanation",
+          "damageDice": "3d6",
+          "damageAverage": 10,
+          "damageType": "Psychic",
+          "riderEffect": "Provided she isn't in sunlight, the banshee releases a mournful wail. Each non-Undead, non-Construct creature within 30 feet that can hear her must make a DC 13 Constitution saving throw. On a failure, a creature drops to 0 Hit Points. On a success, a creature takes 10 (3d6) Psychic damage."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "troll",
+      "name": "Troll",
+      "size": "Large",
+      "type": "Giant",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Arctic", "Forest", "Hill", "Mountain", "Swamp", "Underdark"],
+      "treasureTheme": "Armaments",
+      "ac": 15,
+      "acType": "Natural Armor",
+      "hp": 84,
+      "hpFormula": "8d10 + 40",
+      "speed": "30 ft.",
+      "initiativeMod": 1,
+      "initiativeStatic": 11,
+      "abilities": {
+        "str": { "score": 18, "mod": 4, "save": 4 },
+        "dex": { "score": 13, "mod": 1, "save": 1 },
+        "con": { "score": 20, "mod": 5, "save": 5 },
+        "int": { "score": 7, "mod": -2, "save": -2 },
+        "wis": { "score": 9, "mod": -1, "save": -1 },
+        "cha": { "score": 7, "mod": -2, "save": -2 }
+      },
+      "skills": { "Perception": 2 },
+      "resistances": [],
+      "immunities": [],
+      "senses": "Darkvision 60 ft.; Passive Perception 12",
+      "languages": ["Giant"],
+      "cr": "5",
+      "xp": 1800,
+      "pb": 3,
+      "lore2014": "Born with horrific appetites, trolls eat anything they can catch and devour. Their rubbery green hide and gangly limbs Knit back together in seconds unless scorched by fire or dissolved by acid.",
+      "tacticalRole": "Regenerating Brute / Relentless Juggernaut",
+      "traits": [
+        {
+          "name": "Keen Smell",
+          "description": "The troll has Advantage on Wisdom (Perception) checks that rely on smell."
+        },
+        {
+          "name": "Regeneration",
+          "description": "The troll regains 10 Hit Points at the start of its turn. If the troll takes Acid or Fire damage, this trait doesn't function at the start of the troll's next turn. The troll dies only if it starts its turn with 0 Hit Points and doesn't regenerate."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The troll makes three attacks: one with its Bite and two with its Claws."
+        },
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "1d6 + 4",
+          "damageAverage": 7,
+          "damageType": "Piercing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Claw",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d6 + 4",
+          "damageAverage": 11,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "mind-flayer",
+      "name": "Mind Flayer (Illithid)",
+      "size": "Medium",
+      "type": "Aberration",
+      "alignment": "Lawful Evil",
+      "habitat": ["Underdark"],
+      "treasureTheme": "Arcana",
+      "ac": 15,
+      "acType": "Breastplate",
+      "hp": 71,
+      "hpFormula": "13d8 + 13",
+      "speed": "30 ft., Fly 15 ft. (Hover)",
+      "initiativeMod": 4,
+      "initiativeStatic": 14,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 12, "mod": 1, "save": 1 },
+        "con": { "score": 12, "mod": 1, "save": 1 },
+        "int": { "score": 19, "mod": 4, "save": 7 },
+        "wis": { "score": 17, "mod": 3, "save": 6 },
+        "cha": { "score": 17, "mod": 3, "save": 6 }
+      },
+      "skills": { "Arcana": 7, "Deception": 6, "Insight": 6, "Perception": 6, "Persuasion": 6, "Stealth": 4 },
+      "resistances": ["Psychic"],
+      "immunities": [],
+      "senses": "Darkvision 120 ft.; Passive Perception 16",
+      "languages": ["Deep Speech", "Undercommon", "Telepathy 120 ft."],
+      "cr": "7",
+      "xp": 2900,
+      "pb": 3,
+      "lore2014": "Mind flayers, also called illithids, are the scourge of sentient creatures across countless worlds. Psionic tyrants, slavers, and interdimensional voyagers, they are insidious masterminds that harvest entire races to subsist on humanoid brains.",
+      "tacticalRole": "Boss / Psionic Controller & Brain-Extractor",
+      "traits": [
+        {
+          "name": "Magic Resistance",
+          "description": "The mind flayer has Advantage on saving throws against spells and other magical effects."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Tentacles",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d10 + 4",
+          "damageAverage": 15,
+          "damageType": "Psychic",
+          "riderEffect": "If the target is Medium or smaller, it is Grappled (escape DC 15) and must succeed on a DC 15 Intelligence saving throw or be Stunned until this grapple ends."
+        },
+        {
+          "name": "Extract Brain",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft. (one Incapacitated humanoid Grappled by the mind flayer)",
+          "damageDice": "10d10",
+          "damageAverage": 55,
+          "damageType": "Piercing",
+          "riderEffect": "If this damage reduces the target to 0 Hit Points, the mind flayer kills the target by extracting and devouring its brain."
+        },
+        {
+          "name": "Mind Blast (Recharge 5-6)",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "60-foot cone",
+          "damageDice": "4d8 + 4",
+          "damageAverage": 22,
+          "damageType": "Psychic",
+          "riderEffect": "Each creature in a 60-foot cone must succeed on a DC 15 Intelligence saving throw or take 22 (4d8 + 4) Psychic damage and be Stunned for 1 minute (repeats save at end of each of its turns)."
+        },
+        {
+          "name": "Spellcasting (Psionics, No Components)",
+          "type": "Spellcasting",
+          "attackBonus": 7,
+          "reachOrRange": "60 ft.",
+          "damageDice": "0",
+          "damageAverage": 0,
+          "damageType": "Psychic",
+          "riderEffect": "Intelligence spellcasting (Save DC 15). At Will: Detect Thoughts, Levitate. 1/Day Each: Dominate Monster, Plane Shift (self only)."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "young-green-dragon",
+      "name": "Young Green Dragon",
+      "size": "Large",
+      "type": "Dragon (Chromatic)",
+      "alignment": "Lawful Evil",
+      "habitat": ["Forest"],
+      "treasureTheme": "Arcana, Armaments, Implements, Relics (Full Hoard)",
+      "ac": 18,
+      "acType": "Natural Armor",
+      "hp": 136,
+      "hpFormula": "16d10 + 48",
+      "speed": "40 ft., Fly 80 ft., Swim 40 ft.",
+      "initiativeMod": 4,
+      "initiativeStatic": 14,
+      "abilities": {
+        "str": { "score": 19, "mod": 4, "save": 4 },
+        "dex": { "score": 12, "mod": 1, "save": 4 },
+        "con": { "score": 17, "mod": 3, "save": 6 },
+        "int": { "score": 16, "mod": 3, "save": 3 },
+        "wis": { "score": 13, "mod": 1, "save": 4 },
+        "cha": { "score": 15, "mod": 2, "save": 5 }
+      },
+      "skills": { "Deception": 5, "Perception": 7, "Stealth": 4 },
+      "resistances": [],
+      "immunities": ["Poison", "Poisoned"],
+      "senses": "Blindsight 30 ft., Darkvision 120 ft.; Passive Perception 17",
+      "languages": ["Common", "Draconic"],
+      "cr": "8",
+      "xp": 3900,
+      "pb": 3,
+      "lore2014": "The most cunning and treacherous of true dragons, green dragons use misdirection and trickery to get the upper hand against their enemies. Nasty tempered and thoroughly evil, they take special pleasure in subverting and corrupting good-hearted elves and forest guardians.",
+      "tacticalRole": "Solo Boss / Manipulative Aerial & Breath Threat",
+      "traits": [
+        {
+          "name": "Amphibious",
+          "description": "The dragon can breathe air and water."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The dragon makes three attacks: one with its Bite and two with its Claws."
+        },
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 10 ft.",
+          "damageDice": "2d10 + 4",
+          "damageAverage": 15,
+          "damageType": "Piercing",
+          "riderEffect": "Plus 7 (2d6) Poison damage."
+        },
+        {
+          "name": "Claw",
+          "type": "Melee Attack Roll",
+          "attackBonus": 7,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d6 + 4",
+          "damageAverage": 11,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Poison Breath (Recharge 5-6)",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "30-foot cone",
+          "damageDice": "12d6",
+          "damageAverage": 42,
+          "damageType": "Poison",
+          "riderEffect": "Each creature in a 30-foot cone must make a DC 14 Constitution saving throw, taking 42 (12d6) Poison damage on a failed save, or half as much damage on a successful one."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "young-red-dragon",
+      "name": "Young Red Dragon",
+      "size": "Large",
+      "type": "Dragon (Chromatic)",
+      "alignment": "Chaotic Evil",
+      "habitat": ["Hill", "Mountain"],
+      "treasureTheme": "Arcana, Armaments, Implements, Relics (Full Hoard)",
+      "ac": 18,
+      "acType": "Natural Armor",
+      "hp": 178,
+      "hpFormula": "17d10 + 85",
+      "speed": "40 ft., Climb 40 ft., Fly 80 ft.",
+      "initiativeMod": 4,
+      "initiativeStatic": 14,
+      "abilities": {
+        "str": { "score": 23, "mod": 6, "save": 6 },
+        "dex": { "score": 10, "mod": 0, "save": 4 },
+        "con": { "score": 21, "mod": 5, "save": 9 },
+        "int": { "score": 14, "mod": 2, "save": 2 },
+        "wis": { "score": 11, "mod": 0, "save": 4 },
+        "cha": { "score": 19, "mod": 4, "save": 8 }
+      },
+      "skills": { "Perception": 8, "Stealth": 4 },
+      "resistances": [],
+      "immunities": ["Fire"],
+      "senses": "Blindsight 30 ft., Darkvision 120 ft.; Passive Perception 18",
+      "languages": ["Common", "Draconic"],
+      "cr": "10",
+      "xp": 5900,
+      "pb": 4,
+      "lore2014": "The most covetous of the true dragons, red dragons tirelessly seek to increase their treasure hoards. They are exceptionally vain, even for dragons, and their conceit is reflected in their proud bearing and their disdain for other creatures.",
+      "tacticalRole": "Solo Boss / Devastating Fire Tyrant",
+      "traits": [],
+      "actions": [
+        {
+          "name": "Multiattack",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The dragon makes three attacks: one with its Bite and two with its Claws."
+        },
+        {
+          "name": "Bite",
+          "type": "Melee Attack Roll",
+          "attackBonus": 10,
+          "reachOrRange": "reach 10 ft.",
+          "damageDice": "2d10 + 6",
+          "damageAverage": 17,
+          "damageType": "Piercing",
+          "riderEffect": "Plus 3 (1d6) Fire damage."
+        },
+        {
+          "name": "Claw",
+          "type": "Melee Attack Roll",
+          "attackBonus": 10,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "2d6 + 6",
+          "damageAverage": 13,
+          "damageType": "Slashing",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Fire Breath (Recharge 5-6)",
+          "type": "Saving Throw Action",
+          "attackBonus": null,
+          "reachOrRange": "30-foot cone",
+          "damageDice": "16d6",
+          "damageAverage": 56,
+          "damageType": "Fire",
+          "riderEffect": "Each creature in a 30-foot cone must make a DC 17 Dexterity saving throw, taking 56 (16d6) Fire damage on a failed save, or half as much damage on a successful one."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [],
+      "legendaryActions": []
+    },
+    {
+      "id": "lich",
+      "name": "Lich",
+      "size": "Medium",
+      "type": "Undead (Wizard)",
+      "alignment": "Any Evil Alignment",
+      "habitat": ["Any (Ancient Crypts, Arcane Sanctums, Demiplanes)"],
+      "treasureTheme": "Arcana, Relics",
+      "ac": 17,
+      "acType": "Natural Armor (20 with Shield reaction)",
+      "hp": 195,
+      "hpFormula": "26d8 + 78",
+      "speed": "30 ft.",
+      "initiativeMod": 10,
+      "initiativeStatic": 20,
+      "abilities": {
+        "str": { "score": 11, "mod": 0, "save": 0 },
+        "dex": { "score": 16, "mod": 3, "save": 3 },
+        "con": { "score": 16, "mod": 3, "save": 10 },
+        "int": { "score": 20, "mod": 5, "save": 12 },
+        "wis": { "score": 14, "mod": 2, "save": 9 },
+        "cha": { "score": 16, "mod": 3, "save": 3 }
+      },
+      "skills": { "Arcana": 19, "History": 12, "Insight": 9, "Perception": 9 },
+      "resistances": ["Cold", "Lightning", "Necrotic"],
+      "immunities": ["Poison", "Bludgeoning, Piercing, and Slashing from nonmagical attacks", "Charmed", "Exhaustion", "Frightened", "Paralyzed", "Poisoned"],
+      "senses": "Truesight 120 ft.; Passive Perception 19",
+      "languages": ["Common plus up to five other languages"],
+      "cr": "21",
+      "xp": 33000,
+      "pb": 7,
+      "lore2014": "A lich is the remains of a great wizard who embraces the dark state of undeath as a means of conserving their life force and arcane mastery forever. Bound to a hidden phylactery fed with souls, a lich schemes across centuries from a trap-laden lair.",
+      "tacticalRole": "Legendary Solo Boss / Archmage of Undeath",
+      "traits": [
+        {
+          "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+          "description": "If the lich fails a saving throw, it can choose to succeed instead."
+        },
+        {
+          "name": "Rejuvenation",
+          "description": "If it has a phylactery, a destroyed lich gains a new body in 1d10 days, regaining all its Hit Points and becoming active again within 5 feet of the phylactery."
+        },
+        {
+          "name": "Turn Resistance",
+          "description": "The lich has Advantage on saving throws against any effect that turns Undead."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Multiattack (2024 Upgrade)",
+          "type": "Multiattack",
+          "attackBonus": null,
+          "reachOrRange": "Self",
+          "damageDice": "None",
+          "damageAverage": 0,
+          "damageType": "None",
+          "riderEffect": "The lich makes three Eldritch Burst or Paralyzing Touch attacks, or makes two attacks and uses Spellcasting."
+        },
+        {
+          "name": "Paralyzing Touch",
+          "type": "Melee Attack Roll",
+          "attackBonus": 12,
+          "reachOrRange": "reach 5 ft.",
+          "damageDice": "3d6 + 5",
+          "damageAverage": 15,
+          "damageType": "Cold",
+          "riderEffect": "The target must succeed on a DC 18 Constitution saving throw or be Paralyzed for 1 minute (repeats save at end of each of its turns)."
+        },
+        {
+          "name": "Eldritch Burst",
+          "type": "Ranged Attack Roll",
+          "attackBonus": 12,
+          "reachOrRange": "range 120 ft.",
+          "damageDice": "4d10 + 5",
+          "damageAverage": 27,
+          "damageType": "Force",
+          "riderEffect": "None"
+        },
+        {
+          "name": "Spellcasting (2024 Slotless)",
+          "type": "Spellcasting",
+          "attackBonus": 12,
+          "reachOrRange": "120 ft.",
+          "damageDice": "10d6 + 40",
+          "damageAverage": 75,
+          "damageType": "Force / Necrotic",
+          "riderEffect": "Intelligence spellcasting (Save DC 20, +12 to hit). At Will: Detect Magic, Dispel Magic, Fireball (8d6 Fire), Invisibility, Mage Hand, Prestidigitation. 2/Day Each: Dimension Door, Globe of Invulnerability, Plane Shift. 1/Day Each: Disintegrate (10d6 + 40 Force), Finger of Death (7d8 + 30 Necrotic), Power Word Kill."
+        }
+      ],
+      "bonusActions": [],
+      "reactions": [
+        {
+          "name": "Shield / Counterspell",
+          "description": "The lich casts Shield (+5 AC until start of its next turn) or Counterspell in response to a trigger."
+        }
+      ],
+      "legendaryActions": [
+        {
+          "name": "Arcane Step (1 Action)",
+          "description": "The lich teleports up to 30 feet to an unoccupied space it can see."
+        },
+        {
+          "name": "Paralyzing Touch or Eldritch Burst (1 Action)",
+          "description": "The lich makes one Paralyzing Touch or Eldritch Burst attack."
+        },
+        {
+          "name": "Frightening Gaze (2 Actions)",
+          "description": "The lich fixes its gaze on one creature it can see within 10 feet. Target must succeed on a DC 18 Wisdom saving throw or become Frightened for 1 minute."
+        },
+        {
+          "name": "Disrupt Life (3 Actions)",
+          "description": "Each non-Undead creature within 20 feet of the lich must make a DC 18 Constitution saving throw, taking 21 (6d6) Necrotic damage on a failed save, or half as much on a success."
+        }
+      ]
+    }
+  ]
+}
