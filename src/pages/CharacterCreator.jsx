@@ -251,16 +251,26 @@ export default function CharacterCreator() {
             case 1:
                 return (
                     <RaceSelection
+                        selectedRace={localData.race}
                         selected={localData.race}
-                        onSelect={(race) => updateLocalData('race', race)}
+                        selectedSubrace={localData.subrace}
+                        onSelect={(race, subrace) => {
+                            updateLocalData('race', race);
+                            if (subrace) updateLocalData('subrace', subrace);
+                        }}
                         error={errors.race}
                     />
                 );
             case 2:
                 return (
                     <ClassSelection
+                        selectedClass={localData.class}
                         selected={localData.class}
-                        onSelect={(cls) => updateLocalData('class', cls)}
+                        selectedSubclass={localData.subclass}
+                        onSelect={(cls, subclass) => {
+                            updateLocalData('class', cls);
+                            if (subclass) updateLocalData('subclass', subclass);
+                        }}
                         error={errors.class}
                     />
                 );
@@ -268,7 +278,10 @@ export default function CharacterCreator() {
                 return (
                     <StatAllocation
                         stats={localData.stats}
+                        race={localData.race || 'human'}
+                        characterClass={localData.class || 'fighter'}
                         raceBonuses={selectedRace?.statBonuses || {}}
+                        onStatsChange={(stats) => updateLocalData('stats', stats)}
                         onChange={(stats) => updateLocalData('stats', stats)}
                     />
                 );
