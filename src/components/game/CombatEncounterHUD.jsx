@@ -135,12 +135,8 @@ export default function CombatEncounterHUD({
                 </div>
             </div>
 
-            {/* Enemy Target Cards (Scaled Down when > 3 Attackers) */}
-            <div className={
-                isMultiAttacker
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5"
-                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
-            }>
+            {/* Enemy Target Cards (Stretching horizontally across all available space) */}
+            <div className={`flex flex-wrap w-full ${isMultiAttacker ? 'gap-1.5' : 'gap-2'}`}>
                 {enemies.map((enemy) => {
                     const isDead = enemy.hp <= 0;
                     const isTargeted = activeTarget?.instanceId === enemy.instanceId;
@@ -149,7 +145,7 @@ export default function CombatEncounterHUD({
                         <div
                             key={enemy.instanceId}
                             onClick={() => !isDead && setSelectedEnemyId(enemy.instanceId)}
-                            className={`rounded-lg border transition-all cursor-pointer ${
+                            className={`flex-1 min-w-[calc(50%-0.5rem)] sm:min-w-0 rounded-lg border transition-all cursor-pointer ${
                                 isMultiAttacker ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5'
                             } ${
                                 isDead
