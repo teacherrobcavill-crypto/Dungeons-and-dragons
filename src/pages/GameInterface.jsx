@@ -16,6 +16,7 @@ import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
 import { getMonsterById } from '../data/monsters';
 import { getAdventureById } from '../data/adventures';
+import { getSceneImage } from '../data/assets';
 import {
     calculateCharacterDerivedStats,
     createCombatEncounter,
@@ -125,12 +126,15 @@ export default function GameInterface() {
                 initializationRef.current = true;
                 setIsLoading(true);
                 const opening = await generateOpeningNarrative(activeAdventure, character, aiModel);
+                const startNodeId = activeAdventure?.startNodeId;
+                const startSceneImg = getSceneImage(startNodeId) || activeAdventure?.nodes?.[startNodeId]?.image;
                 addChatMessage({
                     type: 'ai',
                     text: opening,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    ...(startSceneImg ? { image: startSceneImg } : {})
                 });
-                const startNode = activeAdventure?.nodes?.[activeAdventure.startNodeId];
+                const startNode = activeAdventure?.nodes?.[startNodeId];
                 if (startNode?.companionMoments?.length && state.companions?.length) {
                     const matched = findCompanionMoments(startNode.companionMoments, state.companions);
                     matched.forEach(({ companion, text }) => {
@@ -220,8 +224,10 @@ export default function GameInterface() {
             ? `\n\n⚔️ **Encounter Threat:** **${targetNode.encounter.title}** (${targetNode.encounter.monsters?.map((m) => `${m.count}× ${m.name}`).join(', ')})! Click **Engage** below or attack to begin tactical combat!`
             : '';
 
+        const sceneImg = getSceneImage(targetNodeId) || targetNode.image;
         pushDmMessage(
-            `📍 **${targetNode.title}**\n\n${targetNode.readAloud}${npcInfo}${encounterAlert}`
+            `📍 **${targetNode.title}**\n\n${targetNode.readAloud}${npcInfo}${encounterAlert}`,
+            sceneImg ? { image: sceneImg } : {}
         );
 
         // Surface any personal companion story moments for this room

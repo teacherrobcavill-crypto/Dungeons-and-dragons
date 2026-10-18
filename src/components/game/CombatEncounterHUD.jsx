@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getClassById } from '../../data/classes';
 import { getSpellsForClass, getDefaultSpellsForClass } from '../../data/spells';
+import { getMonsterImage } from '../../data/assets';
 import { CONDITIONS_INFO } from '../../services/dndEngine';
 
 export default function CombatEncounterHUD({
@@ -180,6 +181,7 @@ export default function CombatEncounterHUD({
                     const isDead = enemy.hp <= 0;
                     const isTargeted = activeTarget?.instanceId === enemy.instanceId;
                     const hpPct = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
+                    const monsterImg = getMonsterImage(enemy.id || enemy.monsterId, enemy.name) || enemy.image;
                     return (
                         <div
                             key={enemy.instanceId}
@@ -196,9 +198,19 @@ export default function CombatEncounterHUD({
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className={isMultiAttacker ? "text-sm" : "text-base"}>
-                                        {isDead ? '💀' : enemy.icon || '👹'}
-                                    </span>
+                                    {monsterImg ? (
+                                        <div className={`${isMultiAttacker ? 'w-6 h-6' : 'w-7 h-7 sm:w-8 sm:h-8'} rounded-md overflow-hidden border border-red-500/40 shrink-0 bg-slate-950`}>
+                                            <img
+                                                src={monsterImg}
+                                                alt={enemy.name}
+                                                className={`w-full h-full object-cover ${isDead ? 'grayscale opacity-40' : ''}`}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span className={isMultiAttacker ? "text-sm" : "text-base"}>
+                                            {isDead ? '💀' : enemy.icon || '👹'}
+                                        </span>
+                                    )}
                                     <div className="min-w-0">
                                         <p className={`font-bold text-white truncate leading-tight ${
                                             isMultiAttacker ? 'text-[11px]' : 'text-xs'

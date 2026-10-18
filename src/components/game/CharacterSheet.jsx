@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { getRaceById } from '../../data/races';
 import { getClassById } from '../../data/classes';
 import { skills as allSkills, getSkillById } from '../../data/skills';
+import { getCharacterAvatar, getRaceImage } from '../../data/assets';
 import {
     calculateCharacterDerivedStats,
     formatMod,
@@ -25,6 +26,7 @@ export default function CharacterSheet({
     const race = getRaceById(character.race);
     const cls = getClassById(character.class);
     const derived = calculateCharacterDerivedStats(character, cls, race, equippedItems);
+    const avatarImg = getCharacterAvatar(character);
 
     const hpPercentage = Math.max(0, Math.min(100, ((character.hp || 0) / (character.maxHp || 10)) * 100));
     const hpColor = hpPercentage > 50 ? 'bg-emerald-500' : hpPercentage > 25 ? 'bg-amber-500' : 'bg-red-500';
@@ -46,9 +48,19 @@ export default function CharacterSheet({
             {/* Character Identity Header */}
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-3xl shadow-lg">
-                        {race?.icon || cls?.icon || '👤'}
-                    </div>
+                    {avatarImg ? (
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-amber-400/50 shadow-lg bg-slate-900 shrink-0">
+                            <img
+                                src={avatarImg}
+                                alt={character.name || 'Hero'}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-3xl shadow-lg shrink-0">
+                            {race?.icon || cls?.icon || '👤'}
+                        </div>
+                    )}
                     <div>
                         <h3 className="font-display font-bold text-base text-gray-900 dark:text-white">
                             {character.name || 'Hero'}
@@ -312,6 +324,7 @@ export default function CharacterSheet({
                     <div className="space-y-2">
                         {companions.map((comp, idx) => {
                             const isExpanded = expandedCompIndex === idx;
+                            const compImg = getRaceImage(comp.race);
                             return (
                                 <div
                                     key={idx}
@@ -322,13 +335,22 @@ export default function CharacterSheet({
                                         onClick={() => setExpandedCompIndex(isExpanded ? null : idx)}
                                         className="w-full p-2.5 flex items-center justify-between text-left hover:bg-gray-100/70 dark:hover:bg-slate-600/50 transition-colors"
                                     >
-                                        <div>
-                                            <p className="font-bold text-gray-900 dark:text-white">
-                                                {comp.icon ? `${comp.icon} ` : ''}{comp.name}
-                                            </p>
-                                            <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
-                                                {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 14)}/{comp.maxHp || comp.hp || 14} HP</span> • AC {comp.ac || 13}
-                                            </p>
+                                        <div className="flex items-center gap-2.5">
+                                            {compImg ? (
+                                                <div className="w-8 h-8 rounded-lg overflow-hidden border border-amber-400/40 shadow-xs bg-slate-900 shrink-0">
+                                                    <img src={compImg} alt={comp.name} className="w-full h-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <span className="text-xl shrink-0">{comp.icon || '🛡️'}</span>
+                                            )}
+                                            <div>
+                                                <p className="font-bold text-gray-900 dark:text-white">
+                                                    {comp.name}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
+                                                    {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 14)}/{comp.maxHp || comp.hp || 14} HP</span> • AC {comp.ac || 13}
+                                                </p>
+                                            </div>
                                         </div>
                                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0">
                                             {isExpanded ? '▲ Hide' : '▼ Story'}

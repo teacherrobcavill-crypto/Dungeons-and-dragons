@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { adventures, generateCustomAdventure } from '../data/adventures';
+import { getSceneImage, getCharacterAvatar } from '../data/assets';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
@@ -108,9 +109,18 @@ export default function AdventureSelection() {
             <div className="bg-primary-50 dark:bg-primary-900/30 border-b border-primary-100 dark:border-primary-800">
                 <div className="max-w-5xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-2xl shadow-md">
-                            ⚔️
-                        </div>
+                        {(() => {
+                            const heroAvatar = getCharacterAvatar(state.character);
+                            return heroAvatar ? (
+                                <div className="w-12 h-12 rounded-xl overflow-hidden border border-amber-400/50 shadow-md bg-slate-900 shrink-0">
+                                    <img src={heroAvatar} alt={state.character.name || 'Hero'} className="w-full h-full object-cover" />
+                                </div>
+                            ) : (
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-2xl shadow-md shrink-0">
+                                    ⚔️
+                                </div>
+                            );
+                        })()}
                         <div>
                             <p className="font-semibold text-gray-900 dark:text-white">
                                 {state.character.name || 'Your Hero'}{' '}
@@ -168,19 +178,31 @@ export default function AdventureSelection() {
                         <div className="space-y-4">
                             {adventures.map((adventure) => {
                                 const nodeCount = adventure.nodes ? Object.keys(adventure.nodes).length : 1;
+                                const startSceneArt = getSceneImage(adventure.startNodeId);
                                 return (
                                     <Card
                                         key={adventure.id}
                                         hover
                                         onClick={() => setSelectedAdventure(adventure)}
-                                        className={`cursor-pointer ${
+                                        className={`cursor-pointer group ${
                                             selectedAdventure?.id === adventure.id
                                                 ? 'ring-2 ring-primary-500 border-primary-200 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/30'
                                                 : ''
                                         }`}
                                     >
                                         <div className="flex items-start gap-4">
-                                            <div className="text-4xl">{adventure.icon}</div>
+                                            {startSceneArt ? (
+                                                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-amber-400/40 shadow-sm bg-slate-900">
+                                                    <img
+                                                        src={startSceneArt}
+                                                        alt={adventure.name}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="text-4xl">{adventure.icon}</div>
+                                            )}
                                             <div className="flex-1">
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                                                     <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white">

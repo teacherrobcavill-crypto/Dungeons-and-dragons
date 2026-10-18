@@ -1,11 +1,13 @@
 import { getRaceById } from '../../data/races';
 import { getClassById } from '../../data/classes';
 import { getSkillById } from '../../data/skills';
+import { getCharacterAvatar, getRaceImage } from '../../data/assets';
 import Card from '../common/Card';
 
 export default function FinalReview({ character, companions }) {
     const race = getRaceById(character.race);
     const cls = getClassById(character.class);
+    const avatarImg = getCharacterAvatar(character);
 
     const getModifier = (score) => {
         const mod = Math.floor((score - 10) / 2);
@@ -21,9 +23,19 @@ export default function FinalReview({ character, companions }) {
                 {/* Character Summary */}
                 <Card padding="lg">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-3xl">
-                            {race?.icon || '👤'}
-                        </div>
+                        {avatarImg ? (
+                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-amber-400/50 shadow-md bg-slate-900 shrink-0">
+                                <img
+                                    src={avatarImg}
+                                    alt={character.name || 'Hero'}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-3xl shrink-0">
+                                {race?.icon || '👤'}
+                            </div>
+                        )}
                         <div>
                             <h3 className="text-xl font-display font-bold text-gray-900 dark:text-white">
                                 {character.name || 'Unnamed Hero'}
@@ -92,9 +104,16 @@ export default function FinalReview({ character, companions }) {
                             {(companions || []).map((companion, index) => {
                                 const compRace = getRaceById(companion.race);
                                 const compClass = getClassById(companion.class);
+                                const compImg = getRaceImage(companion.race);
                                 return (
                                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                                        <span className="text-2xl">{compRace?.icon || '❓'}</span>
+                                        {compImg ? (
+                                            <div className="w-9 h-9 rounded-lg overflow-hidden border border-amber-400/40 shadow-xs bg-slate-900 shrink-0">
+                                                <img src={compImg} alt={companion.name} className="w-full h-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <span className="text-2xl">{compRace?.icon || '❓'}</span>
+                                        )}
                                         <div>
                                             <p className="font-medium text-gray-900 dark:text-white">{companion.name || 'Unknown'}</p>
                                             <p className="text-sm text-gray-500 dark:text-gray-400">

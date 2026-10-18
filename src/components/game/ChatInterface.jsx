@@ -5,6 +5,7 @@ import { RollResult } from './AnimatedDice';
 import soundService from '../../services/soundService';
 import LoreText from '../common/LoreText';
 import MagicalRevealText from '../common/MagicalRevealText';
+import { getSceneImage, getRaceImage } from '../../data/assets';
 
 const getRaceEmoji = (race) => {
     const raceEmojis = {
@@ -408,6 +409,16 @@ export default function ChatInterface({
                                             </span>
                                         </div>
                                     </div>
+                                    {message.image && (
+                                        <div className="mb-3 rounded-xl overflow-hidden border border-amber-300/40 dark:border-slate-700 shadow-sm max-h-64 sm:max-h-80">
+                                            <img
+                                                src={message.image}
+                                                alt={message.speaker || 'Scene illustration'}
+                                                className="w-full h-full object-cover object-center"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    )}
                                     <div className={`whitespace-pre-line ${getReaderFontClass()} font-normal leading-relaxed`}>
                                         <LoreText text={message.text} fontClass={getReaderFontClass()} />
                                     </div>
@@ -431,6 +442,7 @@ export default function ChatInterface({
                                 {message.companionMessages.map((companion, cIndex) => {
                                     const compId = `comp-${index}-${cIndex}`;
                                     const isCompSpeaking = speakingId === compId;
+                                    const compRaceImg = getRaceImage(companion.companionRace);
                                     return (
                                         <div
                                             key={cIndex}
@@ -440,7 +452,15 @@ export default function ChatInterface({
                                             <div className="w-full px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl border border-l-4 border-l-amber-500 dark:border-l-amber-400 border-gray-200/70 dark:border-slate-700/70 bg-amber-50/40 dark:bg-slate-800/60 shadow-xs">
                                                 <div className="flex items-center justify-between gap-2 mb-1">
                                                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                                        <span className="text-sm">{getRaceEmoji(companion.companionRace)}</span>
+                                                        {compRaceImg ? (
+                                                            <img
+                                                                src={compRaceImg}
+                                                                alt={companion.companionRace || 'Companion'}
+                                                                className="w-5 h-5 rounded-md object-cover border border-amber-400/40 shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm">{getRaceEmoji(companion.companionRace)}</span>
+                                                        )}
                                                         <span className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm">
                                                             {companion.companionName}
                                                         </span>
@@ -561,98 +581,120 @@ export default function ChatInterface({
                         )}
 
                         {/* Room Paths & Tactical Exits */}
-                        {currentNode && (
-                            <div className="w-full rounded-2xl p-3.5 sm:p-4 bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/60 dark:border-slate-700/70 shadow-sm space-y-3">
-                                <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/40 dark:border-slate-700/50">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsChoicesExpanded(!isChoicesExpanded)}
-                                        className="flex items-center gap-2 font-display font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300 tracking-wide uppercase hover:opacity-80 transition-opacity cursor-pointer text-left"
-                                        title={isChoicesExpanded ? 'Hide actions and paths' : 'Show actions and paths'}
-                                    >
-                                        <span>🧭</span>
-                                        <span className="truncate max-w-[150px] sm:max-w-none">{currentNode.title}</span>
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-slate-700 text-amber-900 dark:text-amber-200 font-bold ml-1 shrink-0">
-                                            {isChoicesExpanded ? '▲ Hide Actions' : `▼ Show Actions (${visibleChoices.length})`}
-                                        </span>
-                                    </button>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        {isReaderMode && onToggleReaderMode && (
+                        {currentNode && (() => {
+                            const sceneArt = getSceneImage(currentNode.id) || currentNode.image;
+                            return (
+                                <div className="w-full rounded-2xl overflow-hidden bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/60 dark:border-slate-700/70 shadow-sm space-y-0">
+                                    {sceneArt && (
+                                        <div className="relative w-full h-36 sm:h-48 overflow-hidden group border-b border-amber-200/60 dark:border-slate-700">
+                                            <img
+                                                src={sceneArt}
+                                                alt={currentNode.title}
+                                                className="w-full h-full object-cover object-center brightness-95 group-hover:scale-105 transition-transform duration-700"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex items-end justify-between p-3.5">
+                                                <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-sm border border-amber-500/30">
+                                                    📍 {currentNode.environment || 'Dungeon Chamber'}
+                                                </span>
+                                                <span className="text-[11px] font-mono font-bold text-amber-300 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-amber-500/20">
+                                                    Act {currentNode.act || 1}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="p-3.5 sm:p-4 space-y-3">
+                                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/40 dark:border-slate-700/50">
                                             <button
                                                 type="button"
-                                                onClick={onToggleReaderMode}
-                                                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-colors"
-                                                title="Exit Story Mode back to Tabletop UI"
+                                                onClick={() => setIsChoicesExpanded(!isChoicesExpanded)}
+                                                className="flex items-center gap-2 font-display font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300 tracking-wide uppercase hover:opacity-80 transition-opacity cursor-pointer text-left"
+                                                title={isChoicesExpanded ? 'Hide actions and paths' : 'Show actions and paths'}
                                             >
-                                                ✕ Normal View
+                                                <span>🧭</span>
+                                                <span className="truncate max-w-[150px] sm:max-w-none">{currentNode.title}</span>
+                                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-slate-700 text-amber-900 dark:text-amber-200 font-bold ml-1 shrink-0">
+                                                    {isChoicesExpanded ? '▲ Hide Actions' : `▼ Show Actions (${visibleChoices.length})`}
+                                                </span>
                                             </button>
-                                        )}
-                                        {hasActiveEncounter && onTriggerEncounter && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onTriggerEncounter(currentNode.encounter)}
-                                                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-sm animate-pulse flex items-center gap-1 cursor-pointer"
-                                            >
-                                                ⚔️ Engage
-                                            </button>
-                                        )}
-                                        {hasUnclaimedLoot && onLootRoom && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onLootRoom(currentNode)}
-                                                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1 cursor-pointer"
-                                            >
-                                                💰 Loot
-                                            </button>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {isReaderMode && onToggleReaderMode && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={onToggleReaderMode}
+                                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-colors"
+                                                        title="Exit Story Mode back to Tabletop UI"
+                                                    >
+                                                        ✕ Normal View
+                                                    </button>
+                                                )}
+                                                {hasActiveEncounter && onTriggerEncounter && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onTriggerEncounter(currentNode.encounter)}
+                                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-sm animate-pulse flex items-center gap-1 cursor-pointer"
+                                                    >
+                                                        ⚔️ Engage
+                                                    </button>
+                                                )}
+                                                {hasUnclaimedLoot && onLootRoom && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onLootRoom(currentNode)}
+                                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1 cursor-pointer"
+                                                    >
+                                                        💰 Loot
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Available Choice Buttons - Collapsible */}
+                                        {isChoicesExpanded && (
+                                            <>
+                                                {visibleChoices.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+                                                        {visibleChoices.map((choice) => {
+                                                            const isSkill = choice.type === 'skillCheck' || choice.dc;
+                                                            const isMove = choice.type === 'move' || Boolean(choice.targetNodeId && !choice.dc);
+                                                            return (
+                                                                <button
+                                                                    key={choice.id || choice.label}
+                                                                    type="button"
+                                                                    disabled={isLoading}
+                                                                    onClick={() => onSelectChoice && onSelectChoice(choice)}
+                                                                    className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer ${
+                                                                        isSkill
+                                                                            ? 'bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200'
+                                                                            : isMove
+                                                                                ? 'bg-amber-100/90 dark:bg-slate-700 hover:bg-amber-200 dark:hover:bg-slate-600 border-amber-300 dark:border-slate-500 text-amber-950 dark:text-amber-100'
+                                                                                : 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                                                                    }`}
+                                                                >
+                                                                    <span className="text-base">
+                                                                        {isSkill ? '🎲' : choice.type === 'rest' ? '⛺' : choice.type === 'social' ? '💬' : '🚪'}
+                                                                    </span>
+                                                                    <span>{choice.label}</span>
+                                                                    {choice.dc && (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold uppercase">
+                                                                            {choice.skill || choice.ability || 'Check'} DC {choice.dc}
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+                                                        <span className="text-base">✨</span>
+                                                        <span>All choices and actions in this chamber have been resolved. Use the automap to travel onward or declare a custom action below!</span>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
-
-                                {/* Available Choice Buttons - Collapsible */}
-                                {isChoicesExpanded && (
-                                    <>
-                                        {visibleChoices.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
-                                                {visibleChoices.map((choice) => {
-                                                    const isSkill = choice.type === 'skillCheck' || choice.dc;
-                                                    const isMove = choice.type === 'move' || Boolean(choice.targetNodeId && !choice.dc);
-                                                    return (
-                                                        <button
-                                                            key={choice.id || choice.label}
-                                                            type="button"
-                                                            disabled={isLoading}
-                                                            onClick={() => onSelectChoice && onSelectChoice(choice)}
-                                                            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer ${
-                                                                isSkill
-                                                                    ? 'bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200'
-                                                                    : isMove
-                                                                        ? 'bg-amber-100/90 dark:bg-slate-700 hover:bg-amber-200 dark:hover:bg-slate-600 border-amber-300 dark:border-slate-500 text-amber-950 dark:text-amber-100'
-                                                                        : 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
-                                                            }`}
-                                                        >
-                                                            <span className="text-base">
-                                                                {isSkill ? '🎲' : choice.type === 'rest' ? '⛺' : choice.type === 'social' ? '💬' : '🚪'}
-                                                            </span>
-                                                            <span>{choice.label}</span>
-                                                            {choice.dc && (
-                                                                <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold uppercase">
-                                                                    {choice.skill || choice.ability || 'Check'} DC {choice.dc}
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="py-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-                                                <span className="text-base">✨</span>
-                                                <span>All choices and actions in this chamber have been resolved. Use the automap to travel onward or declare a custom action below!</span>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Integrated Custom Action & Dice Roller (Inline in Chronicle) - Collapsible */}
                         {isChoicesExpanded && (

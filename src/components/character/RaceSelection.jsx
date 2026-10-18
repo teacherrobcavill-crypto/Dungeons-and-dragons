@@ -1,4 +1,5 @@
 import { races } from '../../data/races';
+import { getRaceImage } from '../../data/assets';
 import Card from '../common/Card';
 
 export default function RaceSelection({
@@ -47,6 +48,7 @@ export default function RaceSelection({
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {races.map((race) => {
                     const isSelected = currentRaceId === race.id;
+                    const raceImg = getRaceImage(race.id);
                     const bonusSummary = Object.entries(race.statBonuses || {})
                         .map(([stat, val]) => `+${val} ${stat.slice(0, 3).toUpperCase()}`)
                         .join(', ');
@@ -55,7 +57,7 @@ export default function RaceSelection({
                         <div
                             key={race.id}
                             onClick={() => handleRaceClick(race)}
-                            className={`group relative rounded-2xl p-4 sm:p-5 text-center transition-all duration-200 cursor-pointer border select-none ${
+                            className={`group relative rounded-2xl p-3.5 sm:p-4 text-center transition-all duration-200 cursor-pointer border select-none ${
                                 isSelected
                                     ? 'bg-amber-500/15 dark:bg-amber-500/20 border-amber-500 dark:border-amber-400 ring-4 ring-amber-500/30 shadow-xl shadow-amber-500/15 scale-[1.02]'
                                     : 'bg-white dark:bg-slate-800/80 border-gray-200 dark:border-slate-700 hover:border-amber-400/60 dark:hover:border-amber-500/60 hover:shadow-md hover:scale-[1.01]'
@@ -63,15 +65,26 @@ export default function RaceSelection({
                         >
                             {/* Selected Checkmark Badge */}
                             {isSelected && (
-                                <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] tracking-wide shadow-sm flex items-center gap-1 animate-fade-in">
+                                <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] tracking-wide shadow-sm flex items-center gap-1 animate-fade-in z-10">
                                     <span>✓</span>
                                     <span>SELECTED</span>
                                 </div>
                             )}
 
-                            <div className="text-4xl sm:text-5xl mb-2.5 transition-transform group-hover:scale-110">
-                                {race.icon}
-                            </div>
+                            {raceImg ? (
+                                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2 rounded-xl overflow-hidden border-2 border-amber-500/40 shadow-md group-hover:scale-105 transition-transform bg-slate-900">
+                                    <img
+                                        src={raceImg}
+                                        alt={race.name}
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="text-4xl sm:text-5xl mb-2.5 transition-transform group-hover:scale-110">
+                                    {race.icon}
+                                </div>
+                            )}
+
                             <h3 className={`font-display font-bold text-base sm:text-lg mb-1 ${
                                 isSelected ? 'text-amber-800 dark:text-amber-300' : 'text-gray-900 dark:text-white'
                             }`}>
@@ -95,7 +108,17 @@ export default function RaceSelection({
                 <div className="p-5 sm:p-6 bg-white dark:bg-slate-800/95 border-2 border-amber-500/40 rounded-2xl shadow-md animate-fade-in space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-200 dark:border-slate-700">
                         <div className="flex items-center gap-3">
-                            <span className="text-3xl">{activeRace.icon}</span>
+                            {getRaceImage(activeRace.id) ? (
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-amber-500 shadow-md shrink-0 bg-slate-900">
+                                    <img
+                                        src={getRaceImage(activeRace.id)}
+                                        alt={activeRace.name}
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                </div>
+                            ) : (
+                                <span className="text-3xl">{activeRace.icon}</span>
+                            )}
                             <div>
                                 <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                                     <span>{activeRace.name}</span>

@@ -5,6 +5,7 @@ import { getRaceById } from '../data/races';
 import { getClassById, calculateMaxHp } from '../data/classes';
 import { getDefaultSpellsForClass } from '../data/spells';
 import { heroPresets } from '../data/presets';
+import { getHeroPresetImage, getRaceImage } from '../data/assets';
 import Button from '../components/common/Button';
 import RaceSelection from '../components/character/RaceSelection';
 import ClassSelection from '../components/character/ClassSelection';
@@ -155,7 +156,9 @@ export default function CharacterCreator() {
             hitDiceRemaining: level,
             experience: level === 5 ? 6500 : level === 3 ? 900 : 0,
             gold: level === 5 ? 150 : level === 3 ? 75 : 35,
-            conditions: []
+            conditions: [],
+            presetId: data.presetId || null,
+            image: data.image || getHeroPresetImage(data.presetId || data.name) || getRaceImage(data.race) || null
         };
     };
 
@@ -170,6 +173,7 @@ export default function CharacterCreator() {
     const handleSelectPreset = (preset) => {
         const charObj = preset.character || preset;
         const level = charObj.level || preset.level || 1;
+        const presetImg = getHeroPresetImage(preset.id || charObj.name);
         const payload = buildCompleteCharacterPayload(
             {
                 name: charObj.name || preset.name,
@@ -187,7 +191,9 @@ export default function CharacterCreator() {
                 quirk: charObj.quirk || preset.quirk || '',
                 secret: charObj.secret || preset.secret || '',
                 personalQuest: charObj.personalQuest || preset.personalQuest || '',
-                voiceQuote: charObj.voiceQuote || preset.voiceQuote || ''
+                voiceQuote: charObj.voiceQuote || preset.voiceQuote || '',
+                presetId: preset.id,
+                image: presetImg
             },
             level
         );
@@ -415,27 +421,41 @@ export default function CharacterCreator() {
                             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                                 {heroPresets.map((preset) => {
                                     const c = preset.character || preset;
+                                    const heroImg = getHeroPresetImage(preset.id || c.name);
                                     return (
                                         <button
                                             key={preset.id}
                                             type="button"
                                             onClick={() => handleSelectPreset(preset)}
-                                            className="p-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-100/60 dark:hover:bg-slate-700 border border-amber-200 dark:border-slate-600 text-left transition-all shadow-sm"
+                                            className="p-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-100/60 dark:hover:bg-slate-700 border border-amber-200 dark:border-slate-600 text-left transition-all shadow-sm hover:scale-[1.02] cursor-pointer group flex flex-col justify-between"
                                         >
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-lg">{preset.icon || '⚔️'}</span>
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300">
-                                                    Level {c.level || preset.level || 1}
-                                                </span>
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    {heroImg ? (
+                                                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-amber-400/50 shadow-xs shrink-0 bg-slate-900">
+                                                            <img
+                                                                src={heroImg}
+                                                                alt={c.name || preset.name}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xl">{preset.icon || '⚔️'}</span>
+                                                    )}
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300">
+                                                        Level {c.level || preset.level || 1}
+                                                    </span>
+                                                </div>
+                                                <p className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                                                    {c.name || preset.name}
+                                                </p>
+                                                <p className="text-[11px] text-primary-600 dark:text-primary-400 capitalize font-medium">
+                                                    {c.race} {c.class}
+                                                </p>
                                             </div>
-                                            <p className="font-bold text-xs text-gray-900 dark:text-white truncate">
-                                                {c.name || preset.name}
-                                            </p>
-                                            <p className="text-[11px] text-primary-600 dark:text-primary-400 capitalize">
-                                                {c.race} {c.class}
-                                            </p>
                                             <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                                                {preset.description}
+                                                {preset.description || preset.badge || preset.quirk}
                                             </p>
                                         </button>
                                     );
