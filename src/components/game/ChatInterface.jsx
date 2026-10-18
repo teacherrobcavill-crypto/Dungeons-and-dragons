@@ -96,8 +96,12 @@ export default function ChatInterface({
         };
     }, []);
 
-    const handleToggleNarrate = (id, text, speakerType = 'dm', personality = 'Wise') => {
-        soundService.toggleSpeak?.(text, speakerType, personality, id);
+    const handleToggleNarrate = (id, text, speakerType = 'dm', personality = 'Wise', voiceTrack = null) => {
+        if (voiceTrack) {
+            soundService.toggleVoice?.(voiceTrack, id);
+        } else {
+            soundService.toggleSpeak?.(text, speakerType, personality, id);
+        }
     };
 
     const handleQuickRoll = () => {
@@ -327,16 +331,16 @@ export default function ChatInterface({
                                             )}
                                             <button
                                                 type="button"
-                                                onClick={() => handleToggleNarrate(`msg-${index}`, message.text, 'dm', 'Stoic')}
+                                                onClick={() => handleToggleNarrate(`msg-${index}`, message.text, 'dm', 'Stoic', message.voiceTrack)}
                                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
                                                     speakingId === `msg-${index}`
                                                         ? 'bg-amber-500/30 text-amber-200 border border-amber-500/60 animate-pulse font-bold'
                                                         : 'bg-black/20 hover:bg-black/30 text-amber-300'
                                                 }`}
-                                                title={speakingId === `msg-${index}` ? 'Mute narration' : 'Read skirmish action aloud (TTS)'}
+                                                title={speakingId === `msg-${index}` ? 'Mute narration' : (message.voiceTrack ? 'Play high-immersion voice track' : 'Read skirmish action aloud (TTS)')}
                                             >
-                                                <span>{speakingId === `msg-${index}` ? '🔇' : '🔊'}</span>
-                                                <span>{speakingId === `msg-${index}` ? 'Mute' : 'Narrate'}</span>
+                                                <span>{speakingId === `msg-${index}` ? '🔇' : (message.voiceTrack ? '🎙️' : '🔊')}</span>
+                                                <span>{speakingId === `msg-${index}` ? 'Mute' : (message.voiceTrack ? 'Voice' : 'Narrate')}</span>
                                             </button>
                                             <span className="text-[10px] opacity-40 font-mono">
                                                 {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -393,16 +397,16 @@ export default function ChatInterface({
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => handleToggleNarrate(`msg-${index}`, message.text, 'dm', 'Wise')}
+                                                onClick={() => handleToggleNarrate(`msg-${index}`, message.text, 'dm', 'Wise', message.voiceTrack)}
                                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
                                                     speakingId === `msg-${index}`
                                                         ? 'bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/60 animate-pulse font-bold'
                                                         : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-amber-700 dark:text-amber-300'
                                                 }`}
-                                                title={speakingId === `msg-${index}` ? 'Mute narration' : 'Read passage aloud (TTS)'}
+                                                title={speakingId === `msg-${index}` ? 'Mute narration' : (message.voiceTrack ? 'Play ElevenLabs Studio voice track' : 'Read passage aloud (TTS)')}
                                             >
-                                                <span>{speakingId === `msg-${index}` ? '🔇' : '🔊'}</span>
-                                                <span>{speakingId === `msg-${index}` ? 'Mute' : 'Narrate'}</span>
+                                                <span>{speakingId === `msg-${index}` ? '🔇' : (message.voiceTrack ? '🎙️' : '🔊')}</span>
+                                                <span>{speakingId === `msg-${index}` ? 'Mute' : (message.voiceTrack ? 'Voice' : 'Narrate')}</span>
                                             </button>
                                             <span className="text-[10px] opacity-40 font-mono">
                                                 {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -473,15 +477,15 @@ export default function ChatInterface({
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleToggleNarrate(compId, companion.text, 'companion', companion.personality)}
+                                                        onClick={() => handleToggleNarrate(compId, companion.text, 'companion', companion.personality, companion.voiceTrack)}
                                                         className={`text-xs p-1 rounded-md transition-all shrink-0 cursor-pointer ${
                                                             isCompSpeaking
                                                                 ? 'bg-amber-500/25 text-amber-800 dark:text-amber-200 opacity-100 animate-pulse font-bold'
                                                                 : 'opacity-50 hover:opacity-100 text-gray-600 dark:text-gray-300'
                                                         }`}
-                                                        title={isCompSpeaking ? 'Mute companion voice' : 'Speak companion line'}
+                                                        title={isCompSpeaking ? 'Mute companion voice' : (companion.voiceTrack ? 'Play companion voice track' : 'Speak companion line')}
                                                     >
-                                                        <span>{isCompSpeaking ? '🔇' : '🔊'}</span>
+                                                        <span>{isCompSpeaking ? '🔇' : (companion.voiceTrack ? '🎙️' : '🔊')}</span>
                                                     </button>
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 italic leading-snug pl-0.5">
@@ -516,15 +520,15 @@ export default function ChatInterface({
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => handleToggleNarrate(compMsgId, message.text, 'companion', message.personality)}
+                                                onClick={() => handleToggleNarrate(compMsgId, message.text, 'companion', message.personality, message.voiceTrack)}
                                                 className={`text-xs p-1 rounded-md transition-all shrink-0 cursor-pointer ${
                                                     isCompMsgSpeaking
                                                         ? 'bg-amber-500/25 text-amber-800 dark:text-amber-200 opacity-100 animate-pulse font-bold'
                                                         : 'opacity-50 hover:opacity-100 text-gray-600 dark:text-gray-300'
                                                 }`}
-                                                title={isCompMsgSpeaking ? 'Mute companion voice' : 'Speak companion line'}
+                                                title={isCompMsgSpeaking ? 'Mute companion voice' : (message.voiceTrack ? 'Play companion voice track' : 'Speak companion line')}
                                             >
-                                                <span>{isCompMsgSpeaking ? '🔇' : '🔊'}</span>
+                                                <span>{isCompMsgSpeaking ? '🔇' : (message.voiceTrack ? '🎙️' : '🔊')}</span>
                                             </button>
                                         </div>
                                         <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 italic leading-snug pl-0.5">

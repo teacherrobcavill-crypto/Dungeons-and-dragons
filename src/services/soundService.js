@@ -1,6 +1,8 @@
 // Sound & Voice Narration Service for MythicBot D&D 5e Engine
 // Provides procedural Web Audio API sound effects, ambient soundscapes,
-// and Web Speech API Text-to-Speech (TTS) narration for DM & Party Companions.
+// Web Speech API Text-to-Speech (TTS), and ElevenLabs Studio Voice Audio Playback.
+
+import { VOICE_TRACKS, getVoiceTrack } from '../data/assets';
 
 class SoundService {
     constructor() {
@@ -13,6 +15,8 @@ class SoundService {
         this.currentAmbientTheme = null;
         this.isSpeakingState = false;
         this.currentSpeakingId = null;
+        this.currentVoiceAudio = null;
+        this.currentVoiceId = null;
         this.speechListeners = new Set();
 
         this.soundConfigs = {
@@ -65,6 +69,13 @@ class SoundService {
 
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
+        if (this.currentVoiceAudio) {
+            try {
+                this.currentVoiceAudio.volume = Math.max(0, Math.min(1, this.volume * 1.4));
+            } catch {
+                // ignore
+            }
+        }
     }
 
     play(soundName) {
@@ -290,16 +301,101 @@ class SoundService {
     }
 
     isSpeaking(id = null) {
-        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
-        const synthSpeaking = window.speechSynthesis.speaking;
-        if (!synthSpeaking && !this.isSpeakingState) return false;
-        if (id === null) return this.isSpeakingState || synthSpeaking;
-        return (this.isSpeakingState || synthSpeaking) && this.currentSpeakingId === id;
+        if (typeof window === 'undefined') return false;
+        const synthSpeaking = 'speechSynthesis' in window && window.speechSynthesis.speaking;
+        const voicePlaying = Boolean(this.currentVoiceAudio && !this.currentVoiceAudio.paused);
+        const active = synthSpeaking || voicePlaying || this.isSpeakingState;
+        if (!active) return false;
+        if (id === null) return true;
+        return (this.currentSpeakingId === id || this.currentVoiceId === id);
+    }
+
+    playVoice(keyOrPath, id = null, forcePlay = false) {
+        if (!forcePlay && !this.narrationEnabled && !this.enabled) return false;
+        if (typeof window === 'undefined') return false;
+
+        const trackUrl = getVoiceTrack(keyOrPath) || keyOrPath;
+        if (!trackUrl) return false;
+
+        // Cancel any active Web Speech synthesis and prior voice audio
+        if ('speechSynthesis' in window) {
+            try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
+        }
+        this.stopVoice();
+
+        try {
+            const audio = new Audio(trackUrl);
+            audio.volume = Math.max(0.1, Math.min(1, this.volume * 1.4));
+            this.currentVoiceAudio = audio;
+            this.currentVoiceId = id;
+            this.currentSpeakingId = id;
+            this.isSpeakingState = true;
+
+            this.notifySpeechListeners({ isSpeaking: true, speakingId: id, voiceTrack: trackUrl });
+
+            audio.onended = () => {
+                if (this.currentVoiceAudio === audio) {
+                    this.stopVoice();
+                }
+            };
+
+            audio.onerror = (e) => {
+                console.warn('Voice track playback error:', e);
+                if (this.currentVoiceAudio === audio) {
+                    this.stopVoice();
+                }
+            };
+
+            const playPromise = audio.play();
+            if (playPromise && playPromise.catch) {
+                playPromise.catch((err) => {
+                    console.warn('Voice track playback prevented by browser:', err);
+                    if (this.currentVoiceAudio === audio) {
+                        this.stopVoice();
+                    }
+                });
+            }
+            return true;
+        } catch (e) {
+            console.warn('Voice playback failed:', e);
+            this.stopVoice();
+            return false;
+        }
+    }
+
+    stopVoice() {
+        if (this.currentVoiceAudio) {
+            try {
+                this.currentVoiceAudio.pause();
+                this.currentVoiceAudio.currentTime = 0;
+            } catch {
+                // ignore
+            }
+            this.currentVoiceAudio = null;
+        }
+        const wasSpeaking = this.currentVoiceId !== null || this.isSpeakingState;
+        this.currentVoiceId = null;
+        if (wasSpeaking) {
+            this.isSpeakingState = false;
+            this.currentSpeakingId = null;
+            this.notifySpeechListeners({ isSpeaking: false, speakingId: null });
+        }
+    }
+
+    toggleVoice(keyOrPath, id = null) {
+        if (this.isSpeaking(id)) {
+            this.stopVoice();
+            this.stopSpeaking();
+            return false;
+        }
+        return this.playVoice(keyOrPath, id, true);
     }
 
     speak(text, speakerType = 'dm', personality = 'Wise', forceSpeak = false, id = null) {
         if (!forceSpeak && !this.narrationEnabled) return false;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+
+        this.stopVoice();
 
         const cleaned = this.cleanTextForSpeech(text);
         if (!cleaned) return false;
@@ -379,6 +475,7 @@ class SoundService {
     }
 
     stopSpeaking() {
+        this.stopVoice();
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             try {
                 window.speechSynthesis.cancel();

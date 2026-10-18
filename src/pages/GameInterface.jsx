@@ -16,7 +16,7 @@ import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
 import { getMonsterById } from '../data/monsters';
 import { getAdventureById } from '../data/adventures';
-import { getSceneImage } from '../data/assets';
+import { getSceneImage, getVoiceTrack } from '../data/assets';
 import {
     calculateCharacterDerivedStats,
     createCombatEncounter,
@@ -128,16 +128,21 @@ export default function GameInterface() {
                 const opening = await generateOpeningNarrative(activeAdventure, character, aiModel);
                 const startNodeId = activeAdventure?.startNodeId;
                 const startSceneImg = getSceneImage(startNodeId) || activeAdventure?.nodes?.[startNodeId]?.image;
+                const introTrack = `${activeAdventure.id}-intro`;
+                const hasIntroTrack = Boolean(getVoiceTrack(introTrack));
+
                 addChatMessage({
                     type: 'ai',
                     text: opening,
                     timestamp: new Date().toISOString(),
-                    ...(startSceneImg ? { image: startSceneImg } : {})
+                    ...(startSceneImg ? { image: startSceneImg } : {}),
+                    ...(hasIntroTrack ? { voiceTrack: introTrack } : {})
                 });
                 const startNode = activeAdventure?.nodes?.[startNodeId];
                 if (startNode?.companionMoments?.length && state.companions?.length) {
                     const matched = findCompanionMoments(startNode.companionMoments, state.companions);
                     matched.forEach(({ companion, text }) => {
+                        const compVoice = getCompanionVoiceTrack(companion);
                         addChatMessage({
                             type: 'companion',
                             companionName: companion.name,
@@ -146,19 +151,33 @@ export default function GameInterface() {
                             abilities: companion.specialAbility || companion.signatureMove,
                             personality: companion.personality,
                             text,
+                            voiceTrack: compVoice,
                             timestamp: new Date().toISOString()
                         });
                     });
                 }
                 soundService.play('message');
                 if (state.settings.narrationEnabled) {
-                    soundService.speak?.(opening, 'dm');
+                    if (hasIntroTrack) {
+                        soundService.playVoice(introTrack);
+                    } else {
+                        soundService.speak?.(opening, 'dm');
+                    }
                 }
                 setIsLoading(false);
             }
         };
         initGame();
     }, [isGameStarted, chatHistoryLength, activeAdventure, character, aiModel, addChatMessage, state.settings.narrationEnabled, state.companions]);
+
+    const getCompanionVoiceTrack = (companion) => {
+        if (!companion) return null;
+        const cClass = (companion.class || '').toLowerCase();
+        if (cClass.includes('cleric') || cClass.includes('paladin')) return 'cleric-heal';
+        if (cClass.includes('wizard') || cClass.includes('sorcerer') || cClass.includes('warlock')) return 'wizard-burst';
+        if (cClass.includes('rogue') || cClass.includes('ranger')) return 'rogue-sneak';
+        return null;
+    };
 
     const findCompanionMoments = (moments = [], companions = []) => {
         if (!Array.isArray(moments) || !Array.isArray(companions) || companions.length === 0) return [];
@@ -200,7 +219,11 @@ export default function GameInterface() {
             ...extra
         });
         if (state.settings.narrationEnabled) {
-            soundService.speak?.(text, 'dm');
+            if (extra.voiceTrack && getVoiceTrack(extra.voiceTrack)) {
+                soundService.playVoice(extra.voiceTrack);
+            } else {
+                soundService.speak?.(text, 'dm');
+            }
         }
     };
 
@@ -224,20 +247,41 @@ export default function GameInterface() {
             ? `\n\n⚔️ **Encounter Threat:** **${targetNode.encounter.title}** (${targetNode.encounter.monsters?.map((m) => `${m.count}× ${m.name}`).join(', ')})! Click **Engage** below or attack to begin tactical combat!`
             : '';
 
+        let roomVoiceTrack = null;
+        if (targetNodeId === 'wave_echo_forge') {
+            roomVoiceTrack = 'spell-forge';
+        } else if (targetNodeId === 'ritual_ossuary') {
+            roomVoiceTrack = 'haunted-manor-purification';
+        } else if (targetNodeId === 'astrolabe_chamber') {
+            roomVoiceTrack = 'ancient-temple-vision';
+        } else if (targetNodeId === 'phandalin_hub' || targetNodeId === 'rusty_anchor') {
+            roomVoiceTrack = 'tavern-keeper';
+        } else if (targetNode.type === 'victory') {
+            if (activeAdventure?.id === 'lost-mine') roomVoiceTrack = 'lost-mine-victory';
+            else if (activeAdventure?.id === 'dragon-lair') roomVoiceTrack = 'dragon-lair-victory';
+            else if (activeAdventure?.id === 'thieves-guild') roomVoiceTrack = 'thieves-guild-victory';
+            else if (activeAdventure?.id === 'ancient-temple') roomVoiceTrack = 'ancient-temple-victory';
+        }
+
         const sceneImg = getSceneImage(targetNodeId) || targetNode.image;
         pushDmMessage(
             `📍 **${targetNode.title}**\n\n${targetNode.readAloud}${npcInfo}${encounterAlert}`,
-            sceneImg ? { image: sceneImg } : {}
+            {
+                ...(sceneImg ? { image: sceneImg } : {}),
+                ...(roomVoiceTrack ? { voiceTrack: roomVoiceTrack } : {})
+            }
         );
 
         // Surface any personal companion story moments for this room
         if (targetNode.companionMoments?.length && state.companions?.length) {
             const matched = findCompanionMoments(targetNode.companionMoments, state.companions);
             matched.forEach(({ companion, text }) => {
+                const compVoice = getCompanionVoiceTrack(companion);
                 addChatMessage({
                     type: 'ai',
                     speaker: companion.name,
                     text: `🗣️ **${companion.name}** (*${companion.race} ${companion.class}*):\n"${text}"`,
+                    voiceTrack: compVoice,
                     timestamp: new Date().toISOString()
                 });
             });
@@ -263,15 +307,37 @@ export default function GameInterface() {
             `${encounterDef.tacticalNotes || 'Hostile foes surge forward to surround your party.'} Steel is drawn and incantations echo across the chamber as battle begins!`
         );
 
+        // Identify Boss voice track or fallback to combat initiative
+        let encounterVoiceTrack = 'combat-initiative';
+        const encounterTitleLower = (encounterDef.title || '').toLowerCase();
+        const monsterIds = encounterDef.monsters?.map((m) => (m.monsterId || '').toLowerCase()) || [];
+
+        if (encounterTitleLower.includes('nezznar') || encounterTitleLower.includes('black spider') || monsterIds.includes('black-spider')) {
+            encounterVoiceTrack = 'nezznar-boss';
+        } else if (encounterTitleLower.includes('voranthos') || monsterIds.includes('young-red-dragon') || monsterIds.includes('voranthos')) {
+            encounterVoiceTrack = 'voranthos-boss';
+        } else if (encounterTitleLower.includes('malakor') || (monsterIds.includes('wight') && encounterTitleLower.includes('lord'))) {
+            encounterVoiceTrack = 'malakor-boss';
+        } else if (encounterTitleLower.includes('vespera') || (monsterIds.includes('assassin') && encounterTitleLower.includes('guildmaster'))) {
+            encounterVoiceTrack = 'vespera-boss';
+        } else if (encounterTitleLower.includes('ssethra') || monsterIds.includes('yuan-ti-abomination') || encounterTitleLower.includes('sleeping god')) {
+            encounterVoiceTrack = 'ssethra-boss';
+        }
+
         addChatMessage({
             type: 'combat',
             subtype: 'skirmish_start',
             title: `Battle Joined: ${encounterDef.title}`,
             text: startProse,
             rollText: initProse,
+            voiceTrack: encounterVoiceTrack,
             isNew: true,
             timestamp: new Date().toISOString()
         });
+
+        if (state.settings.narrationEnabled) {
+            soundService.playVoice(encounterVoiceTrack);
+        }
     };
 
     const handleLootRoom = (node) => {
@@ -396,9 +462,21 @@ export default function GameInterface() {
             outcomeProse += `\n⚠️ **Hazard Triggered:** You take **${trapDmg.total} damage** (${choice.failDamageDice})!`;
         }
 
+        let choiceVoice = null;
+        if (roll.isCrit) {
+            choiceVoice = 'nat20-triumph';
+        } else if (roll.isFumble) {
+            choiceVoice = 'nat1-fumble';
+        } else if (!succeeded && choice.failDamageDice) {
+            choiceVoice = 'trap-triggered';
+        }
+
         pushDmMessage(
             `🎲 **${skillOrAbility.toUpperCase()} Check (DC ${dc}):** Rolled **${roll.total}** (d20: ${roll.natural} ${formatMod(roll.totalMod)}) — **${succeeded ? 'SUCCESS!' : 'FAILURE!'}**\n\n${outcomeProse}`,
-            { roll: roll.natural }
+            {
+                roll: roll.natural,
+                ...(choiceVoice ? { voiceTrack: choiceVoice } : {})
+            }
         );
 
         // If choice also moves to a target node on success (or unconditionally)
@@ -422,12 +500,26 @@ export default function GameInterface() {
                 markNodeDefeated(currentNode.id);
             }
             endCombat();
+
+            let victoryTrack = null;
+            if (activeAdventure?.id) {
+                const advVic = `${activeAdventure.id}-victory`;
+                if (getVoiceTrack(advVic)) {
+                    victoryTrack = advVic;
+                }
+            }
+
+            if (state.settings.narrationEnabled && victoryTrack) {
+                soundService.playVoice(victoryTrack);
+            }
+
             addChatMessage({
                 type: 'combat',
                 subtype: 'skirmish_victory',
                 title: `Victory in ${currentCombat.title}`,
                 text: `All enemies have fallen. The chamber settles into quiet save for the ragged breathing of your company. Your companions lower their weapons, having secured the field. You earn ${xpWon} XP and recover ${goldWon} gold pieces from the fallen.`,
                 rollText: `+${xpWon} XP · +${goldWon} gp`,
+                voiceTrack: victoryTrack,
                 isNew: true,
                 timestamp: new Date().toISOString()
             });
@@ -864,9 +956,13 @@ export default function GameInterface() {
                     title: feedItem.title,
                     text: feedItem.text,
                     rollText: feedItem.rollText,
+                    voiceTrack: 'cleric-heal',
                     isNew: true,
                     timestamp: new Date().toISOString()
                 });
+                if (state.settings.narrationEnabled) {
+                    soundService.playVoice('cleric-heal');
+                }
                 await waitReveal(feedItem.text, 1000);
             } else if (compTurn.type === 'attack') {
                 const target = workingEnemies.find((e) => e.instanceId === compTurn.targetId);
@@ -894,6 +990,12 @@ export default function GameInterface() {
                     companionBark: compTurn.text
                 });
 
+                let compVoice = null;
+                const cClass = (comp.class || '').toLowerCase();
+                if (cClass.includes('cleric') || cClass.includes('paladin')) compVoice = 'cleric-heal';
+                else if (cClass.includes('wizard') || cClass.includes('sorcerer') || cClass.includes('warlock')) compVoice = 'wizard-burst';
+                else if (cClass.includes('rogue') || cClass.includes('ranger')) compVoice = 'rogue-sneak';
+
                 const feedItem = {
                     id: `comp-atk-${Date.now()}-${Math.random()}`,
                     type: isFatal ? 'fatal_blow' : compTurn.hit ? 'companion_attack' : 'miss',
@@ -916,12 +1018,16 @@ export default function GameInterface() {
                     attackerName: comp.name,
                     targetName: compTurn.targetName,
                     damage: compTurn.damage,
+                    voiceTrack: (compTurn.hit || isFatal) ? compVoice : null,
                     isNew: true,
                     timestamp: new Date().toISOString()
                 });
 
                 if (isFatal) {
                     soundService.play('critical');
+                }
+                if (state.settings.narrationEnabled && (compTurn.hit || isFatal) && compVoice) {
+                    soundService.playVoice(compVoice);
                 }
 
                 await waitReveal(compNarrative.prose, 1200);
@@ -1017,6 +1123,11 @@ export default function GameInterface() {
                         updateHp(-(character.hp - 1));
                     } else {
                         updateHp(-mTurn.damageToPlayer);
+                        if (character.hp - totalPlayerDamageTaken <= 0) {
+                            if (state.settings.narrationEnabled) {
+                                soundService.playVoice('game-over');
+                            }
+                        }
                     }
                 }
                 if (mTurn.conditionInflicted) {
@@ -1080,7 +1191,8 @@ export default function GameInterface() {
         const totalHeal = Math.max(4, healRoll.total + conMod);
         shortRest(totalHeal);
         pushDmMessage(
-            `⛺ **Short Rest Completed (1 Hour):** You bind your wounds and spend a Hit Die (${hitDie} + ${conMod}), recovering **+${totalHeal} HP** and refreshing short-rest powers!`
+            `⛺ **Short Rest Completed (1 Hour):** You bind your wounds and spend a Hit Die (${hitDie} + ${conMod}), recovering **+${totalHeal} HP** and refreshing short-rest powers!`,
+            { voiceTrack: 'short-rest' }
         );
     };
 
@@ -1088,7 +1200,8 @@ export default function GameInterface() {
         soundService.play('rest');
         longRest();
         pushDmMessage(
-            `🌙 **Long Rest Completed (8 Hours):** Your party makes camp. You awaken at **Full Hit Points (${character.maxHp} HP)** with all **Spell Slots**, **Hit Dice**, and **Class Features** completely restored!`
+            `🌙 **Long Rest Completed (8 Hours):** Your party makes camp. You awaken at **Full Hit Points (${character.maxHp} HP)** with all **Spell Slots**, **Hit Dice**, and **Class Features** completely restored!`,
+            { voiceTrack: 'long-rest' }
         );
     };
 
@@ -1103,9 +1216,19 @@ export default function GameInterface() {
             text: `🎲 Rolling **${skill.name}** (${skill.ability.toUpperCase()}) check...`,
             timestamp: new Date().toISOString()
         });
+        const rollVoice = roll.isCrit ? 'nat20-triumph' : (roll.isFumble ? 'nat1-fumble' : null);
         pushDmMessage(
             `🎯 **${skill.name} Check:** You rolled **${roll.total}** (d20: ${roll.natural} ${formatMod(totalBonus)})${roll.isCrit ? ' — **NATURAL 20!**' : roll.isFumble ? ' — **NATURAL 1!**' : '!'}`,
-            { roll: roll.natural }
+            { roll: roll.natural, ...(rollVoice ? { voiceTrack: rollVoice } : {}) }
+        );
+    };
+
+    const handleLevelUp = () => {
+        soundService.play('levelUp');
+        levelUp();
+        pushDmMessage(
+            `⭐ **LEVEL UP!** You advance to Level ${(character.level || 1) + 1}! Your maximum Hit Points increase, your proficiency deepens, and new martial and arcane powers awaken!`,
+            { voiceTrack: 'level-up' }
         );
     };
 
@@ -1527,7 +1650,7 @@ export default function GameInterface() {
                                 companions={state.companions}
                                 equippedItems={state.equippedItems}
                                 onHpChange={updateHp}
-                                onLevelUp={levelUp}
+                                onLevelUp={handleLevelUp}
                                 onRollSkillCheck={handleRollSkillCheck}
                                 onRemoveCondition={removeCondition}
                             />

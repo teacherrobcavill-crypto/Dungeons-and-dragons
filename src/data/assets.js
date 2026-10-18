@@ -169,3 +169,77 @@ export function getCharacterAvatar(character) {
     }
     return null;
 }
+
+/**
+ * ElevenLabs Studio Voice Catalog (29 High-Immersion Narrative Audio Tracks)
+ */
+export const VOICE_TRACKS = {
+    // 1. Adventure Intros
+    'lost-mine-intro': '/audio/voices/01_lost_mine_intro.mp3',
+    'lost-mine': '/audio/voices/01_lost_mine_intro.mp3',
+    'dragon-lair-intro': '/audio/voices/05_dragon_lair_intro.mp3',
+    'dragon-lair': '/audio/voices/05_dragon_lair_intro.mp3',
+    'haunted-manor-intro': '/audio/voices/08_haunted_manor_intro.mp3',
+    'haunted-manor': '/audio/voices/08_haunted_manor_intro.mp3',
+    'thieves-guild-intro': '/audio/voices/11_thieves_guild_intro.mp3',
+    'thieves-guild': '/audio/voices/11_thieves_guild_intro.mp3',
+    'ancient-temple-intro': '/audio/voices/14_ancient_temple_intro.mp3',
+    'ancient-temple': '/audio/voices/14_ancient_temple_intro.mp3',
+
+    // 2. Boss Declarations
+    'nezznar-boss': '/audio/voices/02_nezznar_boss.mp3',
+    'nezznar': '/audio/voices/02_nezznar_boss.mp3',
+    'black-spider': '/audio/voices/02_nezznar_boss.mp3',
+    'voranthos-boss': '/audio/voices/06_voranthos_boss.mp3',
+    'voranthos': '/audio/voices/06_voranthos_boss.mp3',
+    'young-red-dragon': '/audio/voices/06_voranthos_boss.mp3',
+    'malakor-boss': '/audio/voices/09_malakor_boss.mp3',
+    'malakor': '/audio/voices/09_malakor_boss.mp3',
+    'lord-malakor': '/audio/voices/09_malakor_boss.mp3',
+    'wight': '/audio/voices/09_malakor_boss.mp3',
+    'vespera-boss': '/audio/voices/12_vespera_boss.mp3',
+    'vespera': '/audio/voices/12_vespera_boss.mp3',
+    'assassin': '/audio/voices/12_vespera_boss.mp3',
+    'ssethra-boss': '/audio/voices/15_ssethra_boss.mp3',
+    'ssethra': '/audio/voices/15_ssethra_boss.mp3',
+    'yuan-ti': '/audio/voices/15_ssethra_boss.mp3',
+
+    // 3. Climaxes & Visions
+    'spell-forge': '/audio/voices/03_spell_forge_awakening.mp3',
+    'wave_echo_forge': '/audio/voices/03_spell_forge_awakening.mp3',
+    'haunted-manor-purification': '/audio/voices/10_haunted_manor_purification.mp3',
+    'ritual_ossuary_purification': '/audio/voices/10_haunted_manor_purification.mp3',
+    'ancient-temple-vision': '/audio/voices/16_ancient_temple_vision.mp3',
+    'astrolabe_chamber': '/audio/voices/16_ancient_temple_vision.mp3',
+
+    // 4. Campaign Victories
+    'lost-mine-victory': '/audio/voices/04_lost_mine_victory.mp3',
+    'dragon-lair-victory': '/audio/voices/07_dragon_lair_victory.mp3',
+    'thieves-guild-victory': '/audio/voices/13_thieves_guild_victory.mp3',
+    'ancient-temple-victory': '/audio/voices/17_ancient_temple_victory.mp3',
+
+    // 5. Tabletop & Cinematic Staples
+    'combat-initiative': '/audio/voices/18_combat_initiative.mp3',
+    'trap-triggered': '/audio/voices/19_trap_triggered.mp3',
+    'short-rest': '/audio/voices/20_short_rest.mp3',
+    'long-rest': '/audio/voices/21_long_rest.mp3',
+    'nat20-triumph': '/audio/voices/22_nat20_triumph.mp3',
+    'nat1-fumble': '/audio/voices/23_nat1_fumble.mp3',
+    'tavern-keeper': '/audio/voices/24_tavern_keeper.mp3',
+    'game-over': '/audio/voices/25_game_over.mp3',
+    'level-up': '/audio/voices/26_level_up.mp3',
+
+    // 6. Companion Barks
+    'cleric-heal': '/audio/voices/27_cleric_heal.mp3',
+    'wizard-burst': '/audio/voices/28_wizard_burst.mp3',
+    'rogue-sneak': '/audio/voices/29_rogue_sneak.mp3'
+};
+
+/**
+ * Returns the URI of a voice track or null
+ */
+export function getVoiceTrack(trackKey) {
+    if (!trackKey) return null;
+    const clean = trackKey.toLowerCase().trim();
+    return VOICE_TRACKS[clean] || null;
+}
