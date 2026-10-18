@@ -109,18 +109,6 @@ export default function ChatInterface({
         }
     };
 
-    const latestBubbleRef = useRef(null);
-
-    // Auto-scroll to each new bubble as it arrives so the player never has to manually move the mouse or scroll
-    useEffect(() => {
-        if (filteredMessages.length > 0 && latestBubbleRef.current) {
-            latestBubbleRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-        }
-    }, [filteredMessages.length]);
-
     const scrollToBottom = useCallback(() => {
         // Disabled general jump-to-bottom so the player reads down naturally without skipping upcoming story
     }, []);
@@ -146,6 +134,18 @@ export default function ChatInterface({
         if (messageFilter === 'companions') return message.type === 'companion' || Array.isArray(message.companionMessages);
         return message.type === messageFilter;
     });
+
+    const latestBubbleRef = useRef(null);
+
+    // Auto-scroll to each new bubble as it arrives so the player never has to manually move the mouse or scroll
+    useEffect(() => {
+        if (filteredMessages.length > 0 && latestBubbleRef.current) {
+            latestBubbleRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }, [filteredMessages.length]);
 
     const isNodeSearched = currentNode && searchedNodes.includes(currentNode.id);
     const isNodeLooted = currentNode && lootedNodes.includes(currentNode.id);
