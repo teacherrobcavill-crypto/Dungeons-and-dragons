@@ -45,6 +45,7 @@ export const initialState = {
     defeatedNodes: [],
     disarmedNodes: [],
     completedChoices: [],
+    completedAdventures: [],
     npcAttitudes: {},
     encounteredMonsters: ['goblin', 'wolf', 'bugbear', 'skeleton', 'mimic', 'owlbear', 'young-red-dragon'],
     combat: null,
@@ -97,6 +98,7 @@ export const ActionTypes = {
     MARK_NODE_DEFEATED: 'MARK_NODE_DEFEATED',
     MARK_NODE_DISARMED: 'MARK_NODE_DISARMED',
     MARK_CHOICE_COMPLETED: 'MARK_CHOICE_COMPLETED',
+    COMPLETE_ADVENTURE: 'COMPLETE_ADVENTURE',
     SET_NPC_ATTITUDE: 'SET_NPC_ATTITUDE',
     UNLOCK_MONSTER_CODEX: 'UNLOCK_MONSTER_CODEX',
     SET_COMBAT: 'SET_COMBAT',
@@ -274,6 +276,18 @@ export function gameReducer(state, action) {
                     ? state.completedChoices
                     : [...(state.completedChoices || []), action.choiceKey]
             };
+
+        case ActionTypes.COMPLETE_ADVENTURE: {
+            const advId = action.adventureId;
+            if (!advId) return state;
+            const updated = (state.completedAdventures || []).includes(advId)
+                ? state.completedAdventures
+                : [...(state.completedAdventures || []), advId];
+            return {
+                ...state,
+                completedAdventures: updated
+            };
+        }
 
         case ActionTypes.SET_NPC_ATTITUDE:
             return {

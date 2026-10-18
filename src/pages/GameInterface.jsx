@@ -13,6 +13,8 @@ import BestiaryCodex from '../components/game/BestiaryCodex';
 import CombatEncounterHUD from '../components/game/CombatEncounterHUD';
 import SettingsModal from '../components/game/SettingsModal';
 import DefeatModal from '../components/game/DefeatModal';
+import VictoryModal from '../components/game/VictoryModal';
+import { getAdventureEpilogue } from '../data/adventureEpilogues';
 import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
 import { getMonsterById } from '../data/monsters';
@@ -66,6 +68,7 @@ export default function GameInterface() {
         markNodeDefeated,
         markNodeDisarmed,
         markChoiceCompleted,
+        completeAdventure,
         unlockMonsterCodex,
         setCombat,
         updateCombat,
@@ -83,6 +86,7 @@ export default function GameInterface() {
     const [isLoading, setIsLoading] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isDefeatModalOpen, setIsDefeatModalOpen] = useState(false);
+    const [isVictoryModalOpen, setIsVictoryModalOpen] = useState(false);
     const [defeatCause, setDefeatCause] = useState('Succumbed to mortal wounds in battle.');
     const [sidebarTab, setSidebarTab] = useState('character');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -533,6 +537,46 @@ export default function GameInterface() {
                 if (getVoiceTrack(advVic)) {
                     victoryTrack = advVic;
                 }
+            }
+
+            const isBossFight = currentCombat.difficulty === 'Boss' ||
+                currentNode?.type === 'boss' ||
+                currentNode?.id === 'black_spider_sanctum' ||
+                currentNode?.id === 'voranthos_caldera' ||
+                currentNode?.id === 'ritual_ossuary' ||
+                currentNode?.id === 'shadow_sanctum' ||
+                currentNode?.id === 'throne_sleeping_god';
+
+            const epilogue = getAdventureEpilogue(activeAdventure?.id, activeAdventure);
+            if (!victoryTrack && epilogue?.voiceTrack) {
+                victoryTrack = epilogue.voiceTrack;
+            }
+
+            if (isBossFight) {
+                completeAdventure(activeAdventure?.id);
+                if (epilogue?.bonusXp) gainXp(epilogue.bonusXp);
+                if (epilogue?.bonusGold) updateGold(epilogue.bonusGold);
+                if (epilogue?.specialReward) addInventoryItem(epilogue.specialReward);
+
+                if (victoryTrack) {
+                    soundService.playVoice(victoryTrack, null, true);
+                } else {
+                    soundService.play('victory');
+                }
+
+                setIsVictoryModalOpen(true);
+
+                addChatMessage({
+                    type: 'combat',
+                    subtype: 'campaign_victory',
+                    title: `🏆 CAMPAIGN COMPLETE: ${epilogue.title || 'Victory Achieved!'}`,
+                    text: `**CAMPAIGN CONQUERED!**\n\n${epilogue.epilogueProse}\n\n**Patron's Commendation:** ${epilogue.patronReaction || ''}\n\n**Spoils Awarded:** +${(epilogue.bonusXp || 500) + xpWon} Total XP, +${(epilogue.bonusGold || 300) + goldWon} GP, and **${epilogue.specialReward?.name || 'Campaign Trophy'}**!`,
+                    rollText: `🏆 CAMPAIGN CONQUERED`,
+                    voiceTrack: victoryTrack,
+                    isNew: true,
+                    timestamp: new Date().toISOString()
+                });
+                return true;
             }
 
             if (state.settings.narrationEnabled && victoryTrack) {
@@ -1454,6 +1498,25 @@ export default function GameInterface() {
         navigate('/');
     };
 
+    const handleOpenVictoryModal = () => {
+        setIsVictoryModalOpen(true);
+        const epilogue = getAdventureEpilogue(activeAdventure?.id, activeAdventure);
+        if (epilogue?.voiceTrack) {
+            soundService.playVoice(epilogue.voiceTrack, null, true);
+        } else {
+            soundService.play('victory');
+        }
+    };
+
+    const handleCloseVictoryModal = () => {
+        setIsVictoryModalOpen(false);
+    };
+
+    const handleEmbarkNextAdventure = () => {
+        setIsVictoryModalOpen(false);
+        navigate('/adventure');
+    };
+
     // === REST, SKILL CHECK & SHOP HANDLERS ===
     const handleShortRest = () => {
         soundService.play('rest');
@@ -1862,6 +1925,7 @@ export default function GameInterface() {
                             onSelectChoice={handleSelectChoice}
                             onTriggerEncounter={handleTriggerEncounter}
                             onLootRoom={handleLootRoom}
+                            onOpenVictoryModal={handleOpenVictoryModal}
                             isReaderMode={isReaderMode}
                             onToggleReaderMode={() => setIsReaderMode(!isReaderMode)}
                             readerFontSize={readerFontSize}
@@ -2020,6 +2084,17 @@ export default function GameInterface() {
                 onRestartEncounter={currentNode?.encounter ? handleRestartEncounter : null}
                 onLoadSave={handleLoadLatestSave}
                 onNewCharacter={handleReturnToCharacterCreation}
+            />
+
+            {/* Campaign Victory / Complete Modal */}
+            <VictoryModal
+                isOpen={isVictoryModalOpen}
+                character={character}
+                adventure={currentAdventure}
+                companions={state.companions || []}
+                epilogue={getAdventureEpilogue(currentAdventure?.id, currentAdventure)}
+                onClose={handleCloseVictoryModal}
+                onEmbarkNext={handleEmbarkNextAdventure}
             />
         </div>
     );

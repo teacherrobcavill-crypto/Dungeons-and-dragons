@@ -74,6 +74,7 @@ export default function ChatInterface({
     onSelectChoice,
     onTriggerEncounter,
     onLootRoom,
+    onOpenVictoryModal,
     isReaderMode = false,
     onToggleReaderMode,
     readerFontSize = 'normal',
@@ -157,6 +158,12 @@ export default function ChatInterface({
     const isNodeDefeated = currentNode && defeatedNodes.includes(currentNode.id);
     const hasActiveEncounter = currentNode?.encounter && !isNodeDefeated && !inCombat;
     const hasUnclaimedLoot = currentNode?.loot && !isNodeLooted && (!currentNode.encounter || isNodeDefeated);
+
+    const isBossChamber = Boolean(
+        currentNode?.type === 'boss' ||
+        ['black_spider_sanctum', 'voranthos_caldera', 'ritual_ossuary', 'shadow_sanctum', 'throne_sleeping_god'].includes(currentNode?.id)
+    );
+    const isBossDefeated = isBossChamber && (isNodeDefeated || !currentNode?.encounter);
 
     const isChoiceCompleted = (choice) => {
         const key = `${currentNode?.id || 'node'}:${choice.id || choice.label}`;
@@ -649,6 +656,17 @@ export default function ChatInterface({
                                                         💰 Loot
                                                     </button>
                                                 )}
+                                                {isBossChamber && isBossDefeated && onOpenVictoryModal && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={onOpenVictoryModal}
+                                                        className="px-3 py-1 rounded-lg text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-md flex items-center gap-1.5 cursor-pointer animate-pulse-glow"
+                                                        title="View campaign victory summary and epilogue"
+                                                    >
+                                                        <span>🏆</span>
+                                                        <span>Campaign Victory</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -657,6 +675,16 @@ export default function ChatInterface({
                                             <>
                                                 {visibleChoices.length > 0 ? (
                                                     <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+                                                        {isBossChamber && isBossDefeated && onOpenVictoryModal && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={onOpenVictoryModal}
+                                                                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 border border-amber-400 shadow-md flex items-center gap-2 cursor-pointer animate-pulse-glow w-full sm:w-auto justify-center"
+                                                            >
+                                                                <span className="text-base">🏆</span>
+                                                                <span>View Campaign Victory & Epilogue</span>
+                                                            </button>
+                                                        )}
                                                         {visibleChoices.map((choice) => {
                                                             const isSkill = choice.type === 'skillCheck' || choice.dc;
                                                             const isMove = choice.type === 'move' || Boolean(choice.targetNodeId && !choice.dc);
@@ -686,6 +714,29 @@ export default function ChatInterface({
                                                                 </button>
                                                             );
                                                         })}
+                                                    </div>
+                                                ) : isBossChamber && isBossDefeated ? (
+                                                    <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-500/80 shadow-lg text-center space-y-3 animate-fade-in">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <span className="text-2xl animate-bounce">🏆</span>
+                                                            <span className="font-display font-extrabold text-sm sm:text-base text-amber-950 dark:text-amber-200 uppercase tracking-wider">
+                                                                Campaign Climax Reached & Boss Vanquished!
+                                                            </span>
+                                                            <span className="text-2xl animate-bounce">⚔️</span>
+                                                        </div>
+                                                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 max-w-lg mx-auto">
+                                                            You have triumphed over the final threat of this adventure! The realm sings of your bravery, and your patron awaits to commend your deeds.
+                                                        </p>
+                                                        {onOpenVictoryModal && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={onOpenVictoryModal}
+                                                                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-md hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>🏆</span>
+                                                                <span>View Campaign Victory & Epilogue</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <div className="py-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">

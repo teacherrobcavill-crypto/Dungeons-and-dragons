@@ -135,4 +135,24 @@ test('SHORT_REST and LONG_REST do not revive dead companions', () => {
     assert.equal(longRested.companions[1].hp, 0);
 });
 
+test('COMPLETE_ADVENTURE records adventureId into completedAdventures without duplicates', () => {
+    const afterFirst = gameReducer(initialState, {
+        type: ActionTypes.COMPLETE_ADVENTURE,
+        adventureId: 'lost-mine'
+    });
+    assert.deepEqual(afterFirst.completedAdventures, ['lost-mine']);
 
+    // Duplicate call does not duplicate entry
+    const afterSecond = gameReducer(afterFirst, {
+        type: ActionTypes.COMPLETE_ADVENTURE,
+        adventureId: 'lost-mine'
+    });
+    assert.deepEqual(afterSecond.completedAdventures, ['lost-mine']);
+
+    // Second adventure
+    const afterThird = gameReducer(afterSecond, {
+        type: ActionTypes.COMPLETE_ADVENTURE,
+        adventureId: 'dragon-lair'
+    });
+    assert.deepEqual(afterThird.completedAdventures, ['lost-mine', 'dragon-lair']);
+});

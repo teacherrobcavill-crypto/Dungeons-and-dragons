@@ -209,6 +209,11 @@ export default function AdventureSelection() {
                                                         {adventure.name}
                                                     </h3>
                                                     <div className="flex items-center gap-1.5">
+                                                        {state.completedAdventures?.includes(adventure.id) && (
+                                                            <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-sm flex items-center gap-1 animate-pulse">
+                                                                🏆 Conquered
+                                                            </span>
+                                                        )}
                                                         <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold">
                                                             🗺️ {nodeCount} Chambers
                                                         </span>

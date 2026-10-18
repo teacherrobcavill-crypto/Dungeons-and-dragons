@@ -57,6 +57,9 @@ export function GameProvider({ children }) {
         markChoiceCompleted: (choiceKey) =>
             dispatch({ type: ActionTypes.MARK_CHOICE_COMPLETED, choiceKey }),
 
+        completeAdventure: (adventureId) =>
+            dispatch({ type: ActionTypes.COMPLETE_ADVENTURE, adventureId }),
+
         setNpcAttitude: (npcId, attitude) =>
             dispatch({ type: ActionTypes.SET_NPC_ATTITUDE, npcId, attitude }),
 

@@ -149,8 +149,9 @@ export default function DungeonAutomap({
                     const isCurrent = node.id === currentNodeId;
                     const isCleared = defeatedNodes.includes(node.id);
                     const isLooted = lootedNodes.includes(node.id);
+                    const isBoss = node.type === 'boss' || ['black_spider_sanctum', 'voranthos_caldera', 'ritual_ossuary', 'shadow_sanctum', 'throne_sleeping_god'].includes(node.id);
                     const coords = coordLookup[node.id];
-                    const icon = isVisited ? (NODE_TYPE_ICONS[node.type] || '📍') : '❓';
+                    const icon = isVisited ? (isBoss && isCleared ? '🏆' : (NODE_TYPE_ICONS[node.type] || '📍')) : '❓';
 
                     return (
                         <button
@@ -159,7 +160,7 @@ export default function DungeonAutomap({
                             disabled={inCombat || (!isVisited && !isReachable)}
                             onClick={() => onSelectNode && onSelectNode(node.id)}
                             style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
-                            title={isVisited ? `${node.title} (${node.type})` : 'Unexplored Area — Click to travel'}
+                            title={isVisited ? `${node.title} (${isBoss && isCleared ? '🏆 VICTORY - BOSS CONQUERED' : node.type})` : 'Unexplored Area — Click to travel'}
                             className={`absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center transition-all ${
                                 isCurrent
                                     ? 'z-20 scale-110'
@@ -174,7 +175,9 @@ export default function DungeonAutomap({
                                         ? 'bg-amber-500 text-white border-white dark:border-amber-200 ring-4 ring-amber-400/50 animate-pulse'
                                         : isVisited
                                             ? isCleared
-                                                ? 'bg-emerald-600 text-white border-emerald-300'
+                                                ? isBoss
+                                                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-amber-500/50'
+                                                    : 'bg-emerald-600 text-white border-emerald-300'
                                                 : 'bg-indigo-600 text-white border-indigo-300'
                                             : 'bg-slate-700 text-gray-300 border-slate-500 border-dashed'
                                 }`}
@@ -217,9 +220,15 @@ export default function DungeonAutomap({
                     {/* Status Badges */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
                         {defeatedNodes.includes(currentNode.id) && (
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                                ✅ Threat Cleared
-                            </span>
+                            (currentNode.type === 'boss' || ['black_spider_sanctum', 'voranthos_caldera', 'ritual_ossuary', 'shadow_sanctum', 'throne_sleeping_god'].includes(currentNode.id)) ? (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-sm flex items-center gap-1">
+                                    <span>🏆</span> Campaign Boss Conquered!
+                                </span>
+                            ) : (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                    ✅ Threat Cleared
+                                </span>
+                            )
                         )}
                         {searchedNodes.includes(currentNode.id) && (
                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
