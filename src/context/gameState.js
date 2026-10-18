@@ -63,7 +63,7 @@ export const initialState = {
         aiModel: 'mock',
         darkMode: true,
         soundEnabled: true,
-        narrationEnabled: false,
+        narrationEnabled: true,
         animationsEnabled: true
     },
     pendingRoll: null

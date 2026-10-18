@@ -91,15 +91,15 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
 
                         <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg cursor-pointer">
                             <div className="flex items-center gap-3">
-                                <span className="text-xl">🗣️</span>
+                                <span className="text-xl">🎙️</span>
                                 <div>
-                                    <span className="text-gray-700 dark:text-gray-200 block">Auto Voice Narration (TTS)</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">Read DM descriptions aloud automatically</span>
+                                    <span className="text-gray-700 dark:text-gray-200 block">ElevenLabs Voice Narration</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">Cinematic quest intros, boss declarations & moments</span>
                                 </div>
                             </div>
                             <input
                                 type="checkbox"
-                                checked={Boolean(settings.narrationEnabled)}
+                                checked={settings.narrationEnabled !== false}
                                 onChange={(e) => onSettingsChange({ ...settings, narrationEnabled: e.target.checked })}
                                 className="w-5 h-5 rounded text-primary-500 focus:ring-primary-500"
                             />

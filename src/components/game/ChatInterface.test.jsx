@@ -61,53 +61,32 @@ describe('ChatInterface Component', () => {
         expect(button.closest('button')).toBeDisabled();
     });
 
-    it('toggles between narrate and mute on button press', async () => {
-        class MockSpeechSynthesisUtterance {
-            constructor(text) {
-                this.text = text;
-                this.pitch = 1;
-                this.rate = 1;
-                this.volume = 1;
-                this.voice = null;
-                this.onstart = null;
-                this.onend = null;
-                this.onerror = null;
-            }
-        }
-        window.SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
-        globalThis.SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
+    it('toggles ElevenLabs voice playback on button press when voiceTrack is present', async () => {
+        const toggleSpy = vi.spyOn(soundService, 'toggleVoice').mockImplementation(() => true);
 
-        window.speechSynthesis = {
-            speaking: false,
-            cancel: vi.fn(function () {
-                this.speaking = false;
-            }),
-            speak: vi.fn(function (utterance) {
-                this.speaking = true;
-                utterance.onstart?.();
-            }),
-            getVoices: vi.fn(() => [])
-        };
+        const messagesWithVoice = [
+            {
+                type: 'ai',
+                text: 'You stand before the sun-bleached ruins...',
+                voiceTrack: 'lost-mine-intro',
+                timestamp: new Date().toISOString()
+            }
+        ];
 
         render(
             <ChatInterface
-                messages={mockMessages}
+                messages={messagesWithVoice}
                 onSendMessage={() => { }}
                 isLoading={false}
             />
         );
 
-        // Initially shows Narrate
-        const narrateButton = screen.getByText('Narrate').closest('button');
-        expect(narrateButton).toBeInTheDocument();
+        // Voice button is displayed for messages with ElevenLabs voice tracks
+        const voiceButton = screen.getByText('Voice').closest('button');
+        expect(voiceButton).toBeInTheDocument();
 
-        // Click to narrate -> should switch to Mute
-        fireEvent.click(narrateButton);
-        expect(await screen.findByText('Mute')).toBeInTheDocument();
-
-        // Click again -> should switch back to Narrate
-        const muteButton = screen.getByText('Mute').closest('button');
-        fireEvent.click(muteButton);
-        expect(await screen.findByText('Narrate')).toBeInTheDocument();
+        // Clicking triggers toggleVoice with the voiceTrack
+        fireEvent.click(voiceButton);
+        expect(toggleSpy).toHaveBeenCalledWith('lost-mine-intro', 'msg-0');
     });
 });

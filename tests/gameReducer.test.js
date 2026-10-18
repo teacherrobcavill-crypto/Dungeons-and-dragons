@@ -8,8 +8,9 @@ test('START_GAME sets gameStarted true', () => {
     assert.equal(next.gameStarted, true);
 });
 
-test('initialState has Dark Mode enabled by default', () => {
+test('initialState has Dark Mode and ElevenLabs voice narration enabled by default', () => {
     assert.equal(initialState.settings.darkMode, true);
+    assert.equal(initialState.settings.narrationEnabled, true);
 });
 
 test('UPDATE_HP respects floor and ceiling', () => {

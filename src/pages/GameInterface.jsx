@@ -169,18 +169,16 @@ export default function GameInterface() {
                     });
                 }
                 soundService.play('message');
-                if (state.settings.narrationEnabled) {
+                if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
                     if (hasIntroTrack) {
-                        soundService.playVoice(introTrack);
-                    } else {
-                        soundService.speak?.(opening, 'dm');
+                        soundService.playVoice(introTrack, 'intro-msg', true);
                     }
                 }
                 setIsLoading(false);
             }
         };
         initGame();
-    }, [isGameStarted, chatHistoryLength, activeAdventure, character, aiModel, addChatMessage, state.settings.narrationEnabled, state.companions]);
+    }, [isGameStarted, chatHistoryLength, activeAdventure, character, aiModel, addChatMessage, state.settings.narrationEnabled, state.settings.soundEnabled, state.companions]);
 
     const getCompanionVoiceTrack = (companion) => {
         if (!companion) return null;
@@ -234,11 +232,9 @@ export default function GameInterface() {
             timestamp: new Date().toISOString(),
             ...extra
         });
-        if (state.settings.narrationEnabled) {
+        if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
             if (extra.voiceTrack && getVoiceTrack(extra.voiceTrack)) {
-                soundService.playVoice(extra.voiceTrack);
-            } else {
-                soundService.speak?.(text, 'dm');
+                soundService.playVoice(extra.voiceTrack, null, true);
             }
         }
     };
@@ -266,12 +262,20 @@ export default function GameInterface() {
         let roomVoiceTrack = null;
         if (targetNodeId === 'wave_echo_forge') {
             roomVoiceTrack = 'spell-forge';
-        } else if (targetNodeId === 'ritual_ossuary') {
+        } else if (targetNodeId === 'ritual_ossuary' && !isCleared) {
             roomVoiceTrack = 'haunted-manor-purification';
         } else if (targetNodeId === 'astrolabe_chamber') {
             roomVoiceTrack = 'ancient-temple-vision';
         } else if (targetNodeId === 'phandalin_hub' || targetNodeId === 'rusty_anchor') {
             roomVoiceTrack = 'tavern-keeper';
+        } else if (targetNodeId === 'black_spider_sanctum' && !isCleared) {
+            roomVoiceTrack = 'nezznar-boss';
+        } else if (targetNodeId === 'voranthos_caldera' && !isCleared) {
+            roomVoiceTrack = 'voranthos-boss';
+        } else if (targetNodeId === 'shadow_sanctum' && !isCleared) {
+            roomVoiceTrack = 'vespera-boss';
+        } else if (targetNodeId === 'throne_sleeping_god' && !isCleared) {
+            roomVoiceTrack = 'ssethra-boss';
         } else if (targetNode.type === 'victory') {
             if (activeAdventure?.id === 'lost-mine') roomVoiceTrack = 'lost-mine-victory';
             else if (activeAdventure?.id === 'dragon-lair') roomVoiceTrack = 'dragon-lair-victory';
@@ -351,8 +355,8 @@ export default function GameInterface() {
             timestamp: new Date().toISOString()
         });
 
-        if (state.settings.narrationEnabled) {
-            soundService.playVoice(encounterVoiceTrack);
+        if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
+            soundService.playVoice(encounterVoiceTrack, null, true);
         }
     };
 
@@ -579,8 +583,8 @@ export default function GameInterface() {
                 return true;
             }
 
-            if (state.settings.narrationEnabled && victoryTrack) {
-                soundService.playVoice(victoryTrack);
+            if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false && victoryTrack) {
+                soundService.playVoice(victoryTrack, null, true);
             }
 
             addChatMessage({
@@ -1066,8 +1070,8 @@ export default function GameInterface() {
                     isNew: true,
                     timestamp: new Date().toISOString()
                 });
-                if (state.settings.narrationEnabled) {
-                    soundService.playVoice('cleric-heal');
+                if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
+                    soundService.playVoice('cleric-heal', null, true);
                 }
                 await waitReveal(feedItem.text, 1000);
             } else if (compTurn.type === 'attack') {
@@ -1132,8 +1136,8 @@ export default function GameInterface() {
                 if (isFatal) {
                     soundService.play('critical');
                 }
-                if (state.settings.narrationEnabled && (compTurn.hit || isFatal) && compVoice) {
-                    soundService.playVoice(compVoice);
+                if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false && (compTurn.hit || isFatal) && compVoice) {
+                    soundService.playVoice(compVoice, null, true);
                 }
 
                 await waitReveal(compNarrative.prose, 1200);
@@ -1646,10 +1650,6 @@ export default function GameInterface() {
                 timestamp: response.metadata?.timestamp,
                 companionMessages: response.companionResponses || []
             });
-
-            if (state.settings.narrationEnabled) {
-                soundService.speak?.(response.message, 'dm');
-            }
         } catch (error) {
             logError('dm_response_failed_ui', error, { aiModel: state.settings.aiModel });
             addChatMessage({
@@ -1705,13 +1705,30 @@ export default function GameInterface() {
                 currentNode
             }, resolutionData, action, state.settings.aiModel);
 
-            if (total === 20 || isSuccess) soundService.play('critical');
-            else soundService.play('fumble');
+            let rollVoice = null;
+            if (total === 20) {
+                rollVoice = 'nat20-triumph';
+                soundService.play('critical');
+                if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
+                    soundService.playVoice('nat20-triumph', null, true);
+                }
+            } else if (total === 1) {
+                rollVoice = 'nat1-fumble';
+                soundService.play('fumble');
+                if (state.settings.narrationEnabled !== false && state.settings.soundEnabled !== false) {
+                    soundService.playVoice('nat1-fumble', null, true);
+                }
+            } else if (isSuccess) {
+                soundService.play('critical');
+            } else {
+                soundService.play('fumble');
+            }
 
             addChatMessage({
                 type: 'ai',
                 text: response.message,
                 roll: total,
+                ...(rollVoice ? { voiceTrack: rollVoice } : {}),
                 timestamp: response.metadata?.timestamp,
                 companionMessages: response.companionResponses || []
             });
@@ -1824,11 +1841,11 @@ export default function GameInterface() {
                             <span>⭐ Lvl {character.level || 1}</span>
                         </div>
 
-                        {/* Voice Narration Toggle */}
+                        {/* ElevenLabs Voice Narration Toggle */}
                         <button
                             type="button"
                             onClick={() => {
-                                if (state.settings.narrationEnabled) {
+                                if (state.settings.narrationEnabled !== false) {
                                     soundService.stopSpeaking?.();
                                     updateSettings({ narrationEnabled: false });
                                 } else {
@@ -1836,14 +1853,14 @@ export default function GameInterface() {
                                 }
                             }}
                             className={`p-1.5 sm:p-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                                state.settings.narrationEnabled
-                                    ? 'bg-amber-500 text-slate-950 font-bold'
+                                state.settings.narrationEnabled !== false
+                                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
                                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300'
                             }`}
-                            title={state.settings.narrationEnabled ? 'Auto Voice Narration ON (Click to Mute)' : 'Enable Voice Narration (TTS)'}
+                            title={state.settings.narrationEnabled !== false ? 'ElevenLabs Voice Narration ON (Click to Mute)' : 'Enable ElevenLabs Voice Narration'}
                         >
-                            <span>{state.settings.narrationEnabled ? '🗣️' : '🔇'}</span>
-                            <span className="hidden sm:inline text-xs">TTS</span>
+                            <span>{state.settings.narrationEnabled !== false ? '🎙️' : '🔇'}</span>
+                            <span className="hidden sm:inline text-xs font-bold">Voices</span>
                         </button>
 
                         {/* Export Sheet JSON */}

@@ -8,7 +8,7 @@ class SoundService {
     constructor() {
         this.audioContext = null;
         this.enabled = true;
-        this.narrationEnabled = false;
+        this.narrationEnabled = true;
         this.ambientEnabled = false;
         this.volume = 0.5;
         this.ambientNodes = [];
@@ -302,25 +302,21 @@ class SoundService {
 
     isSpeaking(id = null) {
         if (typeof window === 'undefined') return false;
-        const synthSpeaking = 'speechSynthesis' in window && window.speechSynthesis.speaking;
         const voicePlaying = Boolean(this.currentVoiceAudio && !this.currentVoiceAudio.paused);
-        const active = synthSpeaking || voicePlaying || this.isSpeakingState;
+        const active = voicePlaying || this.isSpeakingState;
         if (!active) return false;
         if (id === null) return true;
         return (this.currentSpeakingId === id || this.currentVoiceId === id);
     }
 
     playVoice(keyOrPath, id = null, forcePlay = false) {
-        if (!forcePlay && !this.narrationEnabled && !this.enabled) return false;
         if (typeof window === 'undefined') return false;
+        if (!this.enabled && !forcePlay) return false;
+        if (this.narrationEnabled === false && !forcePlay) return false;
 
-        const trackUrl = getVoiceTrack(keyOrPath) || keyOrPath;
+        const trackUrl = getVoiceTrack(keyOrPath) || (typeof keyOrPath === 'string' && keyOrPath.startsWith('/') ? keyOrPath : null);
         if (!trackUrl) return false;
 
-        // Cancel any active Web Speech synthesis and prior voice audio
-        if ('speechSynthesis' in window) {
-            try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
-        }
         this.stopVoice();
 
         try {
@@ -340,7 +336,7 @@ class SoundService {
             };
 
             audio.onerror = (e) => {
-                console.warn('Voice track playback error:', e);
+                console.warn('ElevenLabs voice track playback error:', e);
                 if (this.currentVoiceAudio === audio) {
                     this.stopVoice();
                 }
@@ -349,7 +345,7 @@ class SoundService {
             const playPromise = audio.play();
             if (playPromise && playPromise.catch) {
                 playPromise.catch((err) => {
-                    console.warn('Voice track playback prevented by browser:', err);
+                    console.warn('ElevenLabs voice track playback prevented by browser audio policy:', err);
                     if (this.currentVoiceAudio === audio) {
                         this.stopVoice();
                     }
@@ -357,7 +353,7 @@ class SoundService {
             }
             return true;
         } catch (e) {
-            console.warn('Voice playback failed:', e);
+            console.warn('ElevenLabs voice playback failed:', e);
             this.stopVoice();
             return false;
         }
@@ -385,107 +381,23 @@ class SoundService {
     toggleVoice(keyOrPath, id = null) {
         if (this.isSpeaking(id)) {
             this.stopVoice();
-            this.stopSpeaking();
             return false;
         }
         return this.playVoice(keyOrPath, id, true);
     }
 
-    speak(text, speakerType = 'dm', personality = 'Wise', forceSpeak = false, id = null) {
-        if (!forceSpeak && !this.narrationEnabled) return false;
-        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
-
-        this.stopVoice();
-
-        const cleaned = this.cleanTextForSpeech(text);
-        if (!cleaned) return false;
-
-        try {
-            window.speechSynthesis.cancel();
-            const UtteranceClass = (typeof window !== 'undefined' && window.SpeechSynthesisUtterance) || (typeof globalThis !== 'undefined' && globalThis.SpeechSynthesisUtterance);
-            if (!UtteranceClass) return false;
-            const utterance = new UtteranceClass(cleaned);
-            this.currentSpeakingId = id;
-
-            // Configure theatrical voice profile
-            if (speakerType === 'dm') {
-                utterance.pitch = 0.88;
-                utterance.rate = 0.96;
-            } else {
-                const profiles = {
-                    Cheerful: { pitch: 1.2, rate: 1.06 },
-                    Stoic: { pitch: 0.82, rate: 0.92 },
-                    Sarcastic: { pitch: 1.05, rate: 1.04 },
-                    Wise: { pitch: 0.9, rate: 0.92 },
-                    Impulsive: { pitch: 1.15, rate: 1.12 },
-                    Cautious: { pitch: 1.02, rate: 0.95 },
-                    Grumpy: { pitch: 0.78, rate: 0.94 },
-                    Mischievous: { pitch: 1.22, rate: 1.08 }
-                };
-                const profile = profiles[personality] || { pitch: 1.0, rate: 1.0 };
-                utterance.pitch = profile.pitch;
-                utterance.rate = profile.rate;
-            }
-
-            utterance.volume = Math.max(0.2, Math.min(1, this.volume * 1.4));
-            const voices = window.speechSynthesis.getVoices?.() || [];
-            const preferredVoice = voices.find(
-                (v) => v.lang.startsWith('en') && (v.name.includes('Daniel') || v.name.includes('Arthur') || v.name.includes('Google UK') || v.name.includes('Samantha'))
-            ) || voices.find((v) => v.lang.startsWith('en'));
-
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
-            }
-
-            this.isSpeakingState = true;
-            this.notifySpeechListeners({ isSpeaking: true, speakingId: id });
-
-            utterance.onstart = () => {
-                this.isSpeakingState = true;
-                this.notifySpeechListeners({ isSpeaking: true, speakingId: this.currentSpeakingId });
-            };
-            utterance.onend = () => {
-                this.isSpeakingState = false;
-                this.currentSpeakingId = null;
-                this.notifySpeechListeners({ isSpeaking: false, speakingId: null });
-            };
-            utterance.onerror = () => {
-                this.isSpeakingState = false;
-                this.currentSpeakingId = null;
-                this.notifySpeechListeners({ isSpeaking: false, speakingId: null });
-            };
-
-            window.speechSynthesis.speak(utterance);
-            return true;
-        } catch (e) {
-            console.warn('TTS narration failed:', e);
-            this.isSpeakingState = false;
-            this.currentSpeakingId = null;
-            this.notifySpeechListeners({ isSpeaking: false, speakingId: null });
-            return false;
-        }
+    // Robotic browser Web Speech API (speechSynthesis) is removed.
+    // Kept as safe no-op for backward compatibility.
+    speak() {
+        return false;
     }
 
-    toggleSpeak(text, speakerType = 'dm', personality = 'Wise', id = null) {
-        if (this.isSpeaking(id)) {
-            this.stopSpeaking();
-            return false;
-        }
-        return this.speak(text, speakerType, personality, true, id);
+    toggleSpeak() {
+        return false;
     }
 
     stopSpeaking() {
         this.stopVoice();
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            try {
-                window.speechSynthesis.cancel();
-            } catch {
-                // ignore
-            }
-        }
-        this.isSpeakingState = false;
-        this.currentSpeakingId = null;
-        this.notifySpeechListeners({ isSpeaking: false, speakingId: null });
     }
 
     startAmbient(theme = 'dungeon') {
