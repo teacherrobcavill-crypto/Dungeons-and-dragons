@@ -109,11 +109,21 @@ export default function ChatInterface({
         }
     };
 
-    const scrollToBottom = useCallback(() => {
-        // Disabled automatic scroll-to-bottom so the player reads down naturally without skipping upcoming story
-    }, []);
+    const latestBubbleRef = useRef(null);
 
-    // No auto-scroll effect: keeps viewport at current reading position
+    // Auto-scroll to each new bubble as it arrives so the player never has to manually move the mouse or scroll
+    useEffect(() => {
+        if (filteredMessages.length > 0 && latestBubbleRef.current) {
+            latestBubbleRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }, [filteredMessages.length]);
+
+    const scrollToBottom = useCallback(() => {
+        // Disabled general jump-to-bottom so the player reads down naturally without skipping upcoming story
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -236,8 +246,14 @@ export default function ChatInterface({
                     </div>
                 )}
 
-                {filteredMessages.map((message, index) => (
-                    <div key={index} className="w-full space-y-2.5">
+                {filteredMessages.map((message, index) => {
+                    const isLatest = index === filteredMessages.length - 1;
+                    return (
+                        <div
+                            key={index}
+                            ref={isLatest ? latestBubbleRef : null}
+                            className="w-full space-y-2.5 scroll-mb-10 scroll-mt-6"
+                        >
                         {/* Player Action - Full Width Heroic Banner */}
                         {message.type === 'user' && (
                             <div className="w-full animate-fade-in">
@@ -345,7 +361,8 @@ export default function ChatInterface({
                                         <MagicalRevealText
                                             text={message.text}
                                             isNew={message.isNew !== false}
-                                            speed={42}
+                                            speed={130}
+                                            autoScroll={true}
                                             className="leading-relaxed"
                                         />
                                     </div>
@@ -497,8 +514,9 @@ export default function ChatInterface({
                                 </div>
                             );
                         })()}
-                    </div>
-                ))}
+                        </div>
+                    );
+                })}
 
                 {/* Loading / Writing State - Full Width */}
                 {isLoading && (

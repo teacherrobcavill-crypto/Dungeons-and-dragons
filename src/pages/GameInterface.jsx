@@ -781,7 +781,11 @@ export default function GameInterface() {
         setIsCombatResolving(true);
         soundService.play('diceRoll');
 
-        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        const waitReveal = (proseText, basePauseMs = 1200) => {
+            const wordCount = (proseText || '').trim().split(/\s+/).length;
+            const duration = Math.max(2400, (wordCount * 130) + basePauseMs);
+            return new Promise((resolve) => setTimeout(resolve, duration));
+        };
 
         let workingEnemies = [...state.combat.enemies];
         let currentCompanions = [...(state.companions || [])];
@@ -816,7 +820,7 @@ export default function GameInterface() {
                     isNew: true,
                     timestamp: new Date().toISOString()
                 });
-                await wait(1400);
+                await waitReveal(feedItem.text, 1000);
             } else if (compTurn.type === 'attack') {
                 const target = workingEnemies.find((e) => e.instanceId === compTurn.targetId);
                 const isFatal = compTurn.hit && target && (target.hp - compTurn.damage <= 0);
@@ -873,7 +877,7 @@ export default function GameInterface() {
                     soundService.play('critical');
                 }
 
-                await wait(1400);
+                await waitReveal(compNarrative.prose, 1200);
 
                 // Check if Companions finished off all enemies
                 if (checkCombatVictory(workingEnemies, state.combat)) {
@@ -994,7 +998,7 @@ export default function GameInterface() {
                 updateCombat({ enemies: workingEnemies });
             }
 
-            await wait(1400);
+            await waitReveal(narrativeResult.prose, 1200);
         }
 
         if (anyCompanionDamaged) {
