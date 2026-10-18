@@ -309,17 +309,19 @@ export function createCombatEncounter(encounterDef, character, companions = [], 
             initiative: playerInit,
             icon: '⚔️'
         },
-        ...companions.map((comp, idx) => ({
-            id: `companion_${idx}`,
-            name: comp.name || `Companion ${idx + 1}`,
-            isCompanion: true,
-            companionIndex: idx,
-            class: comp.class,
-            race: comp.race,
-            personality: comp.personality,
-            initiative: rollDie(20) + 2,
-            icon: '🛡️'
-        })),
+        ...companions
+            .filter((comp) => (comp.hp !== undefined ? comp.hp : (comp.maxHp || 18)) > 0 && !comp.isDead)
+            .map((comp, idx) => ({
+                id: comp.id || `companion_${idx}`,
+                name: comp.name || `Companion ${idx + 1}`,
+                isCompanion: true,
+                companionIndex: idx,
+                class: comp.class,
+                race: comp.race,
+                personality: comp.personality,
+                initiative: rollDie(20) + 2,
+                icon: '🛡️'
+            })),
         ...enemies.map((e) => ({
             id: e.instanceId,
             name: e.name,
@@ -340,6 +342,7 @@ export function createCombatEncounter(encounterDef, character, companions = [], 
         actionUsed: false,
         bonusActionUsed: false,
         reactionUsed: false,
+        featureCooldowns: {},
         initiativeOrder,
         enemies,
         rollingFeed: [
@@ -588,6 +591,7 @@ export function resolveSpellCast({
 }
 
 export function resolveCompanionTurn(companion, enemies, character) {
+    if (!companion || (companion.hp !== undefined && companion.hp <= 0) || companion.isDead) return null;
     const livingEnemies = enemies.filter((e) => e.hp > 0);
     if (livingEnemies.length === 0) return null;
 
@@ -674,7 +678,7 @@ export function resolveMonsterTurn(monster, character, derivedStats, companions 
     }
 
     // Target Selection: Player or Living Companion
-    const livingCompanions = (companions || []).filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
+    const livingCompanions = (companions || []).filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0 && !c.isDead);
     const targetCompanion = (livingCompanions.length > 0 && Math.random() < 0.4)
         ? livingCompanions[Math.floor(Math.random() * livingCompanions.length)]
         : null;

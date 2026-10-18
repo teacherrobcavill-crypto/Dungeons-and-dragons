@@ -189,13 +189,17 @@ export default function GameInterface() {
 
     const findCompanionMoments = (moments = [], companions = []) => {
         if (!Array.isArray(moments) || !Array.isArray(companions) || companions.length === 0) return [];
+        const livingCompanions = companions.filter(
+            (c) => !c.isDead && (c.hp !== undefined ? c.hp > 0 : true)
+        );
+        if (livingCompanions.length === 0) return [];
         const results = [];
         const usedCompanions = new Set();
 
         for (const moment of moments) {
             if (!moment?.text) continue;
             // 1. Exact or partial companion name match
-            let matchedComp = companions.find(
+            let matchedComp = livingCompanions.find(
                 (c) =>
                     !usedCompanions.has(c.name) &&
                     moment.companionName &&
@@ -204,7 +208,7 @@ export default function GameInterface() {
             );
             // 2. Fallback to class or race match
             if (!matchedComp && (moment.matchClass || moment.matchRace)) {
-                matchedComp = companions.find(
+                matchedComp = livingCompanions.find(
                     (c) =>
                         !usedCompanions.has(c.name) &&
                         ((moment.matchClass && c.class?.toLowerCase() === moment.matchClass.toLowerCase()) ||
@@ -786,7 +790,17 @@ export default function GameInterface() {
             pushDmMessage("💀 You are unconscious at 0 HP and cannot use class features!");
             return;
         }
+        const featKey = (feature.id || feature.name || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const currentRound = state.combat?.round || 1;
+        const lastUsedRound = state.combat?.featureCooldowns?.[featKey];
+        const COOLDOWN_ROUNDS = 4;
+
         if (state.combat?.active) {
+            if (lastUsedRound !== undefined && (currentRound - lastUsedRound) < COOLDOWN_ROUNDS) {
+                const roundsRemaining = COOLDOWN_ROUNDS - (currentRound - lastUsedRound);
+                pushDmMessage(`⏳ **${feature.name}** is on cooldown! Available again in ${roundsRemaining} round${roundsRemaining === 1 ? '' : 's'} (Round ${lastUsedRound + COOLDOWN_ROUNDS}).`);
+                return;
+            }
             const isBonus = feature.actionType === 'bonus';
             if (isBonus && state.combat.bonusActionUsed) {
                 pushDmMessage("⚠️ You have already used your Bonus Action this round!");
@@ -801,13 +815,18 @@ export default function GameInterface() {
         const fname = (feature.name || '').toLowerCase();
         let logText = `⚡ You activate **${feature.name}**! ${feature.effect || ''}`;
 
+        const nextFeatureCooldowns = state.combat ? {
+            ...(state.combat.featureCooldowns || {}),
+            [featKey]: currentRound
+        } : {};
+
         if (fname.includes('second wind') || fname.includes('lay on hands')) {
             const heal = rollDiceFormula(`1d10+${character.level || 1}`).total;
             updateHp(heal);
             soundService.play('heal');
             logText = `💚 You use **${feature.name}**, recovering **${heal} Hit Points**!`;
         } else if (fname.includes('action surge') && state.combat) {
-            updateCombat({ actionUsed: false });
+            updateCombat({ actionUsed: false, featureCooldowns: nextFeatureCooldowns });
             logText = `⚡ **ACTION SURGE!** Adrenaline surges through your veins—your Action is refreshed for another attack or spell this turn!`;
         } else if (fname.includes('rage')) {
             addCondition('raging');
@@ -829,7 +848,7 @@ export default function GameInterface() {
                 }
                 return e;
             });
-            updateCombat({ enemies: updatedEnemies, actionUsed: true });
+            updateCombat({ enemies: updatedEnemies, actionUsed: true, featureCooldowns: nextFeatureCooldowns });
             addChatMessage({
                 type: 'combat',
                 subtype: 'hero_action',
@@ -867,7 +886,7 @@ export default function GameInterface() {
                     timestamp: new Date().toISOString()
                 });
                 if (!checkCombatVictory(updatedEnemies, state.combat)) {
-                    updateCombat({ enemies: updatedEnemies, bonusActionUsed: true });
+                    updateCombat({ enemies: updatedEnemies, bonusActionUsed: true, featureCooldowns: nextFeatureCooldowns });
                 }
                 return;
             }
@@ -877,7 +896,8 @@ export default function GameInterface() {
             const isBonus = feature.actionType === 'bonus';
             updateCombat({
                 actionUsed: isBonus ? state.combat.actionUsed : (fname.includes('action surge') ? false : true),
-                bonusActionUsed: isBonus ? true : state.combat.bonusActionUsed
+                bonusActionUsed: isBonus ? true : state.combat.bonusActionUsed,
+                featureCooldowns: nextFeatureCooldowns
             });
             addChatMessage({
                 type: 'combat',
@@ -970,9 +990,9 @@ export default function GameInterface() {
 
         // 1. Party Companions take their combat turns sequentially
         for (const comp of currentCompanions) {
-            // Downed companions cannot act
+            // Downed or dead companions cannot act
             const compEffectiveHp = comp.hp !== undefined ? comp.hp : (comp.maxHp || 18);
-            if (compEffectiveHp <= 0) continue;
+            if (comp.isDead || compEffectiveHp <= 0) continue;
 
             // Check if any enemies remain alive
             const livingTargets = workingEnemies.filter((e) => e.hp > 0);
@@ -1223,7 +1243,19 @@ export default function GameInterface() {
                         const maxHp = c.maxHp || 18;
                         const currentHp = c.hp !== undefined ? c.hp : maxHp;
                         const nextHp = Math.max(0, currentHp - dmgToTake);
-                        return { ...c, maxHp, hp: nextHp };
+                        const isDead = nextHp <= 0;
+                        if (isDead && !c.isDead) {
+                            addChatMessage({
+                                type: 'combat',
+                                subtype: 'fatal_blow',
+                                title: `💀 COMPANION SLAIN: ${c.name} has fallen!`,
+                                text: `${c.name} takes a mortal wound and collapses lifeless to the dungeon floor!`,
+                                rollText: 'SLAIN IN BATTLE',
+                                isNew: true,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                        return { ...c, maxHp, hp: nextHp, isDead };
                     }
                     return c;
                 });
@@ -1252,7 +1284,7 @@ export default function GameInterface() {
         removeCondition('hidden');
 
         // Check if entire party is wiped out (player down + all companions down)
-        const livingComps = currentCompanions.filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
+        const livingComps = currentCompanions.filter((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0 && !c.isDead);
         if (character.hp <= 0 && livingComps.length === 0) {
             soundService.playVoice('game-over', null, true);
             setIsDefeatModalOpen(true);
@@ -1338,10 +1370,10 @@ export default function GameInterface() {
     const handleCallCompanionHelp = async () => {
         if (isCombatResolving) return;
         const healer = (state.companions || []).find((c) => {
-            const isAlive = (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
+            const isAlive = !c.isDead && (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
             const cls = (c.class || '').toLowerCase();
             return isAlive && (cls.includes('cleric') || cls.includes('paladin') || cls.includes('druid') || (c.role || '').toLowerCase().includes('heal'));
-        }) || (state.companions || []).find((c) => (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
+        }) || (state.companions || []).find((c) => !c.isDead && (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0);
 
         if (!healer) {
             pushDmMessage("⚠️ None of your companions are able to reach you with aid!");
@@ -1382,6 +1414,7 @@ export default function GameInterface() {
             const norm = normalizeCompanion(c, i);
             return {
                 ...norm,
+                isDead: false,
                 hp: Math.max(1, Math.floor(norm.maxHp * 0.5))
             };
         });
@@ -1401,7 +1434,7 @@ export default function GameInterface() {
         // Restore companions to full HP
         const fullCompanions = (state.companions || []).map((c, i) => {
             const norm = normalizeCompanion(c, i);
-            return { ...norm, hp: norm.maxHp };
+            return { ...norm, isDead: false, hp: norm.maxHp };
         });
         setCompanions(fullCompanions);
 
@@ -1928,6 +1961,8 @@ export default function GameInterface() {
                                 inCombat={Boolean(state.combat?.active)}
                                 actionUsed={Boolean(state.combat?.actionUsed)}
                                 bonusActionUsed={Boolean(state.combat?.bonusActionUsed)}
+                                featureCooldowns={state.combat?.featureCooldowns}
+                                round={state.combat?.round}
                             />
                         )}
                         {sidebarTab === 'inventory' && (

@@ -289,6 +289,16 @@ export function describeMonsterAttackTarget({
         };
     }
 
+    if (isFatal || (remainingHp !== null && remainingHp <= 0)) {
+        return {
+            title: isPlayer ? cleanProse(`💀 HERO DOWNED: ${monsterName} strikes You!`) : cleanProse(`💀 COMPANION SLAIN: ${targetName} has fallen!`),
+            prose: isPlayer
+                ? cleanProse(`👹 ${monsterName} strikes you down with ${actionName} (${damage} ${damageType} damage)! Darkness rushes into your vision as you collapse unconscious to the dungeon floor at 0 HP!`)
+                : cleanProse(`👹 ${monsterName} delivers a mortal strike to ${targetName} with ${actionName} (${damage} ${damageType} damage)! ${targetName} collapses lifeless in battle!`),
+            rollText: isPlayer ? '0 HP (Downed)' : 'SLAIN IN BATTLE'
+        };
+    }
+
     if (isCrit) {
         const critText = isPlayer
             ? `💥 BRUTAL CRITICAL STRIKE! ${monsterName} finds a deadly opening, driving its ${actionName} straight into you! The vicious blow inflicts ${damage} ${damageType} damage! Agonizing pain flashes through your limbs (${remainingHp} HP remaining)!`

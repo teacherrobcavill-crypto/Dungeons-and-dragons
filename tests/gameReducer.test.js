@@ -109,4 +109,30 @@ test('UPDATE_HP sets unconscious condition at 0 HP and clears it on revival', ()
     assert.equal(revived.character.deathSaves.failures, 0);
 });
 
+test('SHORT_REST and LONG_REST do not revive dead companions', () => {
+    const initializedState = gameReducer(initialState, {
+        type: ActionTypes.SET_COMPANIONS,
+        companions: [
+            { name: 'Living Ally', class: 'Wizard', hp: 8, maxHp: 18, isDead: false },
+            { name: 'Slain Ally', class: 'Fighter', hp: 0, maxHp: 22, isDead: true }
+        ]
+    });
+
+    assert.equal(initializedState.companions[0].isDead, false);
+    assert.equal(initializedState.companions[1].isDead, true);
+    assert.equal(initializedState.companions[1].hp, 0);
+
+    // Short Rest heals living ally, but slain ally stays dead at 0 HP
+    const shortRested = gameReducer(initializedState, { type: ActionTypes.SHORT_REST });
+    assert.ok(shortRested.companions[0].hp > 8);
+    assert.equal(shortRested.companions[1].isDead, true);
+    assert.equal(shortRested.companions[1].hp, 0);
+
+    // Long Rest heals living ally to maxHp, but slain ally stays dead at 0 HP
+    const longRested = gameReducer(initializedState, { type: ActionTypes.LONG_REST });
+    assert.equal(longRested.companions[0].hp, 18);
+    assert.equal(longRested.companions[1].isDead, true);
+    assert.equal(longRested.companions[1].hp, 0);
+});
+
 

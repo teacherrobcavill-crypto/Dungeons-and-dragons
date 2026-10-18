@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getClassById } from '../../data/classes';
+import { getRaceById } from '../../data/races';
 import { getSpellsForClass, getDefaultSpellsForClass } from '../../data/spells';
 import { getMonsterImage } from '../../data/assets';
 import { CONDITIONS_INFO } from '../../services/dndEngine';
@@ -27,7 +28,7 @@ export default function CombatEncounterHUD({
 
     const isPlayerDown = (character?.hp || 0) <= 0;
     const hasHealingCompanion = (companions || []).some((c) => {
-        const isAlive = (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
+        const isAlive = !c.isDead && (c.hp !== undefined ? c.hp : (c.maxHp || 18)) > 0;
         const cls = (c.class || '').toLowerCase();
         return isAlive && (cls.includes('cleric') || cls.includes('paladin') || cls.includes('druid') || (c.role || '').toLowerCase().includes('heal'));
     });
@@ -90,9 +91,14 @@ export default function CombatEncounterHUD({
     };
 
     const healingPotion = inventory.find((i) => i.name?.toLowerCase().includes('potion') && i.quantity > 0);
-    const activeFeatures = (cls?.classFeatures || []).filter(
+    const raceData = getRaceById ? getRaceById(character.race) : null;
+    const activeClassFeatures = (cls?.classFeatures || []).filter(
         (f) => (f.level || 1) <= (character.level || 1) && f.actionType && f.actionType !== 'passive'
     );
+    const activeRacialFeatures = (raceData?.racialAbilities || []).filter(
+        (f) => f.actionType && f.actionType !== 'passive'
+    );
+    const activeFeatures = [...activeClassFeatures, ...activeRacialFeatures];
 
     return (
         <div className="mx-2 sm:mx-4 mt-2 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 text-white border border-red-500/50 shadow-lg space-y-2 animate-fade-in">
@@ -161,31 +167,31 @@ export default function CombatEncounterHUD({
                     {companions.map((comp, idx) => {
                         const compMaxHp = comp.maxHp || 18;
                         const compHp = comp.hp !== undefined ? comp.hp : compMaxHp;
+                        const isDead = comp.isDead || compHp <= 0;
                         const pct = Math.max(0, Math.min(100, (compHp / compMaxHp) * 100));
-                        const isDown = compHp <= 0;
                         return (
                             <div
                                 key={comp.id || idx}
                                 className={`p-1 sm:p-1.5 rounded-lg border transition-all ${
-                                    isDown
-                                        ? 'bg-red-950/20 border-red-900/60 opacity-50'
+                                    isDead
+                                        ? 'bg-red-950/40 border-red-800/80 opacity-60'
                                         : 'bg-indigo-950/30 border-indigo-500/30'
                                 } space-y-0.5`}
                             >
                                 <div className="flex justify-between items-center text-[10px]">
-                                    <span className="font-bold text-indigo-200 truncate">
-                                        🛡️ {comp.name}
+                                    <span className={`font-bold truncate ${isDead ? 'text-red-400 line-through' : 'text-indigo-200'}`}>
+                                        {isDead ? '💀' : '🛡️'} {comp.name}
                                     </span>
-                                    <span className={`font-mono text-[9px] sm:text-[10px] ${isDown ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
-                                        {isDown ? 'Down' : `${compHp}/${compMaxHp}`}
+                                    <span className={`font-mono text-[9px] sm:text-[10px] ${isDead ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
+                                        {isDead ? 'DEAD' : `${compHp}/${compMaxHp}`}
                                     </span>
                                 </div>
                                 <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-300 ${
-                                            pct > 50 ? 'bg-indigo-400' : pct > 25 ? 'bg-amber-500' : 'bg-rose-600'
+                                            isDead ? 'bg-red-900 w-0' : pct > 50 ? 'bg-indigo-400' : pct > 25 ? 'bg-amber-500' : 'bg-rose-600'
                                         }`}
-                                        style={{ width: `${pct}%` }}
+                                        style={{ width: `${isDead ? 0 : pct}%` }}
                                     />
                                 </div>
                             </div>
@@ -451,19 +457,33 @@ export default function CombatEncounterHUD({
                         </button>
                     )}
 
-                    {/* Class Features */}
+                    {/* Class & Racial Features */}
                     {activeFeatures.map((feat) => {
+                        const featKey = (feat.id || feat.name || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+                        const lastUsed = combat.featureCooldowns?.[featKey];
+                        const curRnd = combat.round || 1;
+                        const roundsElapsed = lastUsed !== undefined ? (curRnd - lastUsed) : 999;
+                        const onCooldown = roundsElapsed < 4;
+                        const roundsLeft = 4 - roundsElapsed;
+
                         const isBonus = feat.actionType === 'bonus';
-                        const isDisabled = (isBonus && combat.bonusActionUsed) || (feat.actionType === 'action' && combat.actionUsed);
+                        const actionBlocked = (isBonus && combat.bonusActionUsed) || (feat.actionType === 'action' && combat.actionUsed);
+                        const isDisabled = actionBlocked || onCooldown;
+
                         return (
                             <button
                                 key={feat.id || feat.name}
                                 type="button"
                                 disabled={isCombatResolving || isDisabled}
                                 onClick={() => onUseClassFeature(feat, activeTarget)}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-700/80 hover:bg-indigo-600 disabled:opacity-35 text-indigo-100 border border-indigo-400/40 transition-all cursor-pointer"
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                    onCooldown
+                                        ? 'bg-slate-800/80 text-gray-400 border-gray-600/40 opacity-50 cursor-not-allowed'
+                                        : 'bg-indigo-700/80 hover:bg-indigo-600 disabled:opacity-35 text-indigo-100 border-indigo-400/40'
+                                }`}
+                                title={onCooldown ? `On cooldown for ${roundsLeft} more round(s)` : feat.effect || feat.description}
                             >
-                                ⚡ {feat.name}
+                                {onCooldown ? `⏳ ${feat.name} (${roundsLeft} rnd${roundsLeft > 1 ? 's' : ''})` : `⚡ ${feat.name}`}
                             </button>
                         );
                     })}

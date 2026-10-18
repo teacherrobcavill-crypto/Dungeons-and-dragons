@@ -148,3 +148,56 @@ test('D&D 5e Death Saving Throws resolve correctly', async () => {
     assert.equal(death.deathSaves.failures, 3);
     assert.equal(death.dead, true);
 });
+
+test('Dead companions are excluded from combat initiative and cannot act', async () => {
+    const { createCombatEncounter, resolveCompanionTurn, resolveMonsterTurn } = await import('../src/services/dndEngine.js');
+    const { getMonsterById } = await import('../src/data/monsters.js');
+
+    const hero = {
+        name: 'Kaelen',
+        class: 'fighter',
+        race: 'half-orc',
+        level: 3,
+        hp: 25,
+        maxHp: 25,
+        stats: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 12, charisma: 8 }
+    };
+
+    const livingComp = { name: 'Aria', class: 'wizard', race: 'elf', hp: 14, maxHp: 18, isDead: false };
+    const deadComp1 = { name: 'Garrick', class: 'paladin', race: 'human', hp: 0, maxHp: 24, isDead: true };
+    const deadComp2 = { name: 'Brynn', class: 'cleric', race: 'dwarf', hp: -5, maxHp: 20, isDead: false };
+
+    const encounter = createCombatEncounter(
+        {
+            title: 'Crypt Battle',
+            monsters: [{ monsterId: 'skeleton', name: 'Skeleton', count: 2 }]
+        },
+        hero,
+        [livingComp, deadComp1, deadComp2],
+        getMonsterById
+    );
+
+    // Only Hero, 1 living companion, and 2 skeletons should be in initiative (total: 4)
+    assert.equal(encounter.initiativeOrder.length, 4);
+    assert.ok(encounter.initiativeOrder.some((i) => i.name === 'Aria'));
+    assert.ok(!encounter.initiativeOrder.some((i) => i.name === 'Garrick'));
+    assert.ok(!encounter.initiativeOrder.some((i) => i.name === 'Brynn'));
+    assert.deepEqual(encounter.featureCooldowns, {});
+
+    // Dead companions return null on their turn
+    const deadTurn1 = resolveCompanionTurn(deadComp1, encounter.enemies, hero);
+    assert.equal(deadTurn1, null);
+    const deadTurn2 = resolveCompanionTurn(deadComp2, encounter.enemies, hero);
+    assert.equal(deadTurn2, null);
+
+    // Living companion successfully acts
+    const livingTurn = resolveCompanionTurn(livingComp, encounter.enemies, hero);
+    assert.ok(livingTurn !== null);
+    assert.equal(livingTurn.companionName, 'Aria');
+
+    // Monster targeting ignores dead companions
+    const monsterTurn = resolveMonsterTurn(encounter.enemies[0], hero, { ac: 16 }, [livingComp, deadComp1, deadComp2]);
+    assert.ok(monsterTurn !== null);
+    assert.ok(monsterTurn.targetName !== 'Garrick');
+    assert.ok(monsterTurn.targetName !== 'Brynn');
+});

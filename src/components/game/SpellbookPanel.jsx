@@ -11,7 +11,9 @@ export default function SpellbookPanel({
     onLongRest,
     inCombat = false,
     actionUsed = false,
-    bonusActionUsed = false
+    bonusActionUsed = false,
+    featureCooldowns = {},
+    round = 1
 }) {
     const [selectedLevelFilter, setSelectedLevelFilter] = useState('all');
     const cls = getClassById(character.class || 'wizard');
@@ -176,17 +178,35 @@ export default function SpellbookPanel({
                                     </p>
                                 </div>
                                 {feat.actionType && feat.actionType !== 'passive' && onUseClassFeature && (() => {
+                                    const featKey = (feat.id || feat.name || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+                                    const lastUsed = featureCooldowns?.[featKey];
+                                    const curRnd = round || 1;
+                                    const roundsElapsed = lastUsed !== undefined ? (curRnd - lastUsed) : 999;
+                                    const onCooldown = inCombat && roundsElapsed < 4;
+                                    const roundsLeft = 4 - roundsElapsed;
+
                                     const isBonus = feat.actionType === 'bonus';
                                     const isActionLocked = inCombat && ((isBonus && bonusActionUsed) || (feat.actionType === 'action' && actionUsed));
+                                    const isDisabled = isActionLocked || onCooldown;
                                     return (
                                         <button
                                             type="button"
-                                            disabled={isActionLocked}
+                                            disabled={isDisabled}
                                             onClick={() => onUseClassFeature(feat)}
-                                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-500 hover:bg-primary-600 disabled:opacity-40 text-white flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                            title={isActionLocked ? `${isBonus ? 'Bonus Action' : 'Action'} already spent this round` : `Activate ${feat.name}`}
+                                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                                                onCooldown
+                                                    ? 'bg-slate-700 text-gray-400 opacity-50'
+                                                    : 'bg-primary-500 hover:bg-primary-600 disabled:opacity-40 text-white'
+                                            }`}
+                                            title={
+                                                onCooldown
+                                                    ? `On cooldown for ${roundsLeft} more round(s)`
+                                                    : isActionLocked
+                                                        ? `${isBonus ? 'Bonus Action' : 'Action'} already spent this round`
+                                                        : `Activate ${feat.name}`
+                                            }
                                         >
-                                            {isActionLocked ? 'Spent' : 'Use'}
+                                            {onCooldown ? `⏳ Cooldown (${roundsLeft})` : isActionLocked ? 'Spent' : 'Use'}
                                         </button>
                                     );
                                 })()}

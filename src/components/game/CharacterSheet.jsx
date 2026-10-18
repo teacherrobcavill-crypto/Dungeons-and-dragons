@@ -344,11 +344,15 @@ export default function CharacterSheet({
                                                 <span className="text-xl shrink-0">{comp.icon || '🛡️'}</span>
                                             )}
                                             <div>
-                                                <p className="font-bold text-gray-900 dark:text-white">
-                                                    {comp.name}
+                                                <p className={`font-bold ${comp.isDead || (comp.hp !== undefined && comp.hp <= 0) ? 'text-red-600 dark:text-red-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                                    {comp.isDead || (comp.hp !== undefined && comp.hp <= 0) ? '💀 ' : ''}{comp.name}
                                                 </p>
                                                 <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
-                                                    {comp.race} {comp.class} • {comp.personality} • <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 18)}/{comp.maxHp || 18} HP</span> • AC {comp.ac || 13}
+                                                    {comp.race} {comp.class} • {comp.personality} • {comp.isDead || (comp.hp !== undefined && comp.hp <= 0) ? (
+                                                        <span className="font-mono text-red-600 dark:text-red-400 font-bold">DEAD (0 HP)</span>
+                                                    ) : (
+                                                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{comp.hp !== undefined ? comp.hp : (comp.maxHp || 18)}/{comp.maxHp || 18} HP</span>
+                                                    )} • AC {comp.ac || 13}
                                                 </p>
                                             </div>
                                         </div>

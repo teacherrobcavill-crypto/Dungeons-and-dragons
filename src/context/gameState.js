@@ -132,7 +132,8 @@ export function normalizeCompanion(comp, fallbackIndex = 0) {
     };
     const defaultMaxHp = classHpDefaults[cls] || 18;
     const maxHp = comp.maxHp || (comp.hp && comp.hp > 14 ? comp.hp : defaultMaxHp);
-    const currentHp = comp.hp !== undefined ? Math.min(maxHp, Math.max(0, comp.hp)) : maxHp;
+    const isDead = Boolean(comp.isDead || (comp.hp !== undefined && comp.hp <= 0));
+    const currentHp = comp.hp !== undefined ? Math.min(maxHp, Math.max(0, comp.hp)) : (isDead ? 0 : maxHp);
 
     const classAcDefaults = {
         barbarian: 15,
@@ -159,6 +160,7 @@ export function normalizeCompanion(comp, fallbackIndex = 0) {
         personality: comp.personality || 'Wise',
         maxHp,
         hp: currentHp,
+        isDead,
         ac
     };
 }
@@ -564,11 +566,15 @@ export function gameReducer(state, action) {
             }
             const healedCompanions = (state.companions || []).map((c, i) => {
                 const norm = normalizeCompanion(c, i);
+                if (norm.isDead || norm.hp <= 0) {
+                    return { ...norm, hp: 0, isDead: true };
+                }
                 const maxHp = norm.maxHp;
                 const currentHp = norm.hp;
                 const compHeal = Math.max(4, Math.floor(maxHp * 0.45));
                 return {
                     ...norm,
+                    isDead: false,
                     hp: Math.min(maxHp, currentHp + compHeal)
                 };
             });
@@ -593,8 +599,12 @@ export function gameReducer(state, action) {
             });
             const restoredCompanions = (state.companions || []).map((c, i) => {
                 const norm = normalizeCompanion(c, i);
+                if (norm.isDead || norm.hp <= 0) {
+                    return { ...norm, hp: 0, isDead: true };
+                }
                 return {
                     ...norm,
+                    isDead: false,
                     hp: norm.maxHp
                 };
             });
