@@ -69,7 +69,7 @@ export default function CompanionSetup({
                     <span>Form Your Party of Companions</span>
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                    You do not journey alone. Choose up to 3 AI companions with distinct personalities and abilities to fight alongside you.
+                    You do not journey alone. Choose up to 3 companions with distinct personalities and abilities to fight alongside you.
                 </p>
             </div>
 

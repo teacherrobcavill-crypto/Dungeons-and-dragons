@@ -11,7 +11,7 @@ export default class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error('MythicBot Error Boundary caught:', error, errorInfo);
+        console.error('Tabletop Engine Error Boundary caught:', error, errorInfo);
     }
 
     handleReset = () => {

@@ -347,7 +347,7 @@ const enrichCompanion = (comp) => {
 
 /**
  * 8 Ready-to-Play Iconic Hero Presets (spanning Levels 1, 3, and 5)
- * Each preset includes pre-built stats, subclass, skills, spells, equipment, rich narrative fields, and 3 AI Party Companions.
+ * Each preset includes pre-built stats, subclass, skills, spells, equipment, rich narrative fields, and 3 Party Companions.
  */
 export const heroPresets = [
     {

@@ -1,32 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import ApiKeyModal from '../components/common/ApiKeyModal';
 import { useGame } from '../context/GameContext';
-import { isGeminiAvailable, initializeGemini } from '../services/aiService';
-import { hasApiKey, getApiKey } from '../services/apiKeyService';
 
 export default function LandingPage() {
     const navigate = useNavigate();
     const { state, resetGame, updateSettings } = useGame();
-    const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-    const [geminiAvailable, setGeminiAvailable] = useState(isGeminiAvailable());
-
-    const refreshGeminiStatus = useCallback(() => {
-        // Reinitialize Gemini if we have a key
-        if (hasApiKey()) {
-            initializeGemini(getApiKey());
-        }
-        setGeminiAvailable(isGeminiAvailable());
-    }, []);
-
-    // Auto-select Gemini if key is available but model is set to mock
-    useEffect(() => {
-        if (hasApiKey() && state.settings.aiModel === 'mock') {
-            updateSettings({ aiModel: 'gemini' });
-        }
-    }, [refreshGeminiStatus, state.settings.aiModel, updateSettings]);
 
     const handleStartAdventure = () => {
         if (state.gameStarted) {
@@ -41,38 +20,21 @@ export default function LandingPage() {
         navigate('/create');
     };
 
-    const handleModelChange = (model) => {
-        if (model === 'gemini' && !hasApiKey()) {
-            // Open the API key modal if trying to select Gemini without a key
-            setApiKeyModalOpen(true);
-            return;
-        }
-        updateSettings({ aiModel: model });
-    };
-
-    const handleApiKeySet = () => {
-        refreshGeminiStatus();
-        // Automatically select Gemini if key was just set
-        if (hasApiKey()) {
-            updateSettings({ aiModel: 'gemini' });
-        }
-    };
-
     const features = [
         {
             icon: '🌌',
-            title: 'Infinite Adventures',
-            description: 'Explore countless procedurally generated quests and storylines that adapt to your choices.'
+            title: 'Living Tabletop Realms',
+            description: 'Explore rich, multi-room campaigns and procedural quests with full dungeon automaps and interactive encounters.'
         },
         {
-            icon: '🤖',
-            title: 'AI Companions',
-            description: 'Create and customize AI party members who fight alongside you with distinct personalities.'
+            icon: '🛡️',
+            title: 'Party Companions',
+            description: 'Recruit and customize brave companions who fight alongside you with distinct personalities and combat roles.'
         },
         {
             icon: '📖',
-            title: 'Context-Aware Storytelling',
-            description: 'Experience narratives that remember your actions and shape the world accordingly.'
+            title: 'Authentic 5e Rules & Voices',
+            description: 'Experience genuine D&D 5e mechanics, tactical combat, and cinematic studio voice narration.'
         }
     ];
 
@@ -92,10 +54,10 @@ export default function LandingPage() {
             <nav className="fixed top-0 left-0 right-0 z-40 glass">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold">
-                            M
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                            ⚔️
                         </div>
-                        <span className="font-display font-bold text-xl text-gray-900 dark:text-white">MythicBot</span>
+                        <span className="font-display font-bold text-xl text-gray-900 dark:text-white">Mythic Chronicles</span>
                     </div>
                     <div className="flex items-center gap-3">
                         {/* Dark Mode Toggle */}
@@ -124,80 +86,16 @@ export default function LandingPage() {
                 <div className="max-w-4xl mx-auto text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-sm font-medium mb-8">
                         <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
-                        AI-Powered Solo RPG
+                        Classic D&D 5e Solo Tabletop
                     </div>
 
                     <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-                        Your AI <span className="gradient-text">Dungeon Master</span> & Solo RPG Companion
+                        Your Solo <span className="gradient-text">Dungeon Master</span> & Tabletop Companion
                     </h1>
 
-                    <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-                        Create characters, embark on epic quests, and let AI guide your adventure.
-                        No experience needed — just imagination.
+                    <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Create legendary heroes, delve into perilous dungeons, and experience living tabletop realms with tactical 5e rules and cinematic voice acting.
                     </p>
-
-                    {/* AI Model Selector */}
-                    <div className="mb-8 flex flex-col items-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Choose your AI Dungeon Master:</p>
-                        <div className="inline-flex rounded-xl bg-gray-100 dark:bg-slate-700 p-1.5 gap-1">
-                            <button
-                                onClick={() => handleModelChange('mock')}
-                                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${state.settings.aiModel === 'mock'
-                                    ? 'bg-white dark:bg-slate-600 text-gray-900 dark:text-white shadow-md'
-                                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                                    }`}
-                            >
-                                <span>📦</span>
-                                <span>Mock AI</span>
-                                <span className="text-xs text-gray-400">(Offline)</span>
-                            </button>
-                            <button
-                                onClick={() => handleModelChange('gemini')}
-                                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${state.settings.aiModel === 'gemini'
-                                    ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-md'
-                                    : geminiAvailable
-                                        ? 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                                    }`}
-                            >
-                                <span>✨</span>
-                                <span>Gemini AI</span>
-                                {!geminiAvailable && <span className="text-xs text-amber-500">(Setup Required)</span>}
-                            </button>
-                        </div>
-
-                        {/* API Key Status & Setup Button */}
-                        <div className="mt-3 flex items-center gap-3">
-                            {geminiAvailable ? (
-                                <>
-                                    <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-                                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                        API Key Set
-                                    </span>
-                                    <button
-                                        onClick={() => setApiKeyModalOpen(true)}
-                                        className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
-                                    >
-                                        Change Key
-                                    </button>
-                                </>
-                            ) : (
-                                <button
-                                    onClick={() => setApiKeyModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                                >
-                                    <span>🔑</span>
-                                    Set up your free API key
-                                </button>
-                            )}
-                        </div>
-
-                        <p className="text-xs text-gray-400 mt-2">
-                            {state.settings.aiModel === 'gemini'
-                                ? '🤖 Using Google Gemini for immersive AI-powered storytelling'
-                                : '📦 Using offline mode with pre-written responses'}
-                        </p>
-                    </div>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Button variant="primary" size="xl" onClick={handleStartAdventure}>
@@ -221,8 +119,7 @@ export default function LandingPage() {
                             Everything You Need for Solo Adventures
                         </h2>
                         <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                            MythicBot combines the best of tabletop RPGs with modern AI to create
-                            an unforgettable gaming experience.
+                            Combines authentic D&D 5e mechanics, tactical combat, and branching dungeon maps to create an unforgettable solo gaming experience.
                         </p>
                     </div>
 
@@ -257,8 +154,8 @@ export default function LandingPage() {
                     <div className="space-y-8">
                         {[
                             { step: 1, title: 'Create Your Hero', desc: 'Choose race, class, stats, and craft your backstory.' },
-                            { step: 2, title: 'Select an Adventure', desc: 'Pick from pre-made quests or create your own.' },
-                            { step: 3, title: 'Play Your Way', desc: 'Type actions, roll dice, and let the AI narrate.' }
+                            { step: 2, title: 'Select an Adventure', desc: 'Pick from iconic D&D modules or generate a custom delve.' },
+                            { step: 3, title: 'Play Your Way', desc: 'Choose your paths, roll dice, and let the Dungeon Master narrate your journey.' }
                         ].map(item => (
                             <div key={item.step} className="flex items-start gap-6">
                                 <div className="w-12 h-12 rounded-xl bg-primary-500 text-white flex items-center justify-center font-bold shrink-0">
@@ -301,22 +198,15 @@ export default function LandingPage() {
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-sm font-bold">
-                            M
+                            ⚔️
                         </div>
-                        <span className="font-display font-semibold text-gray-700 dark:text-gray-200">MythicBot</span>
+                        <span className="font-display font-semibold text-gray-700 dark:text-gray-200">Mythic Chronicles</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        © 2024 MythicBot. Built with ❤️ for solo adventurers.
+                        © 2024 Mythic Chronicles. Built with ❤️ for solo adventurers.
                     </p>
                 </div>
             </footer>
-
-            {/* API Key Setup Modal */}
-            <ApiKeyModal
-                isOpen={apiKeyModalOpen}
-                onClose={() => setApiKeyModalOpen(false)}
-                onKeySet={handleApiKeySet}
-            />
         </div>
     );
 }

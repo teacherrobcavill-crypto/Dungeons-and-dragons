@@ -1,54 +1,10 @@
 import Modal from '../common/Modal';
 import Button from '../common/Button';
-import { AI_MODELS } from '../../services/aiService';
 
 export default function SettingsModal({ isOpen, onClose, settings, onSettingsChange, onResetGame }) {
-    const handleModelChange = (modelId) => {
-        onSettingsChange({ ...settings, aiModel: modelId });
-    };
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Settings & Dungeon Master Configuration" size="md">
+        <Modal isOpen={isOpen} onClose={onClose} title="Settings & Game Configuration" size="md">
             <div className="space-y-6">
-                {/* AI Model Selection */}
-                <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Dungeon Master Engine</h4>
-                    <div className="space-y-2">
-                        {Object.values(AI_MODELS).map((model) => (
-                            <button
-                                key={model.id}
-                                type="button"
-                                onClick={() => model.available && handleModelChange(model.id)}
-                                disabled={!model.available}
-                                className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                                    settings.aiModel === model.id
-                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                        : model.available
-                                            ? 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                                            : 'border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50 cursor-not-allowed'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="font-medium text-gray-900 dark:text-white">{model.name}</span>
-                                    {!model.available && (
-                                        <span className="text-xs px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-full">
-                                            API Key Needed / Coming Soon
-                                        </span>
-                                    )}
-                                    {settings.aiModel === model.id && model.available && (
-                                        <span className="text-xs px-2 py-1 bg-primary-500 text-white rounded-full">
-                                            Active
-                                        </span>
-                                    )}
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Both the <strong>Built-in 5e DM Engine</strong> and <strong>Google Gemini AI</strong> use the complete Player&apos;s Handbook, Dungeon Master&apos;s Guide, and Monster Manual dataset.
-                    </p>
-                </div>
-
                 {/* Audio, Voice Narration & UI Preferences */}
                 <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Audio, Voice & Preferences</h4>
