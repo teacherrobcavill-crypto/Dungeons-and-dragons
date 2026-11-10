@@ -35,8 +35,12 @@ class SoundService {
             trap: { type: 'trap', duration: 0.45 },
             combatStart: { type: 'horn', duration: 0.8 },
             victory: { type: 'fanfare', duration: 1.0 },
-            rest: { type: 'rest', duration: 0.8 }
+            rest: { type: 'rest', duration: 0.8 },
+            step: { type: 'step', duration: 0.12 },
+            portal: { type: 'portal', duration: 0.45 }
         };
+        this.ambientTimer = null;
+        this.ambientListeners = new Set();
     }
 
     init() {
@@ -139,12 +143,34 @@ class SoundService {
                 case 'rest':
                     this.playRestSound();
                     break;
+                case 'step':
+                    this.playFootstepSound();
+                    break;
+                case 'portal':
+                    this.playPortalSound();
+                    break;
                 default:
                     this.playClickSound();
             }
         } catch (e) {
             console.warn('Error playing sound:', e);
         }
+    }
+
+    // Stone flagstone footstep thud
+    playFootstepSound() {
+        const now = this.audioContext.currentTime;
+        const pitch = 85 + Math.random() * 25;
+        this.playTone(pitch, now, 0.065, 'triangle', this.volume * 0.45);
+        this.playTone(pitch * 2.1, now + 0.015, 0.035, 'sine', this.volume * 0.2);
+    }
+
+    // Stone archway portal transition
+    playPortalSound() {
+        const now = this.audioContext.currentTime;
+        this.playTone(196.0, now, 0.22, 'sine', this.volume * 0.4);
+        this.playTone(293.66, now + 0.08, 0.28, 'triangle', this.volume * 0.45);
+        this.playTone(392.0, now + 0.16, 0.32, 'sine', this.volume * 0.4);
     }
 
     // Wooden tabletop clatter for dice rolls
@@ -400,11 +426,153 @@ class SoundService {
         this.stopVoice();
     }
 
-    startAmbient(theme = 'dungeon') {
-        this.currentAmbientTheme = theme;
+    subscribeAmbientState(listener) {
+        if (typeof listener !== 'function') return () => {};
+        this.ambientListeners.add(listener);
+        listener({ ambientEnabled: this.ambientEnabled, theme: this.currentAmbientTheme });
+        return () => this.ambientListeners.delete(listener);
     }
 
-    stopAmbient() {
+    notifyAmbientListeners() {
+        this.ambientListeners.forEach((fn) => {
+            try {
+                fn({ ambientEnabled: this.ambientEnabled, theme: this.currentAmbientTheme });
+            } catch (e) {
+                console.warn(e);
+            }
+        });
+    }
+
+    toggleAmbient(theme = 'dungeon') {
+        if (this.ambientEnabled) {
+            this.stopAmbient();
+            return false;
+        }
+        return this.startAmbient(theme);
+    }
+
+    startAmbient(theme = 'dungeon') {
+        this.currentAmbientTheme = theme || 'dungeon';
+        if (!this.enabled) return false;
+        if (!this.audioContext) {
+            this.init();
+        }
+        if (!this.audioContext) return false;
+
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(() => {});
+        }
+
+        // Clear any existing ambient nodes before building new theme graph
+        this.stopAmbient(true);
+        this.ambientEnabled = true;
+
+        try {
+            const ctx = this.audioContext;
+            const now = ctx.currentTime;
+
+            // Theme acoustic profiles (sub-bass root frequency, filter cutoff, drip/crackle rate)
+            const themeProfiles = {
+                dungeon: { rootFreq: 55.0, fifthFreq: 82.41, filterCutoff: 240, dripChance: 0.45, crackleChance: 0.65 },
+                cavern: { rootFreq: 48.99, fifthFreq: 73.42, filterCutoff: 210, dripChance: 0.75, crackleChance: 0.35 },
+                volcano: { rootFreq: 41.2, fifthFreq: 61.74, filterCutoff: 320, dripChance: 0.2, crackleChance: 0.9 },
+                crypt: { rootFreq: 51.91, fifthFreq: 77.78, filterCutoff: 190, dripChance: 0.5, crackleChance: 0.4 },
+                manor: { rootFreq: 58.27, fifthFreq: 87.31, filterCutoff: 260, dripChance: 0.35, crackleChance: 0.6 },
+                city: { rootFreq: 65.41, fifthFreq: 98.0, filterCutoff: 310, dripChance: 0.3, crackleChance: 0.5 },
+                temple: { rootFreq: 61.74, fifthFreq: 92.5, filterCutoff: 280, dripChance: 0.4, crackleChance: 0.55 },
+                forest: { rootFreq: 73.42, fifthFreq: 110.0, filterCutoff: 380, dripChance: 0.35, crackleChance: 0.5 },
+                town: { rootFreq: 65.41, fifthFreq: 98.0, filterCutoff: 340, dripChance: 0.2, crackleChance: 0.6 }
+            };
+            const profile = themeProfiles[this.currentAmbientTheme] || themeProfiles.dungeon;
+
+            // 1. Sub-bass dungeon resonant drone (two detuned oscillators + LFO)
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0.001, now);
+            if (masterGain.gain.linearRampToValueAtTime) {
+                masterGain.gain.linearRampToValueAtTime(this.volume * 0.14, now + 1.2);
+            } else {
+                masterGain.gain.setValueAtTime(this.volume * 0.14, now);
+            }
+            masterGain.connect(ctx.destination);
+
+            const lowpass = ctx.createBiquadFilter ? ctx.createBiquadFilter() : null;
+            if (lowpass) {
+                lowpass.type = 'lowpass';
+                lowpass.frequency.setValueAtTime(profile.filterCutoff, now);
+                lowpass.connect(masterGain);
+            }
+            const targetNode = lowpass || masterGain;
+
+            const osc1 = ctx.createOscillator();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(profile.rootFreq, now);
+            osc1.connect(targetNode);
+            osc1.start(now);
+
+            const osc2 = ctx.createOscillator();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(profile.fifthFreq, now);
+            const osc2Gain = ctx.createGain();
+            osc2Gain.gain.setValueAtTime(0.35, now);
+            osc2.connect(osc2Gain);
+            osc2Gain.connect(targetNode);
+            osc2.start(now);
+
+            // 2. Filtered Brown Noise Wind / Torch Draft Buffer (if createBuffer is supported)
+            let noiseSource = null;
+            if (ctx.createBuffer && ctx.createBufferSource) {
+                const bufferSize = ctx.sampleRate * 2;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    data[i] = (lastOut + 0.02 * white) / 1.02;
+                    lastOut = data[i];
+                    data[i] *= 0.35;
+                }
+                noiseSource = ctx.createBufferSource();
+                noiseSource.buffer = buffer;
+                noiseSource.loop = true;
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.25, now);
+                noiseSource.connect(noiseGain);
+                noiseGain.connect(targetNode);
+                noiseSource.start(now);
+            }
+
+            this.ambientNodes = [osc1, osc2, osc2Gain, lowpass, masterGain, noiseSource].filter(Boolean);
+
+            // 3. Periodic procedural cavern water droplets & torch ember crackles
+            this.ambientTimer = setInterval(() => {
+                if (!this.enabled || !this.ambientEnabled || !this.audioContext) return;
+                const t = this.audioContext.currentTime;
+                if (Math.random() < profile.dripChance) {
+                    // Resonant cavern water droplet
+                    const dripFreq = 900 + Math.random() * 700;
+                    this.playTone(dripFreq, t, 0.09, 'sine', this.volume * 0.08);
+                    this.playTone(dripFreq * 1.35, t + 0.03, 0.07, 'sine', this.volume * 0.05);
+                }
+                if (Math.random() < profile.crackleChance) {
+                    // Torch sconce ember pop
+                    const popFreq = 140 + Math.random() * 220;
+                    this.playTone(popFreq, t + 0.12, 0.03, 'triangle', this.volume * 0.06);
+                }
+            }, 2400);
+
+            this.notifyAmbientListeners();
+            return true;
+        } catch (e) {
+            console.warn('Error starting procedural dungeon ambience:', e);
+            return false;
+        }
+    }
+
+    stopAmbient(silentNotify = false) {
+        if (this.ambientTimer) {
+            clearInterval(this.ambientTimer);
+            this.ambientTimer = null;
+        }
         this.ambientNodes.forEach((node) => {
             try {
                 node.stop?.();
@@ -414,6 +582,10 @@ class SoundService {
             }
         });
         this.ambientNodes = [];
+        this.ambientEnabled = false;
+        if (!silentNotify) {
+            this.notifyAmbientListeners();
+        }
     }
 }
 

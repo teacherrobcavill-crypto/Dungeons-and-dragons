@@ -157,3 +157,27 @@ test('COMPLETE_ADVENTURE records adventureId into completedAdventures without du
     });
     assert.deepEqual(afterThird.completedAdventures, ['lost-mine', 'dragon-lair']);
 });
+
+test('SET_VIEW_MODE toggles between book, 3d, and split without mutating gameplay state', () => {
+    const seeded = {
+        ...initialState,
+        character: { ...initialState.character, name: 'Aragorn', hp: 18, gold: 75 },
+        visitedNodes: ['ambush_trail', 'goblin_trail']
+    };
+
+    const inBook = gameReducer(seeded, { type: ActionTypes.SET_VIEW_MODE, viewMode: 'book' });
+    assert.equal(inBook.viewMode, 'book');
+    assert.equal(inBook.character.name, 'Aragorn');
+    assert.equal(inBook.character.hp, 18);
+    assert.deepEqual(inBook.visitedNodes, ['ambush_trail', 'goblin_trail']);
+
+    const inSplit = gameReducer(inBook, { type: ActionTypes.SET_VIEW_MODE, viewMode: 'split' });
+    assert.equal(inSplit.viewMode, 'split');
+
+    const in3d = gameReducer(inSplit, { type: ActionTypes.SET_VIEW_MODE, viewMode: '3d' });
+    assert.equal(in3d.viewMode, '3d');
+
+    const isoCam = gameReducer(in3d, { type: ActionTypes.SET_CAMERA_MODE, cameraMode: 'isometric' });
+    assert.equal(isoCam.cameraMode, 'isometric');
+});
+

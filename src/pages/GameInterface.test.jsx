@@ -23,7 +23,12 @@ vi.mock('../services/soundService', () => ({
     default: {
         init: vi.fn(),
         play: vi.fn(),
-        setEnabled: vi.fn()
+        setEnabled: vi.fn(),
+        setNarrationEnabled: vi.fn(),
+        startAmbient: vi.fn(),
+        stopAmbient: vi.fn(),
+        toggleAmbient: vi.fn(),
+        subscribeAmbientState: vi.fn(() => () => {})
     }
 }));
 
@@ -32,24 +37,13 @@ window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 describe('GameInterface Integration', () => {
     it('redirects if game not started', () => {
-        // Since we can't easily assert navigation in this setup without a history spy,
-        // we'll check if it renders nothing or check for side effects.
-        // But renderWithProviders uses BrowserRouter.
-        // A better check is to manually seed the state in a customized provider, 
-        // but for now let's just interpret "not crashing" as a baseline, 
-        // or mock useGame to simulate started state.
+        // Baseline check
     });
 
-    // We need to mock useGame output to test the "Started" state 
-    // because GameProvider initializes with default state (gameStarted: false).
-    // However, GameProvider loads from localStorage.
-
     it('renders the game interface when game is active', async () => {
-        // Pre-seed localStorage to simulate active game
         const activeState = {
             schemaVersion: 2,
             state: {
-                // We need to match the structure in storage.js
                 gameStarted: true,
                 adventure: { name: 'Test Adventure', setting: 'Test World' },
                 character: {
@@ -79,15 +73,12 @@ describe('GameInterface Integration', () => {
 
         renderWithProviders(<GameInterface />);
 
-        // Should show adventure name in header
         expect(await screen.findByText('Test Adventure')).toBeInTheDocument();
 
-        // Should trigger opening narrative
         await waitFor(() => {
             expect(aiService.generateOpeningNarrative).toHaveBeenCalled();
         });
 
-        // Should see the opening message in chat (after effect runs)
         expect(await screen.findByText('Welcome to the adventure!')).toBeInTheDocument();
     });
 
@@ -118,23 +109,60 @@ describe('GameInterface Integration', () => {
         const { fireEvent } = await import('@testing-library/react');
         renderWithProviders(<GameInterface />);
 
-        // Standard header is initially present
         expect(screen.getByRole('banner')).toBeInTheDocument();
         const storyModeButton = screen.getByTitle('Enter Story Focus Mode (Hides interface clutter)');
         expect(storyModeButton).toBeInTheDocument();
 
-        // Enter Story Mode
         fireEvent.click(storyModeButton);
 
-        // Header banner is removed in story mode
         expect(screen.queryByRole('banner')).not.toBeInTheDocument();
 
-        // Floating story mode controls are present
         const exitButton = screen.getByTitle('Exit Story Mode');
         expect(exitButton).toBeInTheDocument();
 
-        // Exiting story mode restores standard header
         fireEvent.click(exitButton);
         expect(screen.getByRole('banner')).toBeInTheDocument();
     });
+
+    it('renders 3D Dungeon viewport, Diegetic Parchment HUD, and toggles First-Person / Isometric cameras', async () => {
+        const activeState = {
+            schemaVersion: 2,
+            state: {
+                gameStarted: true,
+                adventure: { id: 'lost-mine', name: 'The Lost Mine of Phandelver', setting: 'The Sword Coast' },
+                currentNodeId: 'ambush_trail',
+                visitedNodes: ['ambush_trail'],
+                character: {
+                    name: 'Kaelen',
+                    race: 'human',
+                    class: 'fighter',
+                    hp: 14,
+                    maxHp: 14,
+                    level: 1,
+                    stats: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 12, charisma: 10 }
+                },
+                chatHistory: [{ type: 'ai', text: 'Opening narrative', timestamp: new Date().toISOString() }],
+                inventory: [],
+                companions: [],
+                settings: { soundEnabled: true, animationsEnabled: true }
+            }
+        };
+
+        localStorage.setItem('mythicbot_game_state', JSON.stringify(activeState));
+
+        const { fireEvent } = await import('@testing-library/react');
+        renderWithProviders(<GameInterface />);
+
+        const viewport = await screen.findByTestId('dungeon-viewport-3d');
+        expect(viewport).toBeInTheDocument();
+        expect(viewport.getAttribute('data-camera-mode')).toBe('firstPerson');
+
+        const hud = screen.getByTestId('diegetic-parchment-hud');
+        expect(hud).toBeInTheDocument();
+
+        const camToggle = screen.getByTestId('toggle-camera-mode');
+        fireEvent.click(camToggle);
+        expect(viewport.getAttribute('data-camera-mode')).toBe('isometric');
+    });
 });
+

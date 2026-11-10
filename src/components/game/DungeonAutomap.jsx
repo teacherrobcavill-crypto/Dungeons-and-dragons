@@ -20,7 +20,9 @@ export default function DungeonAutomap({
     lootedNodes = [],
     searchedNodes = [],
     onSelectNode,
-    inCombat = false
+    inCombat = false,
+    playerFacingYaw = 0,
+    compact = false
 }) {
     const nodesMap = adventure?.nodes || {};
     const nodeList = Object.values(nodesMap);
@@ -84,40 +86,83 @@ export default function DungeonAutomap({
         coordLookup[n.id] = getCoords(n, idx);
     });
 
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h4 className="font-display font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <span>🗺️</span> Dungeon & World Automap
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Explored: {visitedNodes.length} / {nodeList.length} Chambers
-                    </p>
-                </div>
-                {currentNode?.act && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                        Act {currentNode.act}
-                    </span>
-                )}
-            </div>
+    // Convert yaw in radians (0 = North, -PI/2 = East, PI = South, PI/2 = West) to CSS degrees
+    const facingDeg = Math.round((-playerFacingYaw * 180) / Math.PI);
 
-            {/* Interactive SVG Map Canvas */}
-            <div className="relative w-full h-72 rounded-xl overflow-hidden border-2 border-amber-700/40 dark:border-slate-600 bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 shadow-inner">
-                {/* Grid overlay */}
+    return (
+        <div data-testid={compact ? 'automap-minimap' : 'dungeon-automap'} className={compact ? 'space-y-1.5' : 'space-y-4'}>
+            {!compact && (
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h4 className="font-display font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <span>🗺️</span> Fog-of-War Dungeon Automap
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Explored: {visitedNodes.length} / {nodeList.length} Chambers
+                        </p>
+                    </div>
+                    {currentNode?.act && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                            Act {currentNode.act}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Interactive SVG Map Canvas with Fog-of-War Shroud */}
+            <div className={`relative w-full ${compact ? 'h-36' : 'h-72'} rounded-xl overflow-hidden border-2 border-amber-700/50 dark:border-amber-600/40 bg-gradient-to-br from-amber-100 via-stone-200 to-amber-200 dark:from-slate-950 dark:via-slate-900 dark:to-stone-900 shadow-inner`}>
+                {/* Grid & Fog-of-War SVG overlay */}
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <defs>
-                        <pattern id="dndGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <pattern id={compact ? 'dndGridMini' : 'dndGrid'} width="10" height="10" patternUnits="userSpaceOnUse">
                             <path
                                 d="M 10 0 L 0 0 0 10"
                                 fill="none"
                                 stroke="currentColor"
-                                strokeWidth="0.2"
-                                className="text-amber-900/15 dark:text-slate-600/30"
+                                strokeWidth="0.25"
+                                className="text-amber-900/20 dark:text-amber-500/15"
                             />
                         </pattern>
+                        <radialGradient id={compact ? 'fogClearMini' : 'fogClear'} cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="rgba(245, 158, 11, 0.18)" />
+                            <stop offset="100%" stopColor="rgba(15, 23, 42, 0)" />
+                        </radialGradient>
                     </defs>
-                    <rect width="100" height="100" fill="url(#dndGrid)" />
+                    <rect width="100" height="100" fill={`url(#${compact ? 'dndGridMini' : 'dndGrid'})`} />
+
+                    {/* Illuminated discovery halos around visited nodes */}
+                    {nodeList.map((n) => {
+                        if (!visitedNodes.includes(n.id)) return null;
+                        const c = coordLookup[n.id];
+                        return (
+                            <circle
+                                key={`halo-${n.id}`}
+                                cx={c.x}
+                                cy={c.y}
+                                r="18"
+                                fill={`url(#${compact ? 'fogClearMini' : 'fogClear'})`}
+                            />
+                        );
+                    })}
+
+                    {/* Unexplored Fog-of-War Shroud Clouds */}
+                    {nodeList.map((n) => {
+                        if (visitedNodes.includes(n.id)) return null;
+                        const c = coordLookup[n.id];
+                        const isFrontier = reachableIds.has(n.id);
+                        return (
+                            <circle
+                                key={`fog-${n.id}`}
+                                cx={c.x}
+                                cy={c.y}
+                                r={isFrontier ? '10' : '14'}
+                                fill={isFrontier ? 'rgba(30, 41, 59, 0.45)' : 'rgba(2, 6, 23, 0.78)'}
+                                stroke={isFrontier ? 'rgba(245, 158, 11, 0.35)' : 'none'}
+                                strokeDasharray="1.5,1.5"
+                                strokeWidth="0.4"
+                            />
+                        );
+                    })}
 
                     {/* Edges */}
                     {edges.map((edge) => {
@@ -131,10 +176,10 @@ export default function DungeonAutomap({
                                 y1={p1.y}
                                 x2={p2.x}
                                 y2={p2.y}
-                                stroke={edge.isSecret ? '#f59e0b' : edge.isVisited ? '#6366f1' : '#94a3b8'}
-                                strokeWidth={edge.isVisited ? '1.2' : '0.8'}
+                                stroke={edge.isSecret ? '#f59e0b' : edge.isVisited ? '#f59e0b' : '#94a3b8'}
+                                strokeWidth={edge.isVisited ? '1.3' : '0.8'}
                                 strokeDasharray={edge.isSecret || !edge.isVisited ? '2,2' : 'none'}
-                                opacity={edge.isVisited ? 0.9 : 0.55}
+                                opacity={edge.isVisited ? 0.92 : 0.6}
                             />
                         );
                     })}
@@ -157,6 +202,7 @@ export default function DungeonAutomap({
                         <button
                             key={node.id}
                             type="button"
+                            data-testid={`automap-node-${node.id}`}
                             disabled={inCombat || (!isVisited && !isReachable)}
                             onClick={() => onSelectNode && onSelectNode(node.id)}
                             style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
@@ -170,7 +216,7 @@ export default function DungeonAutomap({
                             }`}
                         >
                             <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-md border-2 transition-all ${
+                                className={`${compact ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'} rounded-full flex items-center justify-center shadow-md border-2 transition-all relative ${
                                     isCurrent
                                         ? 'bg-amber-500 text-white border-white dark:border-amber-200 ring-4 ring-amber-400/50 animate-pulse'
                                         : isVisited
@@ -183,23 +229,42 @@ export default function DungeonAutomap({
                                 }`}
                             >
                                 <span>{icon}</span>
+                                {isCurrent && (
+                                    <span
+                                        data-testid="automap-facing-arrow"
+                                        style={{ transform: `rotate(${facingDeg}deg)` }}
+                                        className="absolute -top-2.5 text-[10px] text-amber-300 drop-shadow font-black pointer-events-none"
+                                    >
+                                        ▲
+                                    </span>
+                                )}
                             </div>
-                            <span
-                                className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap max-w-[110px] truncate shadow-sm ${
-                                    isCurrent
-                                        ? 'bg-amber-900 text-amber-100'
-                                        : isVisited
-                                            ? 'bg-white/90 dark:bg-slate-800/90 text-gray-800 dark:text-gray-200'
-                                            : 'bg-slate-800/80 text-gray-300'
-                                }`}
-                            >
-                                {isVisited ? node.title.replace(/^\d+\.\s*/, '') : 'Unexplored'}
-                                {isLooted ? ' 💰' : ''}
-                            </span>
+                            {!compact && (
+                                <span
+                                    className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap max-w-[110px] truncate shadow-sm ${
+                                        isCurrent
+                                            ? 'bg-amber-900 text-amber-100'
+                                            : isVisited
+                                                ? 'bg-white/90 dark:bg-slate-800/90 text-gray-800 dark:text-gray-200'
+                                                : 'bg-slate-800/80 text-gray-300'
+                                    }`}
+                                >
+                                    {isVisited ? node.title.replace(/^\d+\.\s*/, '') : 'Unexplored'}
+                                    {isLooted ? ' 💰' : ''}
+                                </span>
+                            )}
                         </button>
                     );
                 })}
             </div>
+
+            {compact ? (
+                <div className="flex items-center justify-between text-[10px] text-amber-200/90 px-1">
+                    <span className="truncate font-semibold">{currentNode?.title?.replace(/^\d+\.\s*/, '')}</span>
+                    <span className="font-mono text-amber-300">{visitedNodes.length}/{nodeList.length}</span>
+                </div>
+            ) : (
+                <>
 
             {/* Current Chamber Summary Card */}
             {currentNode && (
@@ -279,6 +344,8 @@ export default function DungeonAutomap({
                         })}
                 </div>
             </div>
+                </>
+            )}
         </div>
     );
 }

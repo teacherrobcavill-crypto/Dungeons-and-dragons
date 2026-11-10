@@ -14,6 +14,7 @@ import CombatEncounterHUD from '../components/game/CombatEncounterHUD';
 import SettingsModal from '../components/game/SettingsModal';
 import DefeatModal from '../components/game/DefeatModal';
 import VictoryModal from '../components/game/VictoryModal';
+import DungeonViewport3D from '../components/game/DungeonViewport3D';
 import { getAdventureEpilogue } from '../data/adventureEpilogues';
 import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
@@ -78,6 +79,8 @@ export default function GameInterface() {
         reviveCharacter,
         loadGame,
         updateSettings,
+        setViewMode,
+        setCameraMode,
         resetGame,
         setPendingRoll,
         clearPendingRoll
@@ -100,9 +103,12 @@ export default function GameInterface() {
     // Hydrate adventure nodes from canonical adventures.js if saved state had an older partial object
     const canonicalAdventure = state.adventure?.id ? getAdventureById(state.adventure.id) : null;
     const activeAdventure = (state.adventure?.nodes ? state.adventure : (canonicalAdventure || state.adventure));
+    const currentAdventure = activeAdventure;
     const character = state.character;
     const aiModel = state.settings.aiModel;
     const chatHistoryLength = state.chatHistory.length;
+    const viewMode = state.viewMode || '3d';
+    const cameraMode = state.cameraMode || 'firstPerson';
 
     const currentNodeId = state.currentNodeId || activeAdventure?.startNodeId || (activeAdventure?.nodes ? Object.keys(activeAdventure.nodes)[0] : null);
     const currentNode = (activeAdventure?.nodes && currentNodeId) ? activeAdventure.nodes[currentNodeId] : null;
@@ -112,6 +118,13 @@ export default function GameInterface() {
     useEffect(() => {
         soundService.init();
     }, []);
+
+    useEffect(() => {
+        const theme = currentNode?.environment || activeAdventure?.ambientTrack || 'dungeon';
+        if (state.settings.soundEnabled !== false) {
+            soundService.startAmbient?.(theme);
+        }
+    }, [currentNode?.environment, activeAdventure?.ambientTrack, state.settings.soundEnabled]);
 
     useEffect(() => {
         soundService.setEnabled(state.settings.soundEnabled);
@@ -1819,6 +1832,34 @@ export default function GameInterface() {
                     </div>
 
                     <div className="flex items-center gap-1.5 sm:gap-2">
+                        {/* View Mode Switcher: 3D Dungeon / Split / Book */}
+                        <div
+                            data-testid="view-mode-switcher"
+                            className="flex items-center rounded-xl bg-gray-100 dark:bg-slate-700 p-0.5 border border-gray-200 dark:border-slate-600"
+                        >
+                            {[
+                                { id: '3d', label: '3D Dungeon', icon: '🏰' },
+                                { id: 'split', label: 'Split', icon: '⚡' },
+                                { id: 'book', label: 'Chronicle', icon: '📜' }
+                            ].map((m) => (
+                                <button
+                                    key={m.id}
+                                    type="button"
+                                    data-testid={`view-mode-${m.id}`}
+                                    onClick={() => setViewMode(m.id)}
+                                    className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                                        viewMode === m.id
+                                            ? 'bg-amber-500 text-slate-950 shadow-sm'
+                                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                                    }`}
+                                    title={`Switch to ${m.label} View`}
+                                >
+                                    <span>{m.icon}</span>
+                                    <span className="hidden md:inline">{m.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
                         {/* Story Reader Focus Mode Button */}
                         <button
                             type="button"
@@ -1902,8 +1943,50 @@ export default function GameInterface() {
 
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden relative">
-                {/* Center Column: Live Combat HUD (when active) + Narrative Chat */}
+                {/* Center Column: 3D Procedural Dungeon Viewport + Live Combat HUD + Narrative Chat */}
                 <div className="flex-1 flex flex-col overflow-hidden">
+                    {!isReaderMode && (viewMode === '3d' || viewMode === 'split') && (
+                        <div
+                            className={
+                                viewMode === '3d'
+                                    ? 'h-[54%] sm:h-[58%] flex-shrink-0 border-b border-amber-700/40 relative'
+                                    : 'h-[42%] sm:h-[45%] flex-shrink-0 border-b border-amber-700/40 relative'
+                            }
+                        >
+                            <DungeonViewport3D
+                                adventure={activeAdventure}
+                                currentNodeId={currentNodeId}
+                                currentNode={currentNode}
+                                character={character}
+                                companions={state.companions || []}
+                                derivedStats={derivedStats}
+                                combat={state.combat}
+                                visitedNodes={state.visitedNodes}
+                                defeatedNodes={state.defeatedNodes}
+                                lootedNodes={state.lootedNodes}
+                                searchedNodes={state.searchedNodes}
+                                completedChoices={state.completedChoices || []}
+                                cameraMode={cameraMode}
+                                onToggleCameraMode={() =>
+                                    setCameraMode(cameraMode === 'firstPerson' ? 'isometric' : 'firstPerson')
+                                }
+                                onSelectNode={handleSelectNode}
+                                onSelectChoice={handleSelectChoice}
+                                onTriggerEncounter={handleTriggerEncounter}
+                                onLootRoom={handleLootRoom}
+                                onManualRoll={(roll) => {
+                                    if (state.pendingRoll) {
+                                        handleManualDiceRoll({ value: roll.value });
+                                    } else {
+                                        const rollMsg = `🎲 Rolled d${roll.sides}: **${roll.value}**${roll.isCrit ? ' 🎉 CRITICAL!' : roll.isFumble ? ' 💀 FUMBLE!' : ''}`;
+                                        handleSendMessage(rollMsg);
+                                    }
+                                }}
+                                onWeaponAttack={handleWeaponAttack}
+                            />
+                        </div>
+                    )}
+
                     {!isReaderMode && state.combat?.active && (
                         <div className="max-h-[36%] sm:max-h-[40%] overflow-y-auto flex-shrink-0">
                             <CombatEncounterHUD

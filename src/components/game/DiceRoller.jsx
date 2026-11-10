@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AnimatedDice } from './AnimatedDice';
+import PolyhedralDice3D from './PolyhedralDice3D';
 
 const DICE_TYPES = [
     { sides: 4, color: '#ef4444', label: 'd4' },
@@ -10,11 +11,31 @@ const DICE_TYPES = [
     { sides: 20, color: '#8b5cf6', label: 'd20' }
 ];
 
-export default function DiceRoller() {
+export default function DiceRoller({ onRoll }) {
     const [results, setResults] = useState([]);
     const [rolling, setRolling] = useState(null);
     const [currentRoll, setCurrentRoll] = useState(null);
     const [finalValue, setFinalValue] = useState(null);
+
+    const recordRollResult = (sides, resultVal) => {
+        const isCritical = sides === 20 && resultVal === 20;
+        const isFumble = sides === 20 && resultVal === 1;
+        const newResult = {
+            sides,
+            result: resultVal,
+            timestamp: Date.now(),
+            isCritical,
+            isFumble
+        };
+        setResults((prev) => [newResult, ...prev].slice(0, 10));
+        onRoll?.({
+            die: `d${sides}`,
+            sides,
+            value: resultVal,
+            isCrit: isCritical,
+            isFumble
+        });
+    };
 
     const rollDice = (sides) => {
         if (rolling) return;
@@ -27,14 +48,7 @@ export default function DiceRoller() {
 
     const handleRollComplete = () => {
         if (currentRoll) {
-            const newResult = {
-                sides: currentRoll.sides,
-                result: currentRoll.result,
-                timestamp: Date.now(),
-                isCritical: currentRoll.sides === 20 && currentRoll.result === 20,
-                isFumble: currentRoll.sides === 20 && currentRoll.result === 1
-            };
-            setResults(prev => [newResult, ...prev].slice(0, 10));
+            recordRollResult(currentRoll.sides, currentRoll.result);
         }
         setRolling(null);
     };
@@ -42,9 +56,15 @@ export default function DiceRoller() {
     const clearResults = () => setResults([]);
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">Dice Roller</h4>
+        <div className="space-y-4">
+            <PolyhedralDice3D
+                defaultSides={20}
+                onRollComplete={(rollPayload) => {
+                    recordRollResult(rollPayload.sides, rollPayload.value);
+                }}
+            />
+            <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Quick 2D Tray & Roll Log</h4>
                 {results.length > 0 && (
                     <button
                         onClick={clearResults}

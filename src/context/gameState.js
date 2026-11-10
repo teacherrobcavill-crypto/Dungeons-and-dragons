@@ -66,6 +66,8 @@ export const initialState = {
         narrationEnabled: true,
         animationsEnabled: true
     },
+    viewMode: '3d', // 'book' | '3d' | 'split'
+    cameraMode: 'firstPerson', // 'firstPerson' | 'isometric'
     pendingRoll: null
 };
 
@@ -107,6 +109,8 @@ export const ActionTypes = {
     SET_CURRENT_STEP: 'SET_CURRENT_STEP',
     START_GAME: 'START_GAME',
     UPDATE_SETTINGS: 'UPDATE_SETTINGS',
+    SET_VIEW_MODE: 'SET_VIEW_MODE',
+    SET_CAMERA_MODE: 'SET_CAMERA_MODE',
     LOAD_STATE: 'LOAD_STATE',
     RESET_STATE: 'RESET_STATE',
     SET_PENDING_ROLL: 'SET_PENDING_ROLL',
@@ -645,6 +649,18 @@ export function gameReducer(state, action) {
 
         case ActionTypes.UPDATE_SETTINGS:
             return { ...state, settings: { ...state.settings, ...action.settings } };
+
+        case ActionTypes.SET_VIEW_MODE: {
+            const validModes = ['book', '3d', 'split'];
+            const nextMode = validModes.includes(action.viewMode) ? action.viewMode : '3d';
+            return { ...state, viewMode: nextMode };
+        }
+
+        case ActionTypes.SET_CAMERA_MODE: {
+            const validCam = ['firstPerson', 'isometric'];
+            const nextCam = validCam.includes(action.cameraMode) ? action.cameraMode : 'firstPerson';
+            return { ...state, cameraMode: nextCam };
+        }
 
         case ActionTypes.LOAD_STATE: {
             const loaded = action.state || {};

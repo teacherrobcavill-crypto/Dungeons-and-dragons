@@ -5,14 +5,14 @@ import { ActionTypes, gameReducer, initialState } from './gameState';
 const GameContext = createContext(null);
 
 export function GameProvider({ children }) {
-    const [state, dispatch] = useReducer(gameReducer, initialState);
-
-    useEffect(() => {
-        const savedState = loadGameState();
-        if (savedState) {
-            dispatch({ type: ActionTypes.LOAD_STATE, state: savedState });
+    const [state, dispatch] = useReducer(
+        gameReducer,
+        initialState,
+        (init) => {
+            const savedState = loadGameState();
+            return savedState ? gameReducer(init, { type: ActionTypes.LOAD_STATE, state: savedState }) : init;
         }
-    }, []);
+    );
 
     useEffect(() => {
         if (state.gameStarted || state.currentStep > 0) {
@@ -137,6 +137,12 @@ export function GameProvider({ children }) {
 
         updateSettings: (settings) =>
             dispatch({ type: ActionTypes.UPDATE_SETTINGS, settings }),
+
+        setViewMode: (viewMode) =>
+            dispatch({ type: ActionTypes.SET_VIEW_MODE, viewMode }),
+
+        setCameraMode: (cameraMode) =>
+            dispatch({ type: ActionTypes.SET_CAMERA_MODE, cameraMode }),
 
         loadGame: (stateToLoad) => {
             const savedState = stateToLoad || loadGameState();
