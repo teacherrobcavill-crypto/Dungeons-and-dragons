@@ -35,5 +35,11 @@ export default [
             'no-case-declarations': 'off',
             'react-refresh/only-export-components': 'off'
         }
+    },
+    {
+        files: ['*.config.js'],
+        languageOptions: {
+            globals: globals.node
+        }
     }
 ];

@@ -66,7 +66,8 @@ export const initialState = {
         narrationEnabled: true,
         animationsEnabled: true
     },
-    viewMode: '3d', // 'book' | '3d' | 'split'
+    viewMode: 'book', // 'book' (Story-first + 3D Cutaway) | '3d' (Full 3D Cutaway) | 'split' (Desktop Split)
+    userSelectedViewMode: false,
     cameraMode: 'firstPerson', // 'firstPerson' | 'isometric'
     pendingRoll: null
 };
@@ -652,8 +653,8 @@ export function gameReducer(state, action) {
 
         case ActionTypes.SET_VIEW_MODE: {
             const validModes = ['book', '3d', 'split'];
-            const nextMode = validModes.includes(action.viewMode) ? action.viewMode : '3d';
-            return { ...state, viewMode: nextMode };
+            const nextMode = validModes.includes(action.viewMode) ? action.viewMode : 'book';
+            return { ...state, viewMode: nextMode, userSelectedViewMode: true };
         }
 
         case ActionTypes.SET_CAMERA_MODE: {
@@ -665,9 +666,17 @@ export function gameReducer(state, action) {
         case ActionTypes.LOAD_STATE: {
             const loaded = action.state || {};
             const loadedChar = loaded.character || {};
+            const normalizedViewMode =
+                loaded.userSelectedViewMode && ['book', '3d', 'split'].includes(loaded.viewMode)
+                    ? loaded.viewMode
+                    : loaded.viewMode === 'split'
+                        ? 'split'
+                        : 'book';
             return {
                 ...initialState,
                 ...loaded,
+                viewMode: normalizedViewMode,
+                userSelectedViewMode: Boolean(loaded.userSelectedViewMode),
                 character: {
                     ...initialState.character,
                     ...loadedChar,

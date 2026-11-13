@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { getClassById } from '../../data/classes';
 import { getRaceById } from '../../data/races';
 import { getSpellsForClass, getDefaultSpellsForClass } from '../../data/spells';
-import { getMonsterImage } from '../../data/assets';
+import { getMonsterImage, getCharacterAvatar, getCompanionAvatar, resolveAssetUrl } from '../../data/assets';
 import { CONDITIONS_INFO } from '../../services/dndEngine';
 
 export default function CombatEncounterHUD({
@@ -19,9 +19,17 @@ export default function CombatEncounterHUD({
     onDodgeAction,
     onEndTurn,
     onRollDeathSave,
-    onCallCompanionHelp
+    onCallCompanionHelp,
+    arenaOverlay = false,
+    selectedEnemyId: controlledEnemyId,
+    onSelectEnemy
 }) {
-    const [selectedEnemyId, setSelectedEnemyId] = useState(null);
+    const [internalEnemyId, setInternalEnemyId] = useState(null);
+    const selectedEnemyId = controlledEnemyId !== undefined ? controlledEnemyId : internalEnemyId;
+    const setSelectedEnemyId = (id) => {
+        setInternalEnemyId(id);
+        onSelectEnemy?.(id);
+    };
     const [rollMode, setRollMode] = useState('normal');
     const [useDivineSmite, setUseDivineSmite] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null); // 'offensive' | 'defensive' | 'potions' | null
@@ -38,7 +46,7 @@ export default function CombatEncounterHUD({
     const enemies = combat.enemies || [];
     const livingEnemies = enemies.filter((e) => e.hp > 0);
     const activeTarget = livingEnemies.find((e) => e.instanceId === selectedEnemyId) || livingEnemies[0] || null;
-    const isMultiAttacker = enemies.length > 3;
+    const isMultiAttacker = enemies.length > 2 || arenaOverlay;
 
     const cls = getClassById(character.class || 'fighter');
     const maxSpellLvl = character.level >= 5 ? 3 : character.level >= 3 ? 2 : 1;
@@ -100,128 +108,146 @@ export default function CombatEncounterHUD({
     );
     const activeFeatures = [...activeClassFeatures, ...activeRacialFeatures];
 
+    const heroPortrait = getCharacterAvatar(character);
+
     return (
-        <div className="mx-2 sm:mx-4 mt-2 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 text-white border border-red-500/50 shadow-lg space-y-2 animate-fade-in">
-            {/* Top Combat Banner */}
-            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-red-500/30 pb-1.5">
-                <div className="flex items-center gap-2">
-                    <span className="text-base animate-pulse">⚔️</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="font-display font-bold text-xs sm:text-sm text-red-200 flex items-center gap-1.5">
-                            <span>{combat.title}</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-600/80 text-white uppercase tracking-wider font-mono">
-                                Round {combat.round}
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                                {combat.difficulty} ({combat.xpReward} XP)
-                            </span>
-                        </h4>
-                        {combat.terrainFeature && (
-                            <span className="text-[10px] text-amber-200/80 hidden md:inline">
-                                • 🌋 {combat.terrainFeature}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Party Combat Vitals Strip */}
-            <div className="p-1.5 sm:p-2 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <div className="flex items-center justify-between text-[10px] font-bold text-gray-300 mb-1 uppercase tracking-wider">
-                    <span className="flex items-center gap-1 text-amber-400">
-                        <span>🛡️</span> Party Vitals
-                    </span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                    {/* Player Card */}
-                    <div className={`p-1 sm:p-1.5 rounded-lg space-y-0.5 transition-all ${
-                        isPlayerDown
-                            ? 'bg-red-950/60 border-2 border-red-600 animate-pulse'
-                            : 'bg-amber-950/40 border border-amber-500/40'
-                    }`}>
-                        <div className="flex justify-between items-center text-[10px]">
-                            <span className={`font-bold truncate ${isPlayerDown ? 'text-red-300' : 'text-amber-300'}`}>
-                                {isPlayerDown ? '💀 ' : '👤 '}{character.name || 'You'}
-                            </span>
-                            <span className={`font-mono text-[9px] sm:text-[10px] ${isPlayerDown ? 'text-red-400 font-bold' : 'text-amber-200'}`}>
-                                {isPlayerDown ? `DOWNED 0/${character.maxHp}` : `${character.hp}/${character.maxHp}`}
-                            </span>
-                        </div>
-                        <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full transition-all duration-300 ${
-                                    isPlayerDown
-                                        ? 'bg-red-600'
-                                        : (character.hp / character.maxHp) > 0.5
-                                            ? 'bg-emerald-500'
-                                            : (character.hp / character.maxHp) > 0.25
-                                                ? 'bg-amber-500'
-                                                : 'bg-rose-600'
-                                }`}
-                                style={{ width: `${Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100))}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Companions */}
-                    {companions.map((comp, idx) => {
-                        const compMaxHp = comp.maxHp || 18;
-                        const compHp = comp.hp !== undefined ? comp.hp : compMaxHp;
-                        const isDead = comp.isDead || compHp <= 0;
-                        const pct = Math.max(0, Math.min(100, (compHp / compMaxHp) * 100));
-                        return (
-                            <div
-                                key={comp.id || idx}
-                                className={`p-1 sm:p-1.5 rounded-lg border transition-all ${
-                                    isDead
-                                        ? 'bg-red-950/40 border-red-800/80 opacity-60'
-                                        : 'bg-indigo-950/30 border-indigo-500/30'
-                                } space-y-0.5`}
-                            >
-                                <div className="flex justify-between items-center text-[10px]">
-                                    <span className={`font-bold truncate ${isDead ? 'text-red-400 line-through' : 'text-indigo-200'}`}>
-                                        {isDead ? '💀' : '🛡️'} {comp.name}
+        <div
+            data-testid="combat-encounter-hud"
+            className={
+                arenaOverlay
+                    ? 'w-full bg-gradient-to-t from-slate-950/96 via-slate-950/90 to-slate-950/78 backdrop-blur-md text-white border-t border-red-500/50 px-2.5 sm:px-4 pt-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-2xl space-y-1.5'
+                    : 'mx-2 sm:mx-4 mt-2 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 text-white border border-red-500/50 shadow-lg space-y-2 animate-fade-in'
+            }
+        >
+            {/* Top Combat Banner & Party Vitals Strip (Shown in standalone mode; in arenaOverlay mode, shown in the top arena bar) */}
+            {!arenaOverlay && (
+                <>
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-red-500/30 pb-1.5">
+                        <div className="flex items-center gap-2">
+                            <span className="text-base animate-pulse">⚔️</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="font-display font-bold text-xs sm:text-sm text-red-200 flex items-center gap-1.5">
+                                    <span>{combat.title}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-600/80 text-white uppercase tracking-wider font-mono">
+                                        Round {combat.round}
                                     </span>
-                                    <span className={`font-mono text-[9px] sm:text-[10px] ${isDead ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
-                                        {isDead ? 'DEAD' : `${compHp}/${compMaxHp}`}
+                                    <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                        {combat.difficulty} ({combat.xpReward} XP)
+                                    </span>
+                                </h4>
+                                {combat.terrainFeature && (
+                                    <span className="text-[10px] text-amber-200/80 hidden md:inline">
+                                        • 🌋 {combat.terrainFeature}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-1.5 sm:p-2 rounded-xl bg-slate-900/80 border border-slate-700/80">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                            <div className={`p-1 sm:p-1.5 rounded-lg space-y-0.5 transition-all ${
+                                isPlayerDown
+                                    ? 'bg-red-950/60 border-2 border-red-600 animate-pulse'
+                                    : 'bg-amber-950/40 border border-amber-500/40'
+                            }`}>
+                                <div className="flex justify-between items-center text-[10px] gap-1">
+                                    <span className={`font-bold truncate flex items-center gap-1 ${isPlayerDown ? 'text-red-300' : 'text-amber-300'}`}>
+                                        {heroPortrait ? (
+                                            <img src={heroPortrait} alt={character.name || 'You'} className="w-4 h-4 rounded-full object-cover shrink-0" />
+                                        ) : (
+                                            <span>{isPlayerDown ? '💀' : '👤'}</span>
+                                        )}
+                                        <span className="truncate">{character.name || 'You'}</span>
+                                    </span>
+                                    <span className={`font-mono text-[9px] sm:text-[10px] ${isPlayerDown ? 'text-red-400 font-bold' : 'text-amber-200'}`}>
+                                        {isPlayerDown ? `0/${character.maxHp}` : `${character.hp}/${character.maxHp}`}
                                     </span>
                                 </div>
                                 <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-300 ${
-                                            isDead ? 'bg-red-900 w-0' : pct > 50 ? 'bg-indigo-400' : pct > 25 ? 'bg-amber-500' : 'bg-rose-600'
+                                            isPlayerDown
+                                                ? 'bg-red-600'
+                                                : (character.hp / character.maxHp) > 0.5
+                                                    ? 'bg-emerald-500'
+                                                    : (character.hp / character.maxHp) > 0.25
+                                                        ? 'bg-amber-500'
+                                                        : 'bg-rose-600'
                                         }`}
-                                        style={{ width: `${isDead ? 0 : pct}%` }}
+                                        style={{ width: `${Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100))}%` }}
                                     />
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
-            </div>
 
-            {/* Enemy Target Cards (Stretching horizontally across all available space) */}
-            <div className={`flex flex-wrap w-full ${isMultiAttacker ? 'gap-1.5' : 'gap-2'}`}>
+                            {companions.map((comp, idx) => {
+                                const compMaxHp = comp.maxHp || 18;
+                                const compHp = comp.hp !== undefined ? comp.hp : compMaxHp;
+                                const isDead = comp.isDead || compHp <= 0;
+                                const pct = Math.max(0, Math.min(100, (compHp / compMaxHp) * 100));
+                                const compImg = getCompanionAvatar(comp);
+                                return (
+                                    <div
+                                        key={comp.id || idx}
+                                        className={`p-1 sm:p-1.5 rounded-lg border transition-all ${
+                                            isDead
+                                                ? 'bg-red-950/40 border-red-800/80 opacity-60'
+                                                : 'bg-indigo-950/30 border-indigo-500/30'
+                                        } space-y-0.5`}
+                                    >
+                                        <div className="flex justify-between items-center text-[10px] gap-1">
+                                            <span className={`font-bold truncate flex items-center gap-1 ${isDead ? 'text-red-400 line-through' : 'text-indigo-200'}`}>
+                                                {compImg ? (
+                                                    <img src={compImg} alt={comp.name} className="w-4 h-4 rounded-full object-cover shrink-0" />
+                                                ) : (
+                                                    <span>{isDead ? '💀' : '🛡️'}</span>
+                                                )}
+                                                <span className="truncate">{comp.name}</span>
+                                            </span>
+                                            <span className={`font-mono text-[9px] sm:text-[10px] ${isDead ? 'text-red-400 font-bold' : 'text-indigo-200'}`}>
+                                                {isDead ? 'DEAD' : `${compHp}/${compMaxHp}`}
+                                            </span>
+                                        </div>
+                                        <div className="h-1 sm:h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all duration-300 ${
+                                                    isDead ? 'bg-red-900 w-0' : pct > 50 ? 'bg-indigo-400' : pct > 25 ? 'bg-amber-500' : 'bg-rose-600'
+                                                }`}
+                                                style={{ width: `${isDead ? 0 : pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Enemy Target Cards (Horizontal swipeable strip on mobile arena so 3D scenery stays open!) */}
+            <div className={arenaOverlay ? 'flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar w-full' : `flex flex-wrap w-full ${isMultiAttacker ? 'gap-1.5' : 'gap-2'}`}>
                 {enemies.map((enemy) => {
                     const isDead = enemy.hp <= 0;
                     const isTargeted = activeTarget?.instanceId === enemy.instanceId;
                     const hpPct = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
-                    const monsterImg = getMonsterImage(enemy.id || enemy.monsterId, enemy.name) || enemy.image;
+                    const monsterImg = getMonsterImage(enemy.id || enemy.monsterId, enemy.name) || resolveAssetUrl(enemy.image);
                     return (
                         <div
                             key={enemy.instanceId}
                             onClick={() => !isDead && setSelectedEnemyId(enemy.instanceId)}
-                            className={`flex-1 min-w-[calc(50%-0.5rem)] sm:min-w-0 rounded-lg border transition-all cursor-pointer ${
-                                isMultiAttacker ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5'
-                            } ${
+                            className={`${
+                                arenaOverlay
+                                    ? 'min-w-[142px] sm:min-w-[175px] flex-1 p-1.5'
+                                    : `flex-1 min-w-[calc(50%-0.5rem)] sm:min-w-0 ${isMultiAttacker ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5'}`
+                            } rounded-lg border transition-all cursor-pointer ${
                                 isDead
                                     ? 'bg-slate-900/40 border-slate-800 opacity-45 cursor-not-allowed'
                                     : isTargeted
-                                        ? 'bg-red-900/40 border-amber-400 ring-2 ring-amber-400/50 shadow-md'
-                                        : 'bg-slate-800/70 border-slate-700 hover:border-red-400/60'
+                                        ? 'bg-red-900/55 border-amber-400 ring-2 ring-amber-400/50 shadow-md'
+                                        : 'bg-slate-800/80 border-slate-700 hover:border-red-400/60'
                             }`}
                         >
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center justify-between mb-1 gap-1">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     {monsterImg ? (
                                         <div className={`${isMultiAttacker ? 'w-6 h-6' : 'w-7 h-7 sm:w-8 sm:h-8'} rounded-md overflow-hidden border border-red-500/40 shrink-0 bg-slate-950`}>
@@ -232,7 +258,7 @@ export default function CombatEncounterHUD({
                                             />
                                         </div>
                                     ) : (
-                                        <span className={isMultiAttacker ? "text-sm" : "text-base"}>
+                                        <span className={isMultiAttacker ? 'text-sm' : 'text-base'}>
                                             {isDead ? '💀' : enemy.icon || '👹'}
                                         </span>
                                     )}
@@ -249,9 +275,9 @@ export default function CombatEncounterHUD({
                                 </div>
                                 {isTargeted && !isDead && (
                                     <span className={`rounded bg-amber-500 text-slate-950 font-bold shrink-0 ${
-                                        isMultiAttacker ? 'text-[8px] px-1 py-0.2' : 'text-[9px] px-1.5 py-0.5'
+                                        isMultiAttacker ? 'text-[8px] px-1 py-0.5' : 'text-[9px] px-1.5 py-0.5'
                                     }`}>
-                                        TARGET 🎯
+                                        🎯
                                     </span>
                                 )}
                             </div>
@@ -734,6 +760,7 @@ export default function CombatEncounterHUD({
                     {/* End Turn */}
                     <button
                         type="button"
+                        data-testid="combat-end-turn"
                         disabled={isCombatResolving}
                         onClick={onEndTurn}
                         className={`ml-auto px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -743,7 +770,8 @@ export default function CombatEncounterHUD({
                         }`}
                     >
                         <span>{isCombatResolving ? '⏳' : '⏭️'}</span>
-                        <span>{isCombatResolving ? 'Skirmish Unfolding...' : 'End Turn (Companions & Monsters Act)'}</span>
+                        <span className="sm:hidden">{isCombatResolving ? 'Resolving...' : 'End Turn'}</span>
+                        <span className="hidden sm:inline">{isCombatResolving ? 'Skirmish Unfolding...' : 'End Turn (Companions & Monsters Act)'}</span>
                     </button>
                 </div>
             </div>

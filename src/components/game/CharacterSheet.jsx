@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { getRaceById } from '../../data/races';
 import { getClassById } from '../../data/classes';
-import { skills as allSkills, getSkillById } from '../../data/skills';
-import { getCharacterAvatar, getRaceImage } from '../../data/assets';
+import { skills as allSkills } from '../../data/skills';
+import { getCharacterAvatar, getCompanionAvatar } from '../../data/assets';
 import {
     calculateCharacterDerivedStats,
     formatMod,
@@ -324,7 +324,7 @@ export default function CharacterSheet({
                     <div className="space-y-2">
                         {companions.map((comp, idx) => {
                             const isExpanded = expandedCompIndex === idx;
-                            const compImg = getRaceImage(comp.race);
+                            const compImg = getCompanionAvatar(comp);
                             return (
                                 <div
                                     key={idx}

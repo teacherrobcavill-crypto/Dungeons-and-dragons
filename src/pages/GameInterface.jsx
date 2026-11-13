@@ -20,7 +20,7 @@ import { logError } from '../services/telemetry';
 import { getClassById } from '../data/classes';
 import { getMonsterById } from '../data/monsters';
 import { getAdventureById } from '../data/adventures';
-import { getSceneImage, getVoiceTrack } from '../data/assets';
+import { getSceneImage, getVoiceTrack, getCharacterAvatar, getCompanionAvatar } from '../data/assets';
 import { normalizeCompanion } from '../context/gameState';
 import {
     calculateCharacterDerivedStats,
@@ -97,6 +97,8 @@ export default function GameInterface() {
     const [readerFontSize, setReaderFontSize] = useState('normal'); // 'normal' | 'large' | 'huge'
     const [readerTheme, setReaderTheme] = useState('dark'); // 'dark' | 'parchment' | 'midnight'
     const [isCombatResolving, setIsCombatResolving] = useState(false);
+    const [battleTargetId, setBattleTargetId] = useState(null);
+    const [showBattleLogDrawer, setShowBattleLogDrawer] = useState(false);
     const initializationRef = useRef(false);
 
     const isGameStarted = state.gameStarted;
@@ -107,7 +109,7 @@ export default function GameInterface() {
     const character = state.character;
     const aiModel = state.settings.aiModel;
     const chatHistoryLength = state.chatHistory.length;
-    const viewMode = state.viewMode || '3d';
+    const viewMode = state.viewMode || 'book';
     const cameraMode = state.cameraMode || 'firstPerson';
 
     const currentNodeId = state.currentNodeId || activeAdventure?.startNodeId || (activeAdventure?.nodes ? Object.keys(activeAdventure.nodes)[0] : null);
@@ -334,6 +336,8 @@ export default function GameInterface() {
             getMonsterById
         );
         setCombat(combatState);
+        setBattleTargetId(combatState.enemies?.[0]?.instanceId || null);
+        setShowBattleLogDrawer(false);
 
         const initProse = combatState.combatLog?.[0] ? cleanProse(combatState.combatLog[0]) : 'Battle Joined';
         const startProse = cleanProse(
@@ -1769,10 +1773,25 @@ export default function GameInterface() {
         { id: 'dice', label: 'Dice', icon: '🎲' }
     ];
 
+    const heroAvatar = getCharacterAvatar(character);
+    const isCombatActive = Boolean(state.combat?.active);
+    const latestCombatFeed = state.combat?.rollingFeed?.length
+        ? state.combat.rollingFeed[state.combat.rollingFeed.length - 1]
+        : null;
+
+    const handleViewportManualRoll = (roll) => {
+        if (state.pendingRoll) {
+            handleManualDiceRoll({ value: roll.value });
+        } else {
+            const rollMsg = `🎲 Rolled d${roll.sides}: **${roll.value}**${roll.isCrit ? ' 🎉 CRITICAL!' : roll.isFumble ? ' 💀 FUMBLE!' : ''}`;
+            handleSendMessage(rollMsg);
+        }
+    };
+
     return (
-        <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-900 transition-colors">
+        <div className="h-[100dvh] flex flex-col bg-gray-50 dark:bg-slate-900 transition-colors overflow-hidden">
             {/* Floating Story Mode Controls (Zero-clutter overlay, no top banner) */}
-            {isReaderMode && (
+            {isReaderMode && !isCombatActive && (
                 <aside aria-label="Story mode controls" className="fixed top-2.5 right-2.5 sm:top-3 sm:right-4 z-30 flex items-center gap-1 bg-slate-900/85 hover:bg-slate-900 backdrop-blur-md px-2 py-1 rounded-full border border-slate-700/70 shadow-lg text-white transition-opacity opacity-80 hover:opacity-100">
                     <button
                         type="button"
@@ -1806,48 +1825,68 @@ export default function GameInterface() {
                 </aside>
             )}
 
-            {/* Standard Header (Hidden in Story Mode) */}
-            {!isReaderMode && (
-                <header className="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 px-3 sm:px-4 py-2.5 flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center gap-2 sm:gap-3">
+            {/* Standard Header (Hidden in Story Focus Mode or Full-Screen Battle Arena) */}
+            {!isReaderMode && !isCombatActive && (
+                <header className="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 px-2.5 sm:px-4 py-2 flex items-center justify-between gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
                         <button
                             type="button"
                             onClick={() => navigate('/')}
-                            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
                             title="Return to Main Menu"
                         >
                             <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
                         </button>
-                        <div className="truncate max-w-[140px] sm:max-w-xs md:max-w-sm">
-                            <h1 className="font-display font-bold text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-1.5 truncate">
-                                <span>{activeAdventure.icon}</span>
+                        {heroAvatar && (
+                            <button
+                                type="button"
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="relative flex-shrink-0 rounded-full ring-2 ring-amber-500/70 overflow-hidden w-8 h-8 bg-slate-900"
+                                title={`${character.name || 'Hero'} — ❤️ ${character.hp}/${character.maxHp}`}
+                            >
+                                <img
+                                    src={heroAvatar}
+                                    alt={character.name || 'Hero'}
+                                    className="w-full h-full object-cover object-top"
+                                />
+                            </button>
+                        )}
+                        <div className="min-w-0 truncate">
+                            <h1 className="font-display font-bold text-xs sm:text-base text-gray-900 dark:text-white flex items-center gap-1 truncate">
+                                <span className="hidden sm:inline">{activeAdventure.icon}</span>
                                 <span className="truncate">{activeAdventure.name}</span>
                             </h1>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                                {currentNode ? `📍 ${currentNode.title}` : activeAdventure.setting}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                                <span className="md:hidden font-bold text-rose-500 dark:text-rose-400 flex-shrink-0">
+                                    ❤️ {character.hp}/{character.maxHp}
+                                </span>
+                                <span className="md:hidden text-gray-400">•</span>
+                                <span className="truncate">
+                                    {currentNode ? `📍 ${currentNode.title}` : activeAdventure.setting}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        {/* View Mode Switcher: 3D Dungeon / Split / Book */}
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        {/* View Mode Switcher: Story (Default) / 3D Scene Cutaway / Split (Desktop) */}
                         <div
                             data-testid="view-mode-switcher"
                             className="flex items-center rounded-xl bg-gray-100 dark:bg-slate-700 p-0.5 border border-gray-200 dark:border-slate-600"
                         >
                             {[
-                                { id: '3d', label: '3D Dungeon', icon: '🏰' },
-                                { id: 'split', label: 'Split', icon: '⚡' },
-                                { id: 'book', label: 'Chronicle', icon: '📜' }
+                                { id: 'book', label: 'Story', icon: '📜', mobileClass: 'flex' },
+                                { id: '3d', label: '3D Scene', icon: '🎬', mobileClass: 'flex' },
+                                { id: 'split', label: 'Split', icon: '⚡', mobileClass: 'hidden md:flex' }
                             ].map((m) => (
                                 <button
                                     key={m.id}
                                     type="button"
                                     data-testid={`view-mode-${m.id}`}
                                     onClick={() => setViewMode(m.id)}
-                                    className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                                    className={`${m.mobileClass} px-2 py-1 rounded-lg text-xs font-bold items-center gap-1 transition-all ${
                                         viewMode === m.id
                                             ? 'bg-amber-500 text-slate-950 shadow-sm'
                                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -1855,7 +1894,7 @@ export default function GameInterface() {
                                     title={`Switch to ${m.label} View`}
                                 >
                                     <span>{m.icon}</span>
-                                    <span className="hidden md:inline">{m.label}</span>
+                                    <span className="hidden sm:inline">{m.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -1864,15 +1903,15 @@ export default function GameInterface() {
                         <button
                             type="button"
                             onClick={() => setIsReaderMode(true)}
-                            className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                            className="px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1 transition-all shadow-sm active:scale-95"
                             title="Enter Story Focus Mode (Hides interface clutter)"
                         >
                             <span>📖</span>
-                            <span className="font-semibold">Story Mode</span>
+                            <span className="hidden lg:inline font-semibold">Story Mode</span>
                         </button>
 
                         {/* Quick Vitals Pill (desktop) */}
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-xs font-semibold text-gray-700 dark:text-gray-200">
                             <span>❤️ {character.hp}/{character.maxHp}</span>
                             <span>•</span>
                             <span>🛡️ AC {derivedStats.ac}</span>
@@ -1901,14 +1940,14 @@ export default function GameInterface() {
                             title={state.settings.narrationEnabled !== false ? 'ElevenLabs Voice Narration ON (Click to Mute)' : 'Enable ElevenLabs Voice Narration'}
                         >
                             <span>{state.settings.narrationEnabled !== false ? '🎙️' : '🔇'}</span>
-                            <span className="hidden sm:inline text-xs font-bold">Voices</span>
+                            <span className="hidden md:inline text-xs font-bold">Voices</span>
                         </button>
 
                         {/* Export Sheet JSON */}
                         <button
                             type="button"
                             onClick={handleExportCharacterSheet}
-                            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-600 dark:text-gray-300 hidden sm:inline-block"
+                            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-600 dark:text-gray-300 hidden md:inline-block"
                             title="Export D&D 5e Character Sheet JSON"
                         >
                             💾
@@ -1922,7 +1961,6 @@ export default function GameInterface() {
                             title="Open Hero & Tabletop Stats"
                         >
                             <span className="text-base">🛡️</span>
-                            <span className="hidden xs:inline">Stats</span>
                         </button>
 
                         {/* Settings */}
@@ -1943,16 +1981,210 @@ export default function GameInterface() {
 
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden relative">
-                {/* Center Column: 3D Procedural Dungeon Viewport + Live Combat HUD + Narrative Chat */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    {!isReaderMode && (viewMode === '3d' || viewMode === 'split') && (
+                {/* Center Column: Story-First Chronicle, 3D Scene Cutaway, or Full-Screen 3D Battle Arena */}
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+                    {isCombatActive ? (
                         <div
-                            className={
-                                viewMode === '3d'
-                                    ? 'h-[54%] sm:h-[58%] flex-shrink-0 border-b border-amber-700/40 relative'
-                                    : 'h-[42%] sm:h-[45%] flex-shrink-0 border-b border-amber-700/40 relative'
-                            }
+                            data-testid="fullscreen-battle-arena"
+                            className="fixed inset-0 z-30 flex flex-col h-[100dvh] w-screen bg-slate-950 overflow-hidden"
                         >
+                            {/* Full-Bleed 3D Scenery & Monster Diorama */}
+                            <div className="absolute inset-0 z-0">
+                                <DungeonViewport3D
+                                    adventure={activeAdventure}
+                                    currentNodeId={currentNodeId}
+                                    currentNode={currentNode}
+                                    character={character}
+                                    companions={state.companions || []}
+                                    derivedStats={derivedStats}
+                                    combat={state.combat}
+                                    visitedNodes={state.visitedNodes}
+                                    defeatedNodes={state.defeatedNodes}
+                                    lootedNodes={state.lootedNodes}
+                                    searchedNodes={state.searchedNodes}
+                                    completedChoices={state.completedChoices || []}
+                                    cameraMode={cameraMode}
+                                    onToggleCameraMode={() =>
+                                        setCameraMode(cameraMode === 'firstPerson' ? 'isometric' : 'firstPerson')
+                                    }
+                                    onSelectNode={handleSelectNode}
+                                    onSelectChoice={handleSelectChoice}
+                                    onTriggerEncounter={handleTriggerEncounter}
+                                    onLootRoom={handleLootRoom}
+                                    onManualRoll={handleViewportManualRoll}
+                                    onWeaponAttack={handleWeaponAttack}
+                                    isBattleArena={true}
+                                    selectedEnemyId={battleTargetId}
+                                    onSelectEnemy={setBattleTargetId}
+                                />
+                            </div>
+
+                            {/* Slim Top Party Vitals & Battle Controls Bar */}
+                            <div className="relative z-20 flex items-center justify-between gap-2 px-2.5 sm:px-4 py-2 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent pointer-events-auto">
+                                <div className="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar">
+                                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-rose-950/85 border border-rose-500/45 text-rose-100 text-[11px] sm:text-xs font-bold flex-shrink-0 shadow-md">
+                                        <span>⚔️</span>
+                                        <span className="truncate max-w-[68px] sm:max-w-[220px]">
+                                            {state.combat.title || currentNode?.title || 'Battle'}
+                                        </span>
+                                        <span className="text-[10px] px-1 py-0.5 rounded bg-rose-500/30 text-amber-200 font-extrabold">
+                                            R{state.combat.round || 1}
+                                        </span>
+                                    </div>
+
+                                    {/* Hero & Living Companions Portrait/HP Pills */}
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/85 border border-amber-500/40 text-white text-[11px] font-bold">
+                                            {heroAvatar && (
+                                                <img
+                                                    src={heroAvatar}
+                                                    alt={character.name || 'Hero'}
+                                                    className="w-5 h-5 rounded-full object-cover object-top ring-1 ring-amber-400"
+                                                />
+                                            )}
+                                            <span className="hidden sm:inline truncate max-w-[75px]">{character.name || 'Hero'}</span>
+                                            <span className={character.hp <= Math.ceil((character.maxHp || 10) * 0.3) ? 'text-rose-400' : 'text-emerald-300'}>
+                                                ❤️ {character.hp}/{character.maxHp}
+                                            </span>
+                                        </div>
+                                        {(state.companions || []).map((comp) => {
+                                            const compHp = comp.hp !== undefined ? comp.hp : (comp.maxHp || 18);
+                                            const compMax = comp.maxHp || 18;
+                                            const compAvatar = getCompanionAvatar(comp);
+                                            return (
+                                                <div
+                                                    key={comp.id || comp.name}
+                                                    className={`hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 border border-slate-700/80 text-[11px] font-semibold ${
+                                                        comp.isDead || compHp <= 0 ? 'opacity-50 text-rose-300' : 'text-slate-200'
+                                                    }`}
+                                                >
+                                                    {compAvatar && (
+                                                        <img
+                                                            src={compAvatar}
+                                                            alt={comp.name}
+                                                            className="w-4 h-4 rounded-full object-cover object-top"
+                                                        />
+                                                    )}
+                                                    <span className="truncate max-w-[65px]">{comp.name}</span>
+                                                    <span className="text-emerald-300">{compHp}/{compMax}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Right Arena Controls */}
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        data-testid="toggle-battle-log"
+                                        onClick={() => setShowBattleLogDrawer((v) => !v)}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                                            showBattleLogDrawer
+                                                ? 'bg-amber-500 text-slate-950 border-amber-300'
+                                                : 'bg-slate-900/85 text-amber-200 border-amber-500/35 hover:bg-slate-800'
+                                        }`}
+                                        title="Toggle Battle Chronicle Log"
+                                    >
+                                        📜 <span className="hidden sm:inline">Log</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-testid="arena-toggle-camera"
+                                        onClick={() => setCameraMode(cameraMode === 'firstPerson' ? 'isometric' : 'firstPerson')}
+                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900/85 text-sky-200 border border-sky-500/35 hover:bg-slate-800 transition-all"
+                                        title="Switch 3D Arena Camera Angle"
+                                    >
+                                        🎥 <span className="hidden sm:inline">{cameraMode === 'firstPerson' ? 'Hero Cam' : 'Tactical'}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        className="px-2 py-1 rounded-lg text-xs font-bold bg-slate-900/85 text-slate-100 border border-slate-600/70 hover:bg-slate-800"
+                                        title="Open Hero Sheet, Spells & Inventory"
+                                    >
+                                        🛡️
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Live Floating Combat Ticker (Latest Turn Narration) */}
+                            {latestCombatFeed && !showBattleLogDrawer && (
+                                <div className="relative z-10 mx-auto mt-0.5 px-3 w-full max-w-lg pointer-events-none">
+                                    <div className="rounded-xl bg-slate-950/75 backdrop-blur-md border border-amber-500/30 px-3 py-1.5 shadow-lg">
+                                        <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-amber-300">
+                                            <span className="truncate">{latestCombatFeed.title}</span>
+                                            {latestCombatFeed.rollText && (
+                                                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 font-mono text-[10px] flex-shrink-0">
+                                                    {latestCombatFeed.rollText}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {latestCombatFeed.text && (
+                                            <p className="text-[11px] text-slate-200 line-clamp-2 leading-snug mt-0.5">
+                                                {latestCombatFeed.text}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Optional Battle Chronicle Log Drawer */}
+                            {showBattleLogDrawer && (
+                                <div className="relative z-20 mx-2.5 sm:mx-auto mt-1 max-h-[40dvh] sm:w-full sm:max-w-xl overflow-y-auto rounded-2xl bg-slate-950/92 backdrop-blur-md border border-amber-500/40 p-3 shadow-2xl pointer-events-auto">
+                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                                            📜 Battle Chronicle ({state.combat.rollingFeed?.length || 0} events)
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBattleLogDrawer(false)}
+                                            className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs font-bold hover:text-white"
+                                        >
+                                            ✕ Close
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(state.combat.rollingFeed || []).slice().reverse().map((entry) => (
+                                            <div key={entry.id} className="rounded-lg bg-slate-900/90 border border-slate-800 p-2">
+                                                <div className="flex items-center justify-between gap-2 text-xs font-bold text-amber-200">
+                                                    <span>{entry.title}</span>
+                                                    {entry.rollText && (
+                                                        <span className="text-[10px] font-mono text-amber-300">{entry.rollText}</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">{entry.text}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bottom Tactical Dock */}
+                            <div className="mt-auto relative z-20 max-h-[50dvh] overflow-y-auto pointer-events-auto">
+                                <CombatEncounterHUD
+                                    combat={state.combat}
+                                    character={character}
+                                    companions={state.companions || []}
+                                    equippedItems={state.equippedItems}
+                                    inventory={state.inventory}
+                                    isCombatResolving={isCombatResolving}
+                                    onWeaponAttack={handleWeaponAttack}
+                                    onCastCombatSpell={handleCastCombatSpell}
+                                    onUseClassFeature={handleUseClassFeature}
+                                    onDrinkPotion={handleDrinkPotion}
+                                    onDodgeAction={handleDodgeAction}
+                                    onEndTurn={handleEndTurn}
+                                    onRollDeathSave={handleRollDeathSave}
+                                    onCallCompanionHelp={handleCallCompanionHelp}
+                                    arenaOverlay={true}
+                                    selectedEnemyId={battleTargetId}
+                                    onSelectEnemy={setBattleTargetId}
+                                />
+                            </div>
+                        </div>
+                    ) : !isReaderMode && viewMode === '3d' ? (
+                        <div className="flex-1 h-full relative overflow-hidden">
                             <DungeonViewport3D
                                 adventure={activeAdventure}
                                 currentNodeId={currentNodeId}
@@ -1974,82 +2206,123 @@ export default function GameInterface() {
                                 onSelectChoice={handleSelectChoice}
                                 onTriggerEncounter={handleTriggerEncounter}
                                 onLootRoom={handleLootRoom}
-                                onManualRoll={(roll) => {
-                                    if (state.pendingRoll) {
-                                        handleManualDiceRoll({ value: roll.value });
-                                    } else {
-                                        const rollMsg = `🎲 Rolled d${roll.sides}: **${roll.value}**${roll.isCrit ? ' 🎉 CRITICAL!' : roll.isFumble ? ' 💀 FUMBLE!' : ''}`;
-                                        handleSendMessage(rollMsg);
-                                    }
-                                }}
+                                onManualRoll={handleViewportManualRoll}
                                 onWeaponAttack={handleWeaponAttack}
+                                onReturnToStory={() => setViewMode('book')}
                             />
                         </div>
-                    )}
-
-                    {!isReaderMode && state.combat?.active && (
-                        <div className="max-h-[36%] sm:max-h-[40%] overflow-y-auto flex-shrink-0">
-                            <CombatEncounterHUD
-                                combat={state.combat}
+                    ) : !isReaderMode && viewMode === 'split' ? (
+                        <>
+                            <div className="h-[46%] flex-shrink-0 border-b border-amber-700/40 relative">
+                                <DungeonViewport3D
+                                    adventure={activeAdventure}
+                                    currentNodeId={currentNodeId}
+                                    currentNode={currentNode}
+                                    character={character}
+                                    companions={state.companions || []}
+                                    derivedStats={derivedStats}
+                                    combat={state.combat}
+                                    visitedNodes={state.visitedNodes}
+                                    defeatedNodes={state.defeatedNodes}
+                                    lootedNodes={state.lootedNodes}
+                                    searchedNodes={state.searchedNodes}
+                                    completedChoices={state.completedChoices || []}
+                                    cameraMode={cameraMode}
+                                    onToggleCameraMode={() =>
+                                        setCameraMode(cameraMode === 'firstPerson' ? 'isometric' : 'firstPerson')
+                                    }
+                                    onSelectNode={handleSelectNode}
+                                    onSelectChoice={handleSelectChoice}
+                                    onTriggerEncounter={handleTriggerEncounter}
+                                    onLootRoom={handleLootRoom}
+                                    onManualRoll={handleViewportManualRoll}
+                                    onWeaponAttack={handleWeaponAttack}
+                                    onReturnToStory={() => setViewMode('book')}
+                                />
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <ChatInterface
+                                    messages={state.chatHistory}
+                                    onSendMessage={handleSendMessage}
+                                    isLoading={isLoading}
+                                    animationsEnabled={state.settings.animationsEnabled}
+                                    pendingRoll={state.pendingRoll}
+                                    onManualRoll={handleManualDiceRoll}
+                                    currentNode={currentNode}
+                                    character={character}
+                                    companions={state.companions || []}
+                                    searchedNodes={state.searchedNodes}
+                                    lootedNodes={state.lootedNodes}
+                                    defeatedNodes={state.defeatedNodes}
+                                    completedChoices={state.completedChoices || []}
+                                    inCombat={false}
+                                    onSelectChoice={handleSelectChoice}
+                                    onTriggerEncounter={handleTriggerEncounter}
+                                    onLootRoom={handleLootRoom}
+                                    onOpenVictoryModal={handleOpenVictoryModal}
+                                    onOpen3DCutaway={() => setViewMode('3d')}
+                                    isReaderMode={isReaderMode}
+                                    onToggleReaderMode={() => setIsReaderMode(!isReaderMode)}
+                                    readerFontSize={readerFontSize}
+                                    readerTheme={readerTheme}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex-1 overflow-hidden">
+                            <ChatInterface
+                                messages={state.chatHistory}
+                                onSendMessage={handleSendMessage}
+                                isLoading={isLoading}
+                                animationsEnabled={state.settings.animationsEnabled}
+                                pendingRoll={state.pendingRoll}
+                                onManualRoll={handleManualDiceRoll}
+                                currentNode={currentNode}
                                 character={character}
                                 companions={state.companions || []}
-                                equippedItems={state.equippedItems}
-                                inventory={state.inventory}
-                                isCombatResolving={isCombatResolving}
-                                onWeaponAttack={handleWeaponAttack}
-                                onCastCombatSpell={handleCastCombatSpell}
-                                onUseClassFeature={handleUseClassFeature}
-                                onDrinkPotion={handleDrinkPotion}
-                                onDodgeAction={handleDodgeAction}
-                                onEndTurn={handleEndTurn}
-                                onRollDeathSave={handleRollDeathSave}
-                                onCallCompanionHelp={handleCallCompanionHelp}
+                                searchedNodes={state.searchedNodes}
+                                lootedNodes={state.lootedNodes}
+                                defeatedNodes={state.defeatedNodes}
+                                completedChoices={state.completedChoices || []}
+                                inCombat={false}
+                                onSelectChoice={handleSelectChoice}
+                                onTriggerEncounter={handleTriggerEncounter}
+                                onLootRoom={handleLootRoom}
+                                onOpenVictoryModal={handleOpenVictoryModal}
+                                onOpen3DCutaway={() => setViewMode('3d')}
+                                isReaderMode={isReaderMode}
+                                onToggleReaderMode={() => setIsReaderMode(!isReaderMode)}
+                                readerFontSize={readerFontSize}
+                                readerTheme={readerTheme}
                             />
                         </div>
                     )}
-
-                    <div className="flex-1 overflow-hidden">
-                        <ChatInterface
-                            messages={state.chatHistory}
-                            onSendMessage={handleSendMessage}
-                            isLoading={isLoading}
-                            animationsEnabled={state.settings.animationsEnabled}
-                            pendingRoll={state.pendingRoll}
-                            onManualRoll={handleManualDiceRoll}
-                            currentNode={currentNode}
-                            searchedNodes={state.searchedNodes}
-                            lootedNodes={state.lootedNodes}
-                            defeatedNodes={state.defeatedNodes}
-                            completedChoices={state.completedChoices || []}
-                            inCombat={Boolean(state.combat?.active)}
-                            onSelectChoice={handleSelectChoice}
-                            onTriggerEncounter={handleTriggerEncounter}
-                            onLootRoom={handleLootRoom}
-                            onOpenVictoryModal={handleOpenVictoryModal}
-                            isReaderMode={isReaderMode}
-                            onToggleReaderMode={() => setIsReaderMode(!isReaderMode)}
-                            readerFontSize={readerFontSize}
-                            readerTheme={readerTheme}
-                        />
-                    </div>
                 </div>
 
-                {/* Mobile Backdrop overlay */}
+                {/* Backdrop overlay for mobile or Full-Screen Battle Arena drawer */}
                 {isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm animate-fade-in"
+                        className={`fixed inset-0 bg-black/60 z-40 ${isCombatActive ? '' : 'lg:hidden'} backdrop-blur-sm animate-fade-in`}
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
 
-                {/* Right Tabletop HUD Sidebar (Responsive slide-over on mobile) */}
+                {/* Right Tabletop HUD Sidebar (Slide-over on mobile & during Full-Screen Battle Arena) */}
                 <aside
-                    className={`fixed inset-y-0 right-0 z-50 w-full sm:w-96 lg:static lg:z-auto lg:w-96 bg-white dark:bg-slate-800 border-l border-gray-100 dark:border-slate-700 flex flex-col transition-transform duration-300 ease-in-out lg:transform-none shadow-2xl lg:shadow-none flex-shrink-0 ${
-                        isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+                    className={`fixed inset-y-0 right-0 z-50 w-full sm:w-96 ${
+                        isCombatActive
+                            ? ''
+                            : 'lg:static lg:z-auto lg:w-96 lg:transform-none lg:shadow-none'
+                    } bg-white dark:bg-slate-800 border-l border-gray-100 dark:border-slate-700 flex flex-col transition-transform duration-300 ease-in-out shadow-2xl flex-shrink-0 ${
+                        isSidebarOpen
+                            ? 'translate-x-0'
+                            : isCombatActive
+                                ? 'translate-x-full'
+                                : 'translate-x-full lg:translate-x-0'
                     }`}
                 >
-                    {/* Mobile Header with Close Button */}
-                    <div className="lg:hidden p-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-gray-50 dark:bg-slate-900">
+                    {/* Drawer Header with Close Button */}
+                    <div className={`${isCombatActive ? 'flex' : 'lg:hidden flex'} p-3 border-b border-gray-100 dark:border-slate-700 items-center justify-between bg-gray-50 dark:bg-slate-900`}>
                         <span className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
                             <span>🛡️</span> Hero & Tabletop HUD
                         </span>

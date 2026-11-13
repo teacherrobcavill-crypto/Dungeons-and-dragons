@@ -124,7 +124,7 @@ describe('GameInterface Integration', () => {
         expect(screen.getByRole('banner')).toBeInTheDocument();
     });
 
-    it('renders 3D Dungeon viewport, Diegetic Parchment HUD, and toggles First-Person / Isometric cameras', async () => {
+    it('defaults to Story view with Scenic Cutaway and switches cleanly to 3D Scene Cutaway and back', async () => {
         const activeState = {
             schemaVersion: 2,
             state: {
@@ -153,6 +153,13 @@ describe('GameInterface Integration', () => {
         const { fireEvent } = await import('@testing-library/react');
         renderWithProviders(<GameInterface />);
 
+        // Story-First default: 3D viewport is tucked away behind Scenic Cutaway button
+        expect(screen.queryByTestId('dungeon-viewport-3d')).not.toBeInTheDocument();
+        const openCutawayBtn = await screen.findByTestId('open-3d-cutaway');
+        expect(openCutawayBtn).toBeInTheDocument();
+
+        fireEvent.click(openCutawayBtn);
+
         const viewport = await screen.findByTestId('dungeon-viewport-3d');
         expect(viewport).toBeInTheDocument();
         expect(viewport.getAttribute('data-camera-mode')).toBe('firstPerson');
@@ -163,6 +170,72 @@ describe('GameInterface Integration', () => {
         const camToggle = screen.getByTestId('toggle-camera-mode');
         fireEvent.click(camToggle);
         expect(viewport.getAttribute('data-camera-mode')).toBe('isometric');
+
+        const backToStoryBtn = screen.getByTestId('return-to-story-btn');
+        fireEvent.click(backToStoryBtn);
+        expect(screen.queryByTestId('dungeon-viewport-3d')).not.toBeInTheDocument();
+    });
+
+    it('enters Full-Screen 3D Battle Arena automatically when combat is active', async () => {
+        const activeBattleState = {
+            schemaVersion: 2,
+            state: {
+                gameStarted: true,
+                adventure: { id: 'lost-mine', name: 'The Lost Mine of Phandelver', setting: 'The Sword Coast' },
+                currentNodeId: 'ambush_trail',
+                visitedNodes: ['ambush_trail'],
+                character: {
+                    name: 'Kaelen',
+                    race: 'human',
+                    class: 'fighter',
+                    hp: 14,
+                    maxHp: 14,
+                    level: 1,
+                    stats: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 12, charisma: 10 }
+                },
+                combat: {
+                    active: true,
+                    title: 'Goblin Arrows',
+                    round: 1,
+                    actionUsed: false,
+                    bonusActionUsed: false,
+                    enemies: [
+                        {
+                            instanceId: 'goblin-1',
+                            id: 'goblin',
+                            name: 'Goblin Ambushers',
+                            hp: 7,
+                            maxHp: 7,
+                            ac: 15
+                        }
+                    ],
+                    rollingFeed: [
+                        {
+                            id: 'init-1',
+                            title: 'Battle Joined: Goblin Arrows',
+                            text: 'Goblins leap from the briars!',
+                            rollText: 'Round 1'
+                        }
+                    ]
+                },
+                chatHistory: [{ type: 'ai', text: 'Opening narrative', timestamp: new Date().toISOString() }],
+                inventory: [],
+                companions: [],
+                settings: { soundEnabled: true, animationsEnabled: true }
+            }
+        };
+
+        localStorage.setItem('mythicbot_game_state', JSON.stringify(activeBattleState));
+
+        renderWithProviders(<GameInterface />);
+
+        const battleArena = await screen.findByTestId('fullscreen-battle-arena');
+        expect(battleArena).toBeInTheDocument();
+
+        const viewport = screen.getByTestId('dungeon-viewport-3d');
+        expect(viewport).toBeInTheDocument();
+        expect(viewport.getAttribute('data-battle-arena')).toBe('true');
+
+        expect(screen.getByTestId('combat-encounter-hud')).toBeInTheDocument();
     });
 });
-

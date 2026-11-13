@@ -5,7 +5,12 @@ import { RollResult } from './AnimatedDice';
 import soundService from '../../services/soundService';
 import LoreText from '../common/LoreText';
 import MagicalRevealText from '../common/MagicalRevealText';
-import { getSceneImage, getRaceImage } from '../../data/assets';
+import {
+    getSceneImage,
+    getCharacterAvatar,
+    getCompanionAvatar,
+    resolveAssetUrl
+} from '../../data/assets';
 
 const getRaceEmoji = (race) => {
     const raceEmojis = {
@@ -78,12 +83,17 @@ export default function ChatInterface({
     isReaderMode = false,
     onToggleReaderMode,
     readerFontSize = 'normal',
-    readerTheme = 'dark'
+    readerTheme = 'dark',
+    character = null,
+    companions = [],
+    onOpen3DCutaway = null
 }) {
     const [input, setInput] = useState('');
     const [messageFilter, setMessageFilter] = useState('all');
     const [isChoicesExpanded, setIsChoicesExpanded] = useState(true);
-    const [showQuickPrompts, setShowQuickPrompts] = useState(false);
+    const [showCustomInput, setShowCustomInput] = useState(
+        typeof window !== 'undefined' ? window.innerWidth >= 640 : true
+    );
     const [speakingId, setSpeakingId] = useState(null);
     const messagesEndRef = useRef(null);
     const { rollDie, formatRollMessage } = useDice();
@@ -422,16 +432,25 @@ export default function ChatInterface({
                                             </span>
                                         </div>
                                     </div>
-                                    {message.image && (
-                                        <div className="mb-3 rounded-xl overflow-hidden border border-amber-300/40 dark:border-slate-700 shadow-sm max-h-64 sm:max-h-80">
-                                            <img
-                                                src={message.image}
-                                                alt={message.speaker || 'Scene illustration'}
-                                                className="w-full h-full object-cover object-center"
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        const resolvedImg = resolveAssetUrl(message.image);
+                                        const activeSceneImg = currentNode
+                                            ? getSceneImage(currentNode.id, currentNode.environment) || resolveAssetUrl(currentNode.image)
+                                            : null;
+                                        const shouldShowInlineImg = Boolean(
+                                            resolvedImg && (inCombat || !currentNode || resolvedImg !== activeSceneImg)
+                                        );
+                                        return shouldShowInlineImg ? (
+                                            <div className="mb-3 rounded-xl overflow-hidden border border-amber-300/40 dark:border-slate-700 shadow-sm max-h-56 sm:max-h-72">
+                                                <img
+                                                    src={resolvedImg}
+                                                    alt={message.speaker || 'Scene illustration'}
+                                                    className="w-full h-full object-cover object-center"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : null;
+                                    })()}
                                     <div className={`whitespace-pre-line ${getReaderFontClass()} font-normal leading-relaxed`}>
                                         <LoreText text={message.text} fontClass={getReaderFontClass()} />
                                     </div>
@@ -455,7 +474,7 @@ export default function ChatInterface({
                                 {message.companionMessages.map((companion, cIndex) => {
                                     const compId = `comp-${index}-${cIndex}`;
                                     const isCompSpeaking = speakingId === compId;
-                                    const compRaceImg = getRaceImage(companion.companionRace);
+                                    const compPortrait = getCompanionAvatar(companion);
                                     return (
                                         <div
                                             key={cIndex}
@@ -465,11 +484,11 @@ export default function ChatInterface({
                                             <div className="w-full px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl border border-l-4 border-l-amber-500 dark:border-l-amber-400 border-gray-200/70 dark:border-slate-700/70 bg-amber-50/40 dark:bg-slate-800/60 shadow-xs">
                                                 <div className="flex items-center justify-between gap-2 mb-1">
                                                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                                        {compRaceImg ? (
+                                                        {compPortrait ? (
                                                             <img
-                                                                src={compRaceImg}
-                                                                alt={companion.companionRace || 'Companion'}
-                                                                className="w-5 h-5 rounded-md object-cover border border-amber-400/40 shrink-0"
+                                                                src={compPortrait}
+                                                                alt={companion.companionName || 'Companion'}
+                                                                className="w-6 h-6 rounded-md object-cover border border-amber-400/50 shrink-0"
                                                             />
                                                         ) : (
                                                             <span className="text-sm">{getRaceEmoji(companion.companionRace)}</span>
@@ -480,7 +499,7 @@ export default function ChatInterface({
                                                         <span className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold capitalize">
                                                             • {companion.companionClass}
                                                         </span>
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-medium border border-amber-500/30 truncate max-w-[220px]">
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-medium border border-amber-500/30 truncate max-w-[200px]">
                                                             ⚡ {getCompanionAbilities(companion)}
                                                         </span>
                                                     </div>
@@ -513,19 +532,28 @@ export default function ChatInterface({
                         {message.type === 'companion' && (() => {
                             const compMsgId = `comp-msg-${index}`;
                             const isCompMsgSpeaking = speakingId === compMsgId;
+                            const compPortrait = getCompanionAvatar(message);
                             return (
                                 <div className="w-full animate-fade-in">
                                     <div className="w-full px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl border border-l-4 border-l-amber-500 dark:border-l-amber-400 border-gray-200/70 dark:border-slate-700/70 bg-amber-50/40 dark:bg-slate-800/60 shadow-xs">
                                         <div className="flex items-center justify-between gap-2 mb-1">
                                             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                                <span className="text-sm">{getRaceEmoji(message.companionRace)}</span>
+                                                {compPortrait ? (
+                                                    <img
+                                                        src={compPortrait}
+                                                        alt={message.companionName || 'Companion'}
+                                                        className="w-6 h-6 rounded-md object-cover border border-amber-400/50 shrink-0"
+                                                    />
+                                                ) : (
+                                                    <span className="text-sm">{getRaceEmoji(message.companionRace)}</span>
+                                                )}
                                                 <span className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm">
                                                     {message.companionName}
                                                 </span>
                                                 <span className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold capitalize">
                                                     • {message.companionClass}
                                                 </span>
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-medium border border-amber-500/30 truncate max-w-[220px]">
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-medium border border-amber-500/30 truncate max-w-[200px]">
                                                     ⚡ {getCompanionAbilities(message)}
                                                 </span>
                                             </div>
@@ -597,40 +625,85 @@ export default function ChatInterface({
                             </div>
                         )}
 
-                        {/* Room Paths & Tactical Exits */}
+                        {/* Scenic Cutaway & Story Choices Card */}
                         {currentNode && (() => {
-                            const sceneArt = getSceneImage(currentNode.id) || currentNode.image;
+                            const sceneArt = getSceneImage(currentNode.id, currentNode.environment) || resolveAssetUrl(currentNode.image);
+                            const heroAvatar = getCharacterAvatar(character);
+                            const livingComps = (companions || []).filter((c) => !c.isDead && (c.hp === undefined || c.hp > 0));
                             return (
-                                <div className="w-full rounded-2xl overflow-hidden bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/60 dark:border-slate-700/70 shadow-sm space-y-0">
+                                <div className="w-full rounded-2xl overflow-hidden bg-amber-50/80 dark:bg-slate-800/90 border border-amber-300/60 dark:border-slate-700 shadow-md">
                                     {sceneArt && (
-                                        <div className="relative w-full h-36 sm:h-48 overflow-hidden group border-b border-amber-200/60 dark:border-slate-700">
+                                        <div className="relative w-full h-40 sm:h-52 overflow-hidden group border-b border-amber-200/60 dark:border-slate-700 bg-slate-950">
                                             <img
                                                 src={sceneArt}
                                                 alt={currentNode.title}
                                                 className="w-full h-full object-cover object-center brightness-95 group-hover:scale-105 transition-transform duration-700"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex items-end justify-between p-3.5">
-                                                <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-sm border border-amber-500/30">
-                                                    📍 {currentNode.environment || 'Dungeon Chamber'}
-                                                </span>
-                                                <span className="text-[11px] font-mono font-bold text-amber-300 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-amber-500/20">
-                                                    Act {currentNode.act || 1}
-                                                </span>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/92 via-slate-950/35 to-slate-950/20 flex flex-col justify-between p-3">
+                                                {/* Top Badges */}
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-[11px] font-bold text-amber-200 tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-sm border border-amber-500/40">
+                                                        📍 {currentNode.environment || 'Scene'} • Act {currentNode.act || 1}
+                                                    </span>
+                                                    {onOpen3DCutaway && (
+                                                        <button
+                                                            type="button"
+                                                            data-testid="open-3d-cutaway"
+                                                            onClick={onOpen3DCutaway}
+                                                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg border border-amber-200 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                                                            title="Cut away to explore the interactive 3D scene & character models"
+                                                        >
+                                                            <span>🎬</span>
+                                                            <span>3D Scene Cutaway</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Bottom Party Portrait Medallions + Scene Title */}
+                                                <div className="flex items-end justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-display font-extrabold text-sm sm:text-base text-white drop-shadow truncate">
+                                                            {currentNode.title}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center -space-x-2 shrink-0">
+                                                        {heroAvatar && (
+                                                            <img
+                                                                src={heroAvatar}
+                                                                alt={character?.name || 'Hero'}
+                                                                title={`${character?.name || 'Hero'} (${character?.hp}/${character?.maxHp} HP)`}
+                                                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-emerald-400 shadow-md bg-slate-900"
+                                                            />
+                                                        )}
+                                                        {livingComps.slice(0, 3).map((comp, ci) => {
+                                                            const cAvatar = getCompanionAvatar(comp);
+                                                            return cAvatar ? (
+                                                                <img
+                                                                    key={comp.id || ci}
+                                                                    src={cAvatar}
+                                                                    alt={comp.name}
+                                                                    title={`${comp.name} (${comp.hp}/${comp.maxHp} HP)`}
+                                                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-indigo-400 shadow-md bg-slate-900"
+                                                                />
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
-                                    <div className="p-3.5 sm:p-4 space-y-3">
-                                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/40 dark:border-slate-700/50">
+
+                                    <div className="p-3 sm:p-4 space-y-3">
+                                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/50 dark:border-slate-700/60">
                                             <button
                                                 type="button"
                                                 onClick={() => setIsChoicesExpanded(!isChoicesExpanded)}
-                                                className="flex items-center gap-2 font-display font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300 tracking-wide uppercase hover:opacity-80 transition-opacity cursor-pointer text-left"
-                                                title={isChoicesExpanded ? 'Hide actions and paths' : 'Show actions and paths'}
+                                                className="flex items-center gap-1.5 font-display font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300 tracking-wide uppercase hover:opacity-80 transition-opacity cursor-pointer text-left"
                                             >
                                                 <span>🧭</span>
-                                                <span className="truncate max-w-[150px] sm:max-w-none">{currentNode.title}</span>
+                                                <span>Choose Your Next Action</span>
                                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-slate-700 text-amber-900 dark:text-amber-200 font-bold ml-1 shrink-0">
-                                                    {isChoicesExpanded ? '▲ Hide Actions' : `▼ Show Actions (${visibleChoices.length})`}
+                                                    {isChoicesExpanded ? '▲' : `▼ (${visibleChoices.length})`}
                                                 </span>
                                             </button>
                                             <div className="flex items-center gap-1.5 shrink-0">
@@ -639,18 +712,8 @@ export default function ChatInterface({
                                                         type="button"
                                                         onClick={onToggleReaderMode}
                                                         className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-colors"
-                                                        title="Exit Story Mode back to Tabletop UI"
                                                     >
                                                         ✕ Normal View
-                                                    </button>
-                                                )}
-                                                {hasActiveEncounter && onTriggerEncounter && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onTriggerEncounter(currentNode.encounter)}
-                                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-sm animate-pulse flex items-center gap-1 cursor-pointer"
-                                                    >
-                                                        ⚔️ Engage
                                                     </button>
                                                 )}
                                                 {hasUnclaimedLoot && onLootRoom && (
@@ -659,33 +722,43 @@ export default function ChatInterface({
                                                         onClick={() => onLootRoom(currentNode)}
                                                         className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1 cursor-pointer"
                                                     >
-                                                        💰 Loot
-                                                    </button>
-                                                )}
-                                                {isBossChamber && isBossDefeated && onOpenVictoryModal && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={onOpenVictoryModal}
-                                                        className="px-3 py-1 rounded-lg text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-md flex items-center gap-1.5 cursor-pointer animate-pulse-glow"
-                                                        title="View campaign victory summary and epilogue"
-                                                    >
-                                                        <span>🏆</span>
-                                                        <span>Campaign Victory</span>
+                                                        💰 Loot ({currentNode.loot.gold || 0}g)
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Available Choice Buttons - Collapsible */}
+                                        {/* Prominent Full-Screen Battle Callout when Hostiles Are Present */}
+                                        {hasActiveEncounter && onTriggerEncounter && (
+                                            <button
+                                                type="button"
+                                                data-testid="story-engage-battle"
+                                                onClick={() => onTriggerEncounter(currentNode.encounter)}
+                                                className="w-full p-3 rounded-xl bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white font-extrabold text-sm shadow-lg border border-red-300/60 flex items-center justify-between gap-2 active:scale-[0.99] transition-all cursor-pointer"
+                                            >
+                                                <span className="flex items-center gap-2 text-left">
+                                                    <span className="text-lg animate-pulse">⚔️</span>
+                                                    <span>
+                                                        <span className="block text-xs uppercase tracking-wider text-amber-200">Hostile Threat Ahead</span>
+                                                        <span>Battle: {currentNode.encounter.title}</span>
+                                                    </span>
+                                                </span>
+                                                <span className="px-2.5 py-1 rounded-lg bg-slate-950/60 text-amber-200 text-xs font-bold shrink-0">
+                                                    Full-Screen 3D →
+                                                </span>
+                                            </button>
+                                        )}
+
+                                        {/* Available Choice Options - Full-Width Readable Cards on iPhone */}
                                         {isChoicesExpanded && (
                                             <>
                                                 {visibleChoices.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+                                                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-0.5 animate-fade-in">
                                                         {isBossChamber && isBossDefeated && onOpenVictoryModal && (
                                                             <button
                                                                 type="button"
                                                                 onClick={onOpenVictoryModal}
-                                                                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 border border-amber-400 shadow-md flex items-center gap-2 cursor-pointer animate-pulse-glow w-full sm:w-auto justify-center"
+                                                                className="px-4 py-3 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 border border-amber-400 shadow-md flex items-center gap-2 cursor-pointer animate-pulse-glow w-full sm:w-auto justify-center"
                                                             >
                                                                 <span className="text-base">🏆</span>
                                                                 <span>View Campaign Victory & Epilogue</span>
@@ -700,20 +773,22 @@ export default function ChatInterface({
                                                                     type="button"
                                                                     disabled={isLoading}
                                                                     onClick={() => onSelectChoice && onSelectChoice(choice)}
-                                                                    className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer ${
+                                                                    className={`w-full sm:w-auto px-3.5 py-3 sm:py-2.5 rounded-xl text-sm font-semibold border transition-all flex items-center justify-between sm:justify-start gap-2.5 text-left shadow-sm active:scale-[0.99] cursor-pointer ${
                                                                         isSkill
-                                                                            ? 'bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200'
+                                                                            ? 'bg-indigo-50 dark:bg-indigo-950/75 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-950 dark:text-indigo-100'
                                                                             : isMove
-                                                                                ? 'bg-amber-100/90 dark:bg-slate-700 hover:bg-amber-200 dark:hover:bg-slate-600 border-amber-300 dark:border-slate-500 text-amber-950 dark:text-amber-100'
-                                                                                : 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                                                                                ? 'bg-amber-100/90 dark:bg-slate-700/95 hover:bg-amber-200 dark:hover:bg-slate-600 border-amber-300 dark:border-slate-500 text-amber-950 dark:text-amber-100'
+                                                                                : 'bg-emerald-50 dark:bg-emerald-950/65 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100'
                                                                     }`}
                                                                 >
-                                                                    <span className="text-base">
-                                                                        {isSkill ? '🎲' : choice.type === 'rest' ? '⛺' : choice.type === 'social' ? '💬' : '🚪'}
+                                                                    <span className="flex items-center gap-2 min-w-0">
+                                                                        <span className="text-base shrink-0">
+                                                                            {isSkill ? '🎲' : choice.type === 'rest' ? '⛺' : choice.type === 'social' ? '💬' : '🚪'}
+                                                                        </span>
+                                                                        <span className="leading-snug">{choice.label}</span>
                                                                     </span>
-                                                                    <span>{choice.label}</span>
                                                                     {choice.dc && (
-                                                                        <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold uppercase">
+                                                                        <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-bold uppercase shrink-0">
                                                                             {choice.skill || choice.ability || 'Check'} DC {choice.dc}
                                                                         </span>
                                                                     )}
@@ -747,7 +822,7 @@ export default function ChatInterface({
                                                 ) : (
                                                     <div className="py-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
                                                         <span className="text-base">✨</span>
-                                                        <span>All choices and actions in this chamber have been resolved. Use the automap to travel onward or declare a custom action below!</span>
+                                                        <span>All choices in this scene have been resolved. Open the Map or declare a custom action below!</span>
                                                     </div>
                                                 )}
                                             </>
@@ -757,19 +832,24 @@ export default function ChatInterface({
                             );
                         })()}
 
-                        {/* Integrated Custom Action & Dice Roller (Inline in Chronicle) - Collapsible */}
+                        {/* Custom Action & Quick d20 Roll (Collapsible on mobile, iOS 16px zoom-safe input) */}
                         {isChoicesExpanded && (
-                            <div className="w-full rounded-2xl p-3.5 sm:p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-200/80 dark:border-slate-700/70 space-y-2.5 animate-fade-in">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                            <div className="w-full rounded-2xl p-3 sm:p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-200/80 dark:border-slate-700/70 space-y-2.5 animate-fade-in">
+                                <div className="flex items-center justify-between gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomInput((v) => !v)}
+                                        className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 flex items-center gap-1.5 cursor-pointer"
+                                    >
                                         <span>✍️</span>
-                                        <span>Declare Action / Freeform Choice</span>
-                                    </span>
+                                        <span>Custom Action / Freeform Prompt</span>
+                                        <span className="text-[10px] opacity-75">{showCustomInput ? '▲' : '▼'}</span>
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={handleQuickRoll}
                                         disabled={isLoading}
-                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 transition-all cursor-pointer"
+                                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 transition-all cursor-pointer"
                                         title="Roll a d20 die"
                                     >
                                         <span>🎲</span>
@@ -777,43 +857,45 @@ export default function ChatInterface({
                                     </button>
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-                                    <input
-                                        type="text"
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        placeholder={
-                                            pendingRoll
-                                                ? `Waiting for ${pendingRoll.characterName === 'player' ? 'your' : pendingRoll.characterName + "'s"} roll (DC ${pendingRoll.dc})...`
-                                                : 'What do you do?'
-                                        }
-                                        disabled={isLoading || Boolean(pendingRoll)}
-                                        className="input flex-1 py-2 sm:py-2.5 text-xs sm:text-sm bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600"
-                                    />
-                                    <Button
-                                        type="submit"
-                                        variant="primary"
-                                        disabled={!input.trim() || isLoading || Boolean(pendingRoll)}
-                                        className="px-4 py-2 sm:py-2.5 text-xs sm:text-sm shrink-0"
-                                    >
-                                        Send
-                                    </Button>
-                                </form>
+                                {showCustomInput && (
+                                    <>
+                                        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={input}
+                                                onChange={(e) => setInput(e.target.value)}
+                                                placeholder={
+                                                    pendingRoll
+                                                        ? `Waiting for ${pendingRoll.characterName === 'player' ? 'your' : pendingRoll.characterName + "'s"} roll (DC ${pendingRoll.dc})...`
+                                                        : 'What do you do?'
+                                                }
+                                                disabled={isLoading || Boolean(pendingRoll)}
+                                                className="input flex-1 py-2.5 text-base sm:text-sm bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600"
+                                            />
+                                            <Button
+                                                type="submit"
+                                                variant="primary"
+                                                disabled={!input.trim() || isLoading || Boolean(pendingRoll)}
+                                                className="px-4 py-2.5 text-sm shrink-0"
+                                            >
+                                                Send
+                                            </Button>
+                                        </form>
 
-                                {/* Quick Action Prompt Chips */}
-                                <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
-                                    <span className="text-gray-500 dark:text-gray-400 font-semibold mr-1">Prompts:</span>
-                                    {quickActions.map((action) => (
-                                        <button
-                                            key={action}
-                                            type="button"
-                                            onClick={() => setInput(action)}
-                                            className="px-2.5 py-0.5 rounded-full bg-gray-200/70 dark:bg-slate-700/70 hover:bg-amber-100 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
-                                        >
-                                            {action}
-                                        </button>
-                                    ))}
-                                </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
+                                            {quickActions.map((action) => (
+                                                <button
+                                                    key={action}
+                                                    type="button"
+                                                    onClick={() => setInput(action)}
+                                                    className="px-2.5 py-1 rounded-full bg-gray-200/70 dark:bg-slate-700/70 hover:bg-amber-100 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
+                                                >
+                                                    {action}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

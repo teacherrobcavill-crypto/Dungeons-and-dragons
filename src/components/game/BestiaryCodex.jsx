@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { monsters } from '../../data/monsters';
 import { getAbilityMod, formatMod } from '../../services/dndEngine';
+import { getMonsterImage } from '../../data/assets';
 
 export default function BestiaryCodex({ encounteredMonsters = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +93,19 @@ export default function BestiaryCodex({ encounteredMonsters = [] }) {
             {active && (
                 <div className="p-4 rounded-xl bg-gradient-to-b from-amber-50/90 to-stone-50 dark:from-slate-800 dark:to-slate-900 border-2 border-red-800/40 dark:border-red-900/60 shadow-md space-y-3 text-xs">
                     {/* Header */}
+                    {getMonsterImage(active.id, active.name) && (
+                        <div className="relative h-36 rounded-lg overflow-hidden border border-red-800/40 bg-slate-950">
+                            <img
+                                src={getMonsterImage(active.id, active.name)}
+                                alt={active.name}
+                                className="w-full h-full object-cover object-top"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent" />
+                            <span className="absolute bottom-2 left-2.5 text-[10px] uppercase tracking-wider font-bold text-amber-300 bg-slate-950/80 px-2 py-0.5 rounded-full border border-amber-500/30">
+                                Illustrated Adversary
+                            </span>
+                        </div>
+                    )}
                     <div className="border-b-2 border-red-800/40 dark:border-red-700/50 pb-2">
                         <div className="flex items-center justify-between">
                             <h5 className="font-display font-bold text-base text-red-900 dark:text-red-300 flex items-center gap-2">

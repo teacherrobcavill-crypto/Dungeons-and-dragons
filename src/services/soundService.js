@@ -2,7 +2,7 @@
 // Provides procedural Web Audio API sound effects, ambient soundscapes,
 // Web Speech API Text-to-Speech (TTS), and ElevenLabs Studio Voice Audio Playback.
 
-import { VOICE_TRACKS, getVoiceTrack } from '../data/assets';
+import { VOICE_TRACKS, getVoiceTrack, resolveAssetUrl } from '../data/assets';
 
 class SoundService {
     constructor() {
@@ -340,7 +340,11 @@ class SoundService {
         if (!this.enabled && !forcePlay) return false;
         if (this.narrationEnabled === false && !forcePlay) return false;
 
-        const trackUrl = getVoiceTrack(keyOrPath) || (typeof keyOrPath === 'string' && keyOrPath.startsWith('/') ? keyOrPath : null);
+        const trackUrl = getVoiceTrack(keyOrPath) || (
+            typeof keyOrPath === 'string' && (keyOrPath.startsWith('/') || keyOrPath.startsWith('audio/'))
+                ? resolveAssetUrl(keyOrPath)
+                : null
+        );
         if (!trackUrl) return false;
 
         this.stopVoice();
